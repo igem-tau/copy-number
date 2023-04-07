@@ -2,7 +2,7 @@ from scipy.stats import pearsonr
 from scipy.stats import spearmanr
 import seaborn as sns
 import matplotlib.pyplot as plt
-from modeling.copy_num.data_prep import *
+from modeling.copy_num.data_prep.pre_process import *
 
 
 def show_corr_between_2_columns(df: pd.DataFrame, x_column_name: str, y_column_name: str):
