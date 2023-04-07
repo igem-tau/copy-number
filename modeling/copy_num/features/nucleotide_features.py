@@ -1,0 +1,414 @@
+import numpy as np
+import pandas as pd
+import math
+from pandas import DataFrame
+from Bio import motifs
+# from Bio.Graphics import LogoFormat, LogoGenerator
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import itertools
+from typing import List, Dict, Union
+from modeling.copy_num.consts import *
+
+
+def generate_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
+    def encode(single_nucleotid: pd.Series, index:int=None) -> pd.DataFrame:
+        columns = []
+        for nucleotide in NUCLEOTIDES:
+          columns.append((single_nucleotid == nucleotide).astype(int))
+        encoded = pd.concat(columns, axis=1)
+        if index is not None:
+          columns = [f'{nucleotide}_{index}' for nucleotide in NUCLEOTIDES]
+        else:
+          columns = list(NUCLEOTIDES)
+        encoded.columns = columns
+        return encoded
+
+    full_encoding = []
+    for current_nucleotide_index in range(PROMOTER_LENGTH):
+        current_nucleotide_encoding = encode(seq.str[current_nucleotide_index], current_nucleotide_index + START_INDEX)
+        full_encoding.append(current_nucleotide_encoding)
+
+    return pd.concat(full_encoding, axis=1)
+
+
+m2 = list(itertools.product(NUCLEOTIDES, repeat=2))
+m3 = list(itertools.product(NUCLEOTIDES, repeat=3))
+m4 = list(itertools.product(NUCLEOTIDES, repeat=4))
+m5 = list(itertools.product(NUCLEOTIDES, repeat=5))
+k_gap = 2
+k_tuple = 2
+
+
+def kmers(seq: str, k: int) -> List[int]:
+    v = []
+    for i in range(len(seq) - k + 1):
+        v.append(seq[i:i + k])
+    return v
+
+
+def pseudo_knc(seq: str, k: int) -> Dict[str, int]:
+    ### k-mer ###
+    ### A, AA, AAA
+
+    d = {}
+    for i in range(1, k + 1):
+        v = list(itertools.product(NUCLEOTIDES, repeat=i))
+        for j in v:
+            search_seq = ''.join(j)
+            key = f'{search_seq}_count'
+            res = seq.count(search_seq)
+            d.update({key: res})
+    return d
+
+
+def z_curve(seq: str) -> Dict[str, int]:
+    ### Z-Curve ### total = 3
+
+    T = seq.count('T')
+    A = seq.count('A')
+    C = seq.count('C')
+    G = seq.count('G')
+
+    x_ = (A + G) - (C + T)
+    y_ = (A + C) - (G + T)
+    z_ = (A + T) - (C + G)
+
+    d = {'z_curve_x_': x_, 'z_curve_y_': y_, 'z_curve_z_': z_}
+    return d
+
+
+def gc_content(seq: str) -> Dict[str, float]:
+    T = seq.count('T')
+    A = seq.count('A')
+    C = seq.count('C')
+    G = seq.count('G')
+
+    gc_content = (G + C) / (A + C + G + T)
+    return {'gc_content': gc_content}
+
+
+def cumulative_skew(seq: str) -> Dict[str, float]:
+    T = seq.count('T')
+    A = seq.count('A')
+    C = seq.count('C')
+    G = seq.count('G')
+
+    GCSkew = (G - C) / (G + C)
+    ATSkew = (A - T) / (A + T)
+
+    d = {'gc_skew': GCSkew, 'at_skew': ATSkew}
+    return d
+
+
+def atgc_ratio(seq: str) -> Dict[str, float]:
+    T = seq.count('T')
+    A = seq.count('A')
+    C = seq.count('C')
+    G = seq.count('G')
+
+    atgc_ratio = (A + T) / (G + C)
+    return {'atgc_ratio': atgc_ratio}
+
+
+def mono_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___1
+    ### g-gap
+    '''
+    AA      0-gap (2-mer)
+    A_A     1-gap
+    A__A    2-gap
+    A___A   3-gap
+    A____A  4-gap
+    '''
+
+    d = {}
+    m = m2
+    for i in range(1, g + 1, 1):
+        V = kmers(seq, i + 2)
+
+        for gGap in m:
+            C = 0
+            for v in V:
+                if v[0] == gGap[0] and v[-1] == gGap[1]:
+                    C += 1
+            key = f'mono_mono_k_gap_{i}_{gGap}_'
+            d[key] = C
+
+    return d
+
+
+def mono_di_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___2
+
+    d = {}
+    m = m3
+    for i in range(1, g + 1, 1):
+        V = kmers(seq, i + 3)
+        for gGap in m:
+
+            C = 0
+            for v in V:
+                if v[0] == gGap[0] and v[-2] == gGap[1] and v[-1] == gGap[2]:
+                    C += 1
+
+            key = f'mono_di_k_gap_{i}_{gGap}_'
+            d[key] = C
+
+    return d
+
+
+def di_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 2___1
+
+    d = {}
+    m = m3
+    for i in range(1, g + 1, 1):
+        V = kmers(seq, i + 3)
+
+        for gGap in m:
+            C = 0
+            for v in V:
+                if v[0] == gGap[0] and v[1] == gGap[1] and v[-1] == gGap[2]:
+                    C += 1
+            key = f'di_mono_k_gap_{i}_{gGap}_'
+            d.update({key: C})
+
+    return d
+
+
+def mono_tri_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___3
+
+    # A_AAA       1-gap
+    # A__AAA      2-gap
+    # A___AAA     3-gap
+    # A____AAA    4-gap
+    # A_____AAA   5-gap upto g
+
+    d = {}
+    m = m4
+    for i in range(1, g + 1, 1):
+        V = kmers(seq, i + 4)
+
+        for gGap in m:
+            C = 0
+            for v in V:
+                if v[0] == gGap[0] and v[-3] == gGap[1] and v[-2] == gGap[2] and v[-1] == gGap[3]:
+                    C += 1
+            key = f'mono_tri_k_gap_{i}_{gGap}_'
+            d[key] = C
+
+    return d
+
+
+def tri_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 3___1
+
+    # AAA_A       1-gap
+    # AAA__A      2-gap
+    # AAA___A     3-gap
+    # AAA____A    4-gap
+    # AAA_____A   5-gap upto g
+
+    d = {}
+    m = m4
+    for i in range(1, g + 1, 1):
+        V = kmers(seq, i + 4)
+
+        for gGap in m:
+            C = 0
+            for v in V:
+                if v[0] == gGap[0] and v[1] == gGap[1] and v[2] == gGap[2] and v[-1] == gGap[3]:
+                    C += 1
+
+            key = f'tri_mono_k_gap_{i}_{gGap}_'
+            d[key] = C
+
+    return d
+
+
+def di_di_k_gap(seq: str, g: int) -> Dict[str, int]:
+    ### gapping ### total = [(64xg)] = 2,304 [g=9]
+    # AA_AA       1-gap
+    # AA__AA      2-gap
+    # AA___AA     3-gap
+    # AA____AA    4-gap
+    # AA_____AA   5-gap upto g
+
+    d = {}
+    m = m4
+    for i in range(1, g + 1, 1):
+        V = kmers(seq, i + 4)
+
+        for gGap in m:
+            C = 0
+            for v in V:
+                if v[0] == gGap[0] and v[1] == gGap[1] and v[-2] == gGap[2] and v[-1] == gGap[3]:
+                    C += 1
+            key = f'di_di_k_gap_{i}_{gGap}_'
+            d[key] = C
+
+    return d
+
+
+def di_tri_k_gap(seq: str, g: int) -> Dict[str, int]:  # 2___3
+
+    ### gapping ### total = [(64xg)] = 2,304 [g=9]
+    # AA_AAA       1-gap
+    # AA__AAA      2-gap
+    # AA___AAA     3-gap
+    # AA____AAA    4-gap
+    # AA_____AAA   5-gap upto g
+
+    d = {}
+    m = m5
+    for i in range(1, g + 1, 1):
+        V = kmers(seq, i + 5)
+        for gGap in m:
+            C = 0
+            for v in V:
+                if v[0] == gGap[0] and v[1] == gGap[1] and v[-3] == gGap[2] and \
+                        v[-2] == gGap[3] and v[-1] == gGap[4]:
+                    C += 1
+            key = f'di_tri_k_gap_{i}_{gGap}_'
+            d[key] = C
+
+    return d
+
+
+def tri_di_k_gap(seq: str, g):  # 3___2
+
+    ### gapping ### total = [(64xg)] = 2,304 [g=9]
+    # AAA_AA       1-gap
+    # AAA__AA      2-gap
+    # AAA___AA     3-gap
+    # AAA____AA    4-gap
+    # AAA_____AA   5-gap upto g
+
+    d = {}
+    m = m5
+    for i in range(1, g + 1, 1):
+        V = kmers(seq, i + 5)
+        for gGap in m:
+            C = 0
+            for v in V:
+                if v[0] == gGap[0] and v[1] == gGap[1] and v[2] == gGap[2] and \
+                        v[-2] == gGap[3] and v[-1] == gGap[4]:
+                    C += 1
+            key = f'tri_di_k_gap_{i}_{gGap}_'
+            d[key] = C
+
+    return d
+
+
+def extract(seq: str) -> Dict[str, Union[int, float]]:
+    d = {}
+
+    res = z_curve(seq)
+    d.update(res)
+
+    res = gc_content(seq)
+    d.update(res)
+
+    res = cumulative_skew(seq)
+    d.update(res)
+
+    res = atgc_ratio(seq)
+    d.update(res)
+
+    res = pseudo_knc(seq, k_tuple)  # k=2|(16), k=3|(64), k=4|(256), k=5|(1024)
+    d.update(res)
+
+    res = mono_mono_k_gap(seq, k_gap)  # 4*(k)*4 = 240
+    d.update(res)
+
+    res = mono_di_k_gap(seq, k_gap)  # 4*k*(4^2) = 960
+    d.update(res)
+
+    res = mono_tri_k_gap(seq, k_gap)  # 4*k*(4^3) = 3,840
+    d.update(res)
+
+    res = di_mono_k_gap(seq, k_gap)  # (4^2)*k*(4)    = 960
+    d.update(res)
+
+    res = di_di_k_gap(seq, k_gap)  # (4^2)*k*(4^2)  = 3,840
+    d.update(res)
+
+    res = di_tri_k_gap(seq, k_gap)  # (4^2)*k*(4^3)  = 15,360
+    d.update(res)
+
+    res = tri_mono_k_gap(seq, k_gap)  # (4^3)*k*(4)    = 3,840
+    d.update(res)
+
+    res = tri_di_k_gap(seq, k_gap)  # (4^3)*k*(4^2)  = 15,360
+    d.update(res)
+
+    return d
+
+
+def generate_df_from_seq(seq: 'pd.Series[str]') -> pd.DataFrame:
+    return pd.DataFrame(seq.apply(extract).tolist())
+
+
+def get_prob_dict_for_idx(idx_bases):
+    counts = {}
+    for char in idx_bases:
+        if char in counts:
+            counts[char] += 1
+        else:
+            counts[char] = 1
+    prob_d = {c: counts[c] / len(idx_bases) for c in counts}
+    return prob_d
+
+
+def get_prob_dict(seq_lst: list):
+    d = {}
+    seq_len = len(seq_lst[0])
+    for i in range(seq_len):
+        bases_per_idx = [seq[i] for seq in seq_lst]
+        d[i] = get_prob_dict_for_idx(bases_per_idx)
+    return d
+
+
+# Features from Tamir's article
+# https://www.nature.com/articles/s41598-021-89918-6#Sec8
+# See Methods section
+def entropy(df: pd.DataFrame, seq_col: str):
+    # calc entropy for seq
+    def seq_entropy(seq, prob_dict):
+        entropy_val = 0
+        for i, v in enumerate(seq):
+            p_i = prob_dict[i][v]
+            entropy_val += p_i * math.log2(p_i)
+        return -entropy_val / 2  # divide by 2 for normalization purposes
+
+    prob_dict = get_prob_dict(df[seq_col].to_list())
+    df['entropy'] = df[seq_col].apply(seq_entropy, prob_dict=prob_dict)
+    return df
+
+
+def folding_energy():
+    # Todo: It seems irrelevant in our case
+    #  check with the team what they think,
+    #  In general folding energy is calculated for RNA,
+    #  it supposed to predict minimum free-energy secondary structure of RNA sequence
+    #  and in our case the data is only the promotor which is not transcribed to RNA
+    pass
+
+
+def codon_adaptation_index():
+    # Todo: CAI - another feature that seems irrelevant in our case
+    #  It measures the degree with which genes use preferred codons
+    #  So it is related to a gene and its codons (and we work with promotor data)
+    pass
+
+
+def effective_codons_number():
+    # Todo: ENC measures the degree in which genes use more specific codons
+    #  as opposed to using all codons uniformly
+    #  So also irrelevant
+    pass
+
+
+def dna_folding_energy_diff():
+    pass
+
+
+def dna_topology_dist_diff():
+    pass

@@ -1,0 +1,6 @@
+biopython
+xgboost
+statsmodels
+pymemesuite
+minepy
+optuna
