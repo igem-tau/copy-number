@@ -1,4 +1,4 @@
-from modeling.copy_num.data_prep import *
+from modeling.copy_num.data_prep.pre_process import *
 from modeling.copy_num.features.nucleotide_features import *
 from modeling.copy_num.features.pssm import *
 from modeling.copy_num.features.promotor_strength import calc_promoter_zones_strength
