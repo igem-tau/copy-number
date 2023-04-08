@@ -43,7 +43,7 @@ def combine_all_features(df: pd.DataFrame, x_col: str, y_col: str, **kwargs):
 
 
 def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=0,stratify=X['Hight_or_low'])
     numeric_features = X_train.select_dtypes(include='float64', exclude='int64')
 
     scaler = StandardScaler()
@@ -55,7 +55,7 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame):
     return X_train, X_test, y_train, y_test
 
 
-def model(data_df: pd.DataFrame, model_name: str, data_name: str):
+def model(data_df: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
     print(f"Running {model_name} for {data_name}")
     X, y = combine_all_features(data_df, x_col="Promoter Sequence", y_col='Copy Number',
                          **{"promotor_strength": data_df['Predicted Promoter Strength (KbT)'],
@@ -68,7 +68,7 @@ def model(data_df: pd.DataFrame, model_name: str, data_name: str):
     if model_name == "lasso":
         run_lasso(X_train, X_test, y_train, y_test, data_title=data_name)
     elif model_name == "xgboost":
-        run_xgboost(X_train, X_test, y_train, y_test)
+        run_xgboost(X_train, X_test, y_train, y_test,Best_param)
     else:
         raise Exception(f"No such model: {model_name}")
 

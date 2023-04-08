@@ -5,8 +5,11 @@ from sklearn.model_selection import RandomizedSearchCV
 import numpy as np
 import matplotlib.pyplot as plt
 
-def run_xgboost(X_train, X_test, y_train, y_test, importance_title: str = None):
-    xgb_model = xgb.XGBRegressor()
+def run_xgboost(X_train, X_test, y_train, y_test, Best_param: dict,importance_title: str = None):
+    if not  bool(Best_param):
+        xgb_model = xgb.XGBRegressor(Best_param)
+    else:
+        xgb_model = xgb.XGBRegressor()
     xgb_model.fit(X_train, y_train)
     y_pred = xgb_model.predict(X_test)
 
