@@ -57,3 +57,25 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
         zones_strength[f'{zone} predicted strength'] = strength
 
     return pd.DataFrame(zones_strength)
+def create_hight_or_low_features(X: pd.DataFrame,Type_of_thresh) -> pd.DataFrame:
+    l=['mean','median']
+    if Type_of_thresh not in l:
+        while True:
+            u_in = input("Please enter a precentage between 0 and 100: ")
+            try:
+                number = float(u_in)
+                if 0 <= number <= 100:
+                    Threshold=max(X["Copy Number"])*number/100
+                    print(f'Threshold was selected to be {Threshold} ({number}%)')
+                    break
+                else:
+                    print("The number must be between 0 and 100.")
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+    elif Type_of_thresh=='mean':
+        Threshold = X["Copy Number"].mean()
+    elif Type_of_thresh=='med':
+        Threshold = X["Copy Number"].median()
+
+    return(pd.DataFrame(np.array([X["Copy Number"] <= Threshold]).T.astype(int),columns=['Hight_or_low']))
+

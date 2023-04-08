@@ -2,6 +2,7 @@ from modeling.copy_num.data_prep.pre_process import *
 from modeling.copy_num.features.nucleotide_features import *
 from modeling.copy_num.features.pssm import *
 from modeling.copy_num.features.promotor_strength import calc_promoter_zones_strength
+from modeling.copy_num.features.promotor_strength import create_hight_or_low_features
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from modeling.copy_num.models.lasso import run_lasso
@@ -33,6 +34,7 @@ def combine_all_features(df: pd.DataFrame, x_col: str, y_col: str, **kwargs):
     features.append(generate_one_hot_encoding(src_data))
     features.append(generate_df_from_seq(src_data))
     features.append(calc_promoter_zones_strength(src_data, RNAp_EDITED_ZONES))
+    features.append(create_hight_or_low_features(src_data, Type_of_thresh='mean'))  # except "mean", "med",and %
 
     X_temp = pd.concat(features, axis=1)
     X = remove_zero_variance_features(X_temp)
