@@ -4,7 +4,7 @@ import xgboost as xgb
 from sklearn.model_selection import RandomizedSearchCV
 import numpy as np
 import matplotlib.pyplot as plt
-
+from modeling.copy_num.models.Paramteers_Tuining import  best_param_to_xl
 def run_xgboost(X_train, X_test, y_train, y_test, Best_param: dict,importance_title: str = None):
     if not  bool(Best_param):
         xgb_model = xgb.XGBRegressor(Best_param)
@@ -28,6 +28,9 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,num_of_steps = 5,nun_
                                 min(max_val, parameters_base[key][0] + (parameters_base[key][0] / (t + 0.5)))]
         return ([lower_n, upper_num])
 
+    scores = [-1]
+    param_d={}
+
     for step in range(num_of_steps):
         parameters_min = {"learning_rate": calc_range("learning_rate", 0.0001, 0.5, step)[0],
                           "n_estimators": calc_range("n_estimators", 2, 5000, step)[0],
@@ -43,7 +46,6 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,num_of_steps = 5,nun_
                           "colsample_bytree": calc_range("colsample_bytree", 0.0001, 1, step)[1]}
         parameters = {}
         keys_pairs = [("learning_rate", "max_depth"), ("subsample", "n_estimators"), ("gamma", "colsample_bytree")]
-        scores = []
         for t in keys_pairs:
             parameters = parameters_base
             parameters[t[0]] = np.linspace(parameters_min[t[0]], parameters_max[t[0]], 4)
@@ -64,8 +66,11 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,num_of_steps = 5,nun_
             parameters_base[t[1]] = [rand_obj.best_params_[t[1]]]
             print(
                 f'{t[0]} was set to {rand_obj.best_params_[t[0]]} and {t[1]} was set to {rand_obj.best_params_[t[1]]}')
+            if score>max(scores):
+                param_d={score,rand_obj.best_params_}
     print(scores)
     plt.plot(range(len(scores)), scores, label='score')
     plt.legend()
     plt.show()
+    # best_param_to_xl(param_d) not finished yet
     return(scores[-1],rand_obj.best_params_)
