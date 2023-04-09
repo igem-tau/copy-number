@@ -1,6 +1,6 @@
-biopython
-xgboost
-statsmodels
-pymemesuite
-minepy
-optuna
+biopython==1.81
+xgboost==1.7.5
+statsmodels==0.13.5
+pymemesuite==0.1.0a2
+minepy==1.2.6
+optuna==3.1.0
