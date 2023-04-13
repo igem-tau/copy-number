@@ -57,8 +57,10 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
         zones_strength[f'{zone} predicted strength'] = strength
 
     return pd.DataFrame(zones_strength)
-def create_hight_or_low_features(X: pd.DataFrame,Type_of_thresh) -> pd.DataFrame:
-    l=['mean','median']
+
+
+def create_hight_or_low_features(X: pd.DataFrame, Type_of_thresh) -> pd.DataFrame:
+    l=['mean', 'median']
     if Type_of_thresh not in l:
         while True:
             u_in = input("Please enter a precentage between 0 and 100: ")

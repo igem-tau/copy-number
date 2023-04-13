@@ -4,20 +4,35 @@ import xgboost as xgb
 from sklearn.model_selection import RandomizedSearchCV
 import numpy as np
 import matplotlib.pyplot as plt
-from modeling.copy_num.models.Paramteers_Tuining import  best_param_to_xl
-def run_xgboost(X_train, X_test, y_train, y_test, Best_param: dict,importance_title: str = None):
-    if not  bool(Best_param):
+from modeling.copy_num.models.Parameters_Tuning import best_param_to_xl
+
+
+XGB_MODEL = None
+
+
+def export_model():
+    if XGB_MODEL is not None:
+        return XGB_MODEL
+
+
+def run_xgboost(X_train, X_test, y_train, y_test, Best_param: dict, importance_title: str = None, show_analysis: bool = True):
+    if not bool(Best_param):
         xgb_model = xgb.XGBRegressor(Best_param)
     else:
         xgb_model = xgb.XGBRegressor()
     xgb_model.fit(X_train, y_train)
     y_pred = xgb_model.predict(X_test)
 
-    r2 = r2_score(y_test, y_pred)
-    print(f"R^2 value for xgboost: {r2}")
+    XGB_MODEL = xgb_model
 
-    xgb.plot_importance(xgb_model, max_num_features=20, title=importance_title)
-    plt.show()
+    if show_analysis:
+        r2 = r2_score(y_test, y_pred)
+        print(f"R^2 value for xgboost: {r2}")
+
+        xgb.plot_importance(xgb_model, max_num_features=20, title=importance_title)
+        plt.show()
+
+
 def converge_randomsearch(X_train, X_test, y_train, y_test,num_of_steps = 5,nun_iter=7):
     xgb_tuned = xgb.XGBRegressor(random_state=1)
     parameters_base = {"learning_rate": [0.5 / 2], "n_estimators": [int(2000 / 2)], "max_depth": [int(20 / 2)],

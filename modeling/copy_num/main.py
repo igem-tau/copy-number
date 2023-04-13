@@ -6,7 +6,7 @@ from modeling.copy_num.features.promotor_strength import create_hight_or_low_fea
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from modeling.copy_num.models.lasso import run_lasso
-from modeling.copy_num.models.xgboost import run_xgboost
+from modeling.copy_num.models.xgboost import run_xgboost, export_model
 
 
 def show_nucliotide_distrib_per_group():
@@ -34,7 +34,7 @@ def combine_all_features(df: pd.DataFrame, x_col: str, y_col: str, **kwargs):
     features.append(generate_one_hot_encoding(src_data))
     features.append(generate_df_from_seq(src_data))
     features.append(calc_promoter_zones_strength(src_data, RNAp_EDITED_ZONES))
-    features.append(create_hight_or_low_features(src_data, Type_of_thresh='mean'))  # except "mean", "med",and %
+    features.append(create_hight_or_low_features(df, Type_of_thresh='mean'))  # except "mean", "med",and %
 
     X_temp = pd.concat(features, axis=1)
     X = remove_zero_variance_features(X_temp)
@@ -43,7 +43,7 @@ def combine_all_features(df: pd.DataFrame, x_col: str, y_col: str, **kwargs):
 
 
 def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=0,stratify=X['Hight_or_low'])
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=0, stratify=X['Hight_or_low'])
     numeric_features = X_train.select_dtypes(include='float64', exclude='int64')
 
     scaler = StandardScaler()
@@ -55,7 +55,7 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame):
     return X_train, X_test, y_train, y_test
 
 
-def model(data_df: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
+def model(data_df: pd.DataFrame, model_name: str, data_name: str, Best_param={}, show_analysis: bool = True):
     print(f"Running {model_name} for {data_name}")
     X, y = combine_all_features(data_df, x_col="Promoter Sequence", y_col='Copy Number',
                          **{"promotor_strength": data_df['Predicted Promoter Strength (KbT)'],
@@ -68,9 +68,15 @@ def model(data_df: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
     if model_name == "lasso":
         run_lasso(X_train, X_test, y_train, y_test, data_title=data_name)
     elif model_name == "xgboost":
-        run_xgboost(X_train, X_test, y_train, y_test,Best_param)
+        run_xgboost(X_train, X_test, y_train, y_test, Best_param, show_analysis=show_analysis)
     else:
         raise Exception(f"No such model: {model_name}")
+
+
+def get_current_best_model():
+    pRNA_df = get_pRNA_data()
+    model(pRNA_df, model_name="xgboost", data_name="p RNA", show_analysis=False)
+    return export_model()
 
 
 def main():
@@ -87,7 +93,12 @@ def main():
     # Todo: add modeling for combined data
 
 
-if __name__ == '__main__':
-    main()
+def test():
+    p_rna = get_pRNA_data()
+    print("play")
 
+
+if __name__ == '__main__':
+    # main()
+    test()
 
