@@ -7,6 +7,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from modeling.copy_num.models.lasso import run_lasso
 from modeling.copy_num.models.xgboost import run_xgboost
+from modeling.copy_num.models.xgboost import converge_randomsearch
+import warnings
 
 
 def show_nucliotide_distrib_per_group():
@@ -34,7 +36,7 @@ def combine_all_features(df: pd.DataFrame, x_col: str, y_col: str, **kwargs):
     features.append(generate_one_hot_encoding(src_data))
     features.append(generate_df_from_seq(src_data))
     features.append(calc_promoter_zones_strength(src_data, RNAp_EDITED_ZONES))
-    features.append(create_hight_or_low_features(src_data, Type_of_thresh='mean'))  # except "mean", "med",and %
+    features.append(create_hight_or_low_features(df, Type_of_thresh='mean'))  # except "mean", "med",and %
 
     X_temp = pd.concat(features, axis=1)
     X = remove_zero_variance_features(X_temp)
@@ -55,7 +57,7 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame):
     return X_train, X_test, y_train, y_test
 
 
-def model(data_df: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
+def model(train_test,data_df: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
     print(f"Running {model_name} for {data_name}")
     X, y = combine_all_features(data_df, x_col="Promoter Sequence", y_col='Copy Number',
                          **{"promotor_strength": data_df['Predicted Promoter Strength (KbT)'],
@@ -65,24 +67,32 @@ def model(data_df: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
 
     X_train, X_test, y_train, y_test = prepare_model_data(X, y)
 
-    if model_name == "lasso":
-        run_lasso(X_train, X_test, y_train, y_test, data_title=data_name)
-    elif model_name == "xgboost":
-        run_xgboost(X_train, X_test, y_train, y_test,Best_param)
+    if train_test=='train':
+        for i in range(7):
+            [ii,kk]=converge_randomsearch(X_train, X_test, y_train, y_test, num_of_steps=5, nun_iter=7)
     else:
-        raise Exception(f"No such model: {model_name}")
+
+        if model_name == "lasso":
+            run_lasso(X_train, X_test, y_train, y_test, data_title=data_name)
+        elif model_name == "xgboost":
+            run_xgboost(X_train, X_test, y_train, y_test,Best_param)
+        else:
+            raise Exception(f"No such model: {model_name}")
 
 
 def main():
+    warnings.simplefilter(action='ignore', category=FutureWarning)
+
     # modeling for p-RNA
+    train_test=''
     pRNA_df = get_pRNA_data()
-    model(pRNA_df, model_name="lasso", data_name="p RNA")
-    model(pRNA_df, model_name="xgboost", data_name="p RNA")
+    # model(train_test,pRNA_df, model_name="lasso", data_name="p RNA")
+    # model(train_test,pRNA_df, model_name="xgboost", data_name="p RNA")
 
     # modeling for i-RNA
     iRNA_df = get_iRNA_data()
-    model(iRNA_df, model_name="lasso", data_name="i RNA")
-    model(iRNA_df, model_name="xgboost", data_name="i RNA")
+    # model(train_test,iRNA_df, model_name="lasso", data_name="i RNA")
+    model(train_test,iRNA_df, model_name="xgboost", data_name="i RNA")
 
     # Todo: add modeling for combined data
 
