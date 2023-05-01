@@ -9,6 +9,7 @@ from modeling.copy_num.models.lasso import run_lasso
 from modeling.copy_num.models.xgboost import run_xgboost
 from modeling.copy_num.models.xgboost import converge_randomsearch
 import warnings
+import numpy as np
 
 
 def show_nucliotide_distrib_per_group():
