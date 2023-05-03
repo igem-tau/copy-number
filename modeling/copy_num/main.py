@@ -1,4 +1,3 @@
-from modeling.copy_num.data_prep.post_process import remove_zero_variance_features
 from modeling.copy_num.data_prep.pre_process import *
 from modeling.copy_num.features.nucleotide_features import *
 from modeling.copy_num.analysis.pssm import *

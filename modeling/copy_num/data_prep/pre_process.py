@@ -1,15 +1,15 @@
-from joblib import dump
+from joblib import dump, load
 import pandas as pd
 import os
 import numpy as np
 from modeling.copy_num.consts import *
 from modeling.copy_num.features.motifs import calc_motifs_pv
 from modeling.copy_num.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq
-from modeling.copy_num.features.promotor_strength import calc_promoter_zones_strength
+from modeling.copy_num.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from modeling.copy_num.features.pssm_feature import calc_series_pssm_score
 
-timepoints_df = pd.read_excel(os.path.join("..", "..", "data", "copy_num", "sup_data_3_seq_cnt_p_rna.xlsx")) # priming RNA time points
-
+DATA_PATH = os.path.join("..", "..", "..", "data")
+timepoints_df = pd.read_excel(os.path.join("..", "..", "..", "data", "copy_num", "sup_data_3_seq_cnt_p_rna.xlsx")) # priming RNA time points
 
 def get_RNAp_data():
     """
@@ -66,30 +66,53 @@ def generate_features(RNA_data: pd.DataFrame, type:str='p', cp:bool=False) -> pd
     RNA_y = RNA_data['Copy Number'] if cp else None
     return RNA_X, RNA_y
 
-def generate_features_combined(seq: 'pd.Series[str]', type:str='p', RNA_features: 'pd.DataFrame') -> pd.DataFrame:
-
-    RNA_seq_original = pd.Series(RNAi_SEQ_ORIGINAL)
-    RNA_X, _ = generate_features(RNA_seq_original, type, cp=False)
-
+def generate_features_combined(RNA_features: pd.DataFrame, type: str='p') -> pd.DataFrame:
+    RNA_seq_original = pd.Series(RNAp_SEQ_ORIGINAL if type == 'p' else RNAi_SEQ_ORIGINAL)
+    RNA_df = pd.concat([RNA_seq_original, calc_predicted_promoter_strength(RNA_seq_original)])
+    RNA_X, _ = generate_features(RNA_df, type, cp=False)
     RNA_original_features = pd.DataFrame(np.repeat(RNA_X.values, RNA_X.shape[0], axis=0), columns=RNA_X.columns)
-
-    RNA_X_shared_model = pd.merge(RNA_features, RNA_original_features, left_index=True, right_index=True, suffixes=('_p', '_i'))
+    suffixes = ('_p', '_i') if type == 'p' else ('_i', '_p')
+    RNA_X_shared_model = pd.merge(RNA_features, RNA_original_features, left_index=True, right_index=True, suffixes=suffixes)
     RNA_X_shared_model['changed RNA type'] = 0 if type == 'p' else 1  # RNAp will be 0 (and RNAi will be 1)
+    return RNA_X_shared_model
+
+
+def remove_zero_variance_features(X: pd.DataFrame) -> pd.DataFrame:
+  zero_variance_cols = X.columns[X.var() == 0]
+  return X.drop(zero_variance_cols, axis=1)
 
 
 def save_features_df():
     RNAp_data = get_RNAp_data()
     RNAi_data = get_RNAi_data()
 
-    RNAp_X, RNAp_y = generate_features(RNAp_data)
-    RNAi_X, RNAi_y = generate_features(RNAi_data)
+    RNAp_X, RNAp_y = generate_features(RNAp_data, type='p')
+    RNAi_X, RNAi_y = generate_features(RNAi_data, type='i')
+
+    RNAp_X_shared_model = generate_features_combined(RNAp_X, type='p')
+    RNAi_X_shared_model = generate_features_combined(RNAi_X, type='i')
+
+    if (RNAi_X_shared_model.columns != RNAp_X_shared_model.columns).any():
+        raise Exception('the columns in the shared RNAi and RNAp do not match, must be fixed in order to continue')
+    else:
+        X_shared_model = remove_zero_variance_features(
+            pd.concat([RNAi_X_shared_model, RNAp_X_shared_model], axis=0, ignore_index=True))
+        Y_shared_model = pd.concat([RNAi_y, RNAp_y], axis=0, ignore_index=True)
 
     data = {
-        'RNAp_X': RNAp_X,
+        'RNAp_X': remove_zero_variance_features(RNAp_X),
         'RNAp_y': RNAp_y,
-        'RNAi_X': RNAi_X,
+        'RNAi_X': remove_zero_variance_features(RNAi_X),
         'RNAi_y': RNAi_y,
         'X_shared': X_shared_model,
         'Y_shared': Y_shared_model
     }
-    dump(data, 'DataFrames_with_features.joblib')
+    dump(data, os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
+    return data
+
+def get_features_df():
+    if os.path.exists(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib')):
+        data = load(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
+    else:
+        data = save_features_df()
+    return data

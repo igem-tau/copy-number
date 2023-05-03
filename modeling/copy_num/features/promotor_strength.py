@@ -4,7 +4,7 @@ import numpy as np
 import seaborn as sns
 from typing import List, Tuple, Union
 from functools import partial
-
+import os
 
 def get_energy_matrix_for_rna_polymeras() -> pd.DataFrame:
     """
@@ -19,7 +19,7 @@ def get_energy_matrix_for_rna_polymeras() -> pd.DataFrame:
     :return:
     """
     FIRST_INDEX = -40
-    RAW_DATA = np.loadtxt('https://doi.org/10.1371/journal.pcbi.1002811.s003')
+    RAW_DATA = np.loadtxt(os.path.join("..", "..", "data", "pcbi.1002811.s003.txt"))
     return pd.DataFrame(RAW_DATA, columns=list(NUCLEOTIDES), index=np.arange(FIRST_INDEX, FIRST_INDEX + len(RAW_DATA)))
 
 

@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from modeling.copy_num.models.Parameters_Tuning.best_param_to_xl import *
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+from modeling.copy_num.models.Parameters_Tuning import best_param_to_xl
+
 def run_xgboost(X_train, X_test, y_train, y_test, Best_param: dict,importance_title: str = None):
     if not bool(Best_param):
         xgb_model = xgb.XGBRegressor(Best_param)
