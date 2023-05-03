@@ -101,6 +101,7 @@ def promoter_strength_plot(RNA_X, RNA_y, RNA_correlations_df, type:str='p'):
             transform=ax.transAxes)
     ax.text(0.8, 0.3, 'Spearman pv=%.4f' % RNA_correlations_df.loc['Spearman pv', 'Predicted Promoter Strength (KbT)'],
             transform=ax.transAxes)
+    plt.show()
 
 if __name__ == '__main__':
     data = get_features_df()
