@@ -1,6 +1,8 @@
 from joblib import dump, load
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy.stats import pearsonr, spearmanr
+
 from modeling.copy_num.data_prep.pre_process import get_features_df
 from minepy import MINE
 import numpy as np
