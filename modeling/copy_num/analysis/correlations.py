@@ -129,16 +129,10 @@ if __name__ == '__main__':
         data_i = calc_correlations_with_copynumber(RNAi_X, RNAi_y)
         data_p = calc_correlations_with_copynumber(RNAp_X, RNAp_y)
         data = {
-            'RNAp_X': RNAp_X,
-            'RNAp_y': RNAp_y,
-            'RNAi_X': RNAi_X,
-            'RNAi_y': RNAi_y,
-            'X_shared': X_shared_model,
-            'Y_shared': Y_shared_model,
-            'RNAi_correlations': data_i['Correlation df'],
-            'RNAi_permutations': data_i['Permutations df'],
             'RNAp_correlations': data_p['Correlation df'],
             'RNAp_permutations': data_p['Permutations df'],
+            'RNAi_correlations': data_i['Correlation df'],
+            'RNAi_permutations': data_i['Permutations df'],
         }
         dump(data, SAVED_CORRELATIONS_PATH)
         RNAp_correlations_df = data_p['Correlation df']
