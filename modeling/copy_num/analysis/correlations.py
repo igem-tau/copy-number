@@ -10,7 +10,7 @@ import os
 from typing import Dict
 
 CORRELATIONS_METHODS = ['pearson', 'kendall', 'spearman']
-DATA_PATH = os.path.join("..", "..", "data")
+DATA_PATH = os.path.join("..", '..', "..", "data")
 
 def calc_MIC_pv(original_mine: 'MINE', RNA_Series: 'pd.Series', RNA_copynumber: 'pd.Series') -> dict:
     mics = []
@@ -117,8 +117,9 @@ if __name__ == '__main__':
     PSSM_corr_plot(RNAi_X['pssm_score'], RNAi_y, 'RNAi PSSM')
 
     # other features
-    if os.path.exists(os.path.join(DATA_PATH, 'DataFrames_with_features_and_correlations.joblib')):
-        data = load('DataFrames_with_features_and_correlations.joblib')
+    SAVED_CORRELATIONS_PATH = os.path.join(DATA_PATH, 'correlations_DataFrames.joblib')
+    if os.path.exists(SAVED_CORRELATIONS_PATH):
+        data = load(SAVED_CORRELATIONS_PATH)
         RNAp_correlations_df = data['RNAp_correlations']
         RNAp_permutations_df = data['RNAp_permutations']
         RNAi_correlations_df = data['RNAi_correlations']
@@ -138,7 +139,7 @@ if __name__ == '__main__':
             'RNAp_correlations': data_p['Correlation df'],
             'RNAp_permutations': data_p['Permutations df'],
         }
-        dump(data, 'DataFrames_with_features_and_correlations.joblib')
+        dump(data, SAVED_CORRELATIONS_PATH)
         RNAp_correlations_df = data_p['Correlation df']
         RNAp_permutations_df = data_p['Permutations df']
         RNAi_correlations_df = data_i['Correlation df']
