@@ -111,6 +111,11 @@ def atgc_ratio(seq: str) -> Dict[str, float]:
     return {'atgc_ratio': atgc_ratio}
 
 
+def get_k_gap_description(nucleotides: Tuple[str], before_gap: int, after_gap: int, k: int, gap: str = '_') -> str:
+    return f'{"".join(nucleotides[:before_gap])}{k * gap}{"".join(
+        nucleotides[before_gap:before_gap + after_gap])}_count'
+
+
 def mono_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___1
     ### g-gap
     '''
@@ -131,7 +136,7 @@ def mono_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___1
             for v in V:
                 if v[0] == gGap[0] and v[-1] == gGap[1]:
                     C += 1
-            key = f'mono_mono_k_gap_{i}_{gGap}_'
+            key = get_k_gap_description(gGap, 1, 1, i)
             d[key] = C
 
     return d
@@ -150,7 +155,7 @@ def mono_di_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___2
                 if v[0] == gGap[0] and v[-2] == gGap[1] and v[-1] == gGap[2]:
                     C += 1
 
-            key = f'mono_di_k_gap_{i}_{gGap}_'
+            key = get_k_gap_description(gGap, 1, 2, i)
             d[key] = C
 
     return d
@@ -168,7 +173,7 @@ def di_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 2___1
             for v in V:
                 if v[0] == gGap[0] and v[1] == gGap[1] and v[-1] == gGap[2]:
                     C += 1
-            key = f'di_mono_k_gap_{i}_{gGap}_'
+            key = get_k_gap_description(gGap, 2, 1, i)
             d.update({key: C})
 
     return d
@@ -192,7 +197,7 @@ def mono_tri_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___3
             for v in V:
                 if v[0] == gGap[0] and v[-3] == gGap[1] and v[-2] == gGap[2] and v[-1] == gGap[3]:
                     C += 1
-            key = f'mono_tri_k_gap_{i}_{gGap}_'
+            key = get_k_gap_description(gGap, 1, 3, i)
             d[key] = C
 
     return d
@@ -217,7 +222,7 @@ def tri_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 3___1
                 if v[0] == gGap[0] and v[1] == gGap[1] and v[2] == gGap[2] and v[-1] == gGap[3]:
                     C += 1
 
-            key = f'tri_mono_k_gap_{i}_{gGap}_'
+            key = get_k_gap_description(gGap, 3, 1, i)
             d[key] = C
 
     return d
@@ -241,7 +246,7 @@ def di_di_k_gap(seq: str, g: int) -> Dict[str, int]:
             for v in V:
                 if v[0] == gGap[0] and v[1] == gGap[1] and v[-2] == gGap[2] and v[-1] == gGap[3]:
                     C += 1
-            key = f'di_di_k_gap_{i}_{gGap}_'
+            key = get_k_gap_description(gGap, 2, 2, i)
             d[key] = C
 
     return d
@@ -266,7 +271,7 @@ def di_tri_k_gap(seq: str, g: int) -> Dict[str, int]:  # 2___3
                 if v[0] == gGap[0] and v[1] == gGap[1] and v[-3] == gGap[2] and \
                         v[-2] == gGap[3] and v[-1] == gGap[4]:
                     C += 1
-            key = f'di_tri_k_gap_{i}_{gGap}_'
+            key = get_k_gap_description(gGap, 2, 3, i)
             d[key] = C
 
     return d
@@ -291,7 +296,7 @@ def tri_di_k_gap(seq: str, g):  # 3___2
                 if v[0] == gGap[0] and v[1] == gGap[1] and v[2] == gGap[2] and \
                         v[-2] == gGap[3] and v[-1] == gGap[4]:
                     C += 1
-            key = f'tri_di_k_gap_{i}_{gGap}_'
+            key = get_k_gap_description(gGap, 3, 2, i)
             d[key] = C
 
     return d

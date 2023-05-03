@@ -24,7 +24,7 @@ def show_corr_between_2_columns(df: pd.DataFrame, x_column_name: str, y_column_n
 
 
 def check_some_correlations():
-    p_rna_df = get_pRNA_data()
+    p_rna_df = get_RNAp_data()
 
     # corr between promotor strength and copy num
     show_corr_between_2_columns(p_rna_df, "cnt_grw", "Copy Number")
@@ -36,7 +36,7 @@ def check_some_correlations():
     show_corr_between_2_columns(p_rna_df, "Predicted Promoter Strength (KbT)", "copy_num_log")
     show_corr_between_2_columns(p_rna_df, "Predicted Promoter Strength (KbT)", "cnt_grw")
 
-    p_rna_merged_df = get_pRNA_merged_data()
+    p_rna_merged_df = get_RNAp_merged_data()
     show_corr_between_2_columns(p_rna_merged_df, "Predicted Promoter Strength (KbT)", "log_avg_dup_rate")
 
 
