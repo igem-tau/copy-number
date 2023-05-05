@@ -1,6 +1,8 @@
 from joblib import dump, load
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy.stats import pearsonr, spearmanr
+
 from modeling.copy_num.data_prep.pre_process import get_features_df
 from minepy import MINE
 import numpy as np
@@ -8,7 +10,7 @@ import os
 from typing import Dict
 
 CORRELATIONS_METHODS = ['pearson', 'kendall', 'spearman']
-DATA_PATH = os.path.join("..", "..", "data")
+DATA_PATH = os.path.join("..", '..', "..", "data")
 
 def calc_MIC_pv(original_mine: 'MINE', RNA_Series: 'pd.Series', RNA_copynumber: 'pd.Series') -> dict:
     mics = []
@@ -99,6 +101,7 @@ def promoter_strength_plot(RNA_X, RNA_y, RNA_correlations_df, type:str='p'):
             transform=ax.transAxes)
     ax.text(0.8, 0.3, 'Spearman pv=%.4f' % RNA_correlations_df.loc['Spearman pv', 'Predicted Promoter Strength (KbT)'],
             transform=ax.transAxes)
+    plt.show()
 
 if __name__ == '__main__':
     data = get_features_df()
@@ -115,8 +118,9 @@ if __name__ == '__main__':
     PSSM_corr_plot(RNAi_X['pssm_score'], RNAi_y, 'RNAi PSSM')
 
     # other features
-    if os.path.exists(os.path.join(DATA_PATH, 'DataFrames_with_features_and_correlations.joblib')):
-        data = load('DataFrames_with_features_and_correlations.joblib')
+    SAVED_CORRELATIONS_PATH = os.path.join(DATA_PATH, 'correlations_DataFrames.joblib')
+    if os.path.exists(SAVED_CORRELATIONS_PATH):
+        data = load(SAVED_CORRELATIONS_PATH)
         RNAp_correlations_df = data['RNAp_correlations']
         RNAp_permutations_df = data['RNAp_permutations']
         RNAi_correlations_df = data['RNAi_correlations']
@@ -125,18 +129,12 @@ if __name__ == '__main__':
         data_i = calc_correlations_with_copynumber(RNAi_X, RNAi_y)
         data_p = calc_correlations_with_copynumber(RNAp_X, RNAp_y)
         data = {
-            'RNAp_X': RNAp_X,
-            'RNAp_y': RNAp_y,
-            'RNAi_X': RNAi_X,
-            'RNAi_y': RNAi_y,
-            'X_shared': X_shared_model,
-            'Y_shared': Y_shared_model,
-            'RNAi_correlations': data_i['Correlation df'],
-            'RNAi_permutations': data_i['Permutations df'],
             'RNAp_correlations': data_p['Correlation df'],
             'RNAp_permutations': data_p['Permutations df'],
+            'RNAi_correlations': data_i['Correlation df'],
+            'RNAi_permutations': data_i['Permutations df'],
         }
-        dump(data, 'DataFrames_with_features_and_correlations.joblib')
+        dump(data, SAVED_CORRELATIONS_PATH)
         RNAp_correlations_df = data_p['Correlation df']
         RNAp_permutations_df = data_p['Permutations df']
         RNAi_correlations_df = data_i['Correlation df']

@@ -7,7 +7,7 @@ from Bio import motifs
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import itertools
-from typing import List, Dict, Union
+from typing import List, Dict, Tuple, Union
 from modeling.copy_num.consts import *
 
 
@@ -112,8 +112,7 @@ def atgc_ratio(seq: str) -> Dict[str, float]:
 
 
 def get_k_gap_description(nucleotides: Tuple[str], before_gap: int, after_gap: int, k: int, gap: str = '_') -> str:
-    return f'{"".join(nucleotides[:before_gap])}{k * gap}{"".join(
-        nucleotides[before_gap:before_gap + after_gap])}_count'
+    return f'{"".join(nucleotides[:before_gap])}{k * gap}{"".join(nucleotides[before_gap:before_gap + after_gap])}_count'
 
 
 def mono_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___1
