@@ -19,7 +19,7 @@ def get_energy_matrix_for_rna_polymeras() -> pd.DataFrame:
     :return:
     """
     FIRST_INDEX = -40
-    RAW_DATA = np.loadtxt(os.path.join("..", "..", "data", "pcbi.1002811.s003.txt"))
+    RAW_DATA = np.loadtxt(os.path.join("..", "..", "..", "data", "pcbi.1002811.s003.txt"))
     return pd.DataFrame(RAW_DATA, columns=list(NUCLEOTIDES), index=np.arange(FIRST_INDEX, FIRST_INDEX + len(RAW_DATA)))
 
 

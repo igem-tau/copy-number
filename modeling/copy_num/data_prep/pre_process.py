@@ -16,7 +16,7 @@ def get_RNAp_data():
     get RNA_P df, with additional columns
     :return:
     """
-    RNAp_df = pd.read_excel(os.path.join("..", "..", "data", "copy_num", "sup_data_1_p_rna.xlsx"), names=RNA_DATA_COLUMNS)  # priming RNA
+    RNAp_df = pd.read_excel(os.path.join(DATA_PATH, "copy_num", "sup_data_1_p_rna.xlsx"), names=RNA_DATA_COLUMNS)  # priming RNA
     RNAp_df["cnt_grw"] = RNAp_df["Final Counts"] / RNAp_df["Initial Counts"]
     shift = abs(RNAp_df["Copy Number"].min()) + 1e-10
     RNAp_df["copy_num_log"] = np.log(RNAp_df["Copy Number"] + shift)
@@ -28,7 +28,7 @@ def get_RNAi_data():
     get RNA_I df, with additional columns
     :return:
     """
-    RNAi_df = pd.read_excel(os.path.join("..", "..", "data", "copy_num", "sup_data_2_i_rna.xlsx"), names=RNA_DATA_COLUMNS)  # inhibitory RNA
+    RNAi_df = pd.read_excel(os.path.join(DATA_PATH, "copy_num", "sup_data_2_i_rna.xlsx"), names=RNA_DATA_COLUMNS)  # inhibitory RNA
     RNAi_df["cnt_grw"] = RNAi_df["Final Counts"] / RNAi_df["Initial Counts"]
     return RNAi_df
 
@@ -50,12 +50,12 @@ def get_RNAp_merged_data():
     merged = pd.merge(RNAp_df, timepoints_df, on="Promoter Sequence")
     return merged
 
-def generate_features(RNA_data: pd.DataFrame, type:str='p', cp:bool=False) -> pd.DataFrame:
+def generate_features(RNA_data: pd.DataFrame, type:str='p', cp:bool=True) -> pd.DataFrame:
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
     RNA_features = []
 
     RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
-    RNA_pssm_score = calc_series_pssm_score(RNA_data['Promoter Sequence (-35 to +1)'])
+    RNA_pssm_score = calc_series_pssm_score(RNA_seq, None, type)
     RNA_features.append(RNA_pssm_score)
     RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
@@ -68,11 +68,15 @@ def generate_features(RNA_data: pd.DataFrame, type:str='p', cp:bool=False) -> pd
 
 def generate_features_combined(RNA_features: pd.DataFrame, type: str='p') -> pd.DataFrame:
     RNA_seq_original = pd.Series(RNAp_SEQ_ORIGINAL if type == 'p' else RNAi_SEQ_ORIGINAL)
-    RNA_df = pd.concat([RNA_seq_original, calc_predicted_promoter_strength(RNA_seq_original)])
+    RNA_df = pd.concat([RNA_seq_original, calc_predicted_promoter_strength(RNA_seq_original)], axis=1)
+    RNA_df.rename(columns={RNA_df.columns[0]: 'Promoter Sequence (-35 to +1)'}, inplace = True)
     RNA_X, _ = generate_features(RNA_df, type, cp=False)
-    RNA_original_features = pd.DataFrame(np.repeat(RNA_X.values, RNA_X.shape[0], axis=0), columns=RNA_X.columns)
-    suffixes = ('_p', '_i') if type == 'p' else ('_i', '_p')
-    RNA_X_shared_model = pd.merge(RNA_features, RNA_original_features, left_index=True, right_index=True, suffixes=suffixes)
+    RNA_original_features = pd.DataFrame(np.repeat(RNA_X.values, RNA_features.shape[0], axis=0), columns=RNA_X.columns)
+    if type == 'p':
+        RNA_X_shared_model = pd.merge(RNA_original_features, RNA_features, left_index=True, right_index=True, suffixes=('_p', '_i'))
+    else:
+        RNA_X_shared_model = pd.merge(RNA_features, RNA_original_features, left_index=True, right_index=True, suffixes=('_p', '_i'))
+
     RNA_X_shared_model['changed RNA type'] = 0 if type == 'p' else 1  # RNAp will be 0 (and RNAi will be 1)
     return RNA_X_shared_model
 
@@ -89,8 +93,8 @@ def save_features_df():
     RNAp_X, RNAp_y = generate_features(RNAp_data, type='p')
     RNAi_X, RNAi_y = generate_features(RNAi_data, type='i')
 
-    RNAp_X_shared_model = generate_features_combined(RNAp_X, type='p')
-    RNAi_X_shared_model = generate_features_combined(RNAi_X, type='i')
+    RNAp_X_shared_model = generate_features_combined(RNAi_X, type='p')
+    RNAi_X_shared_model = generate_features_combined(RNAp_X, type='i')
 
     if (RNAi_X_shared_model.columns != RNAp_X_shared_model.columns).any():
         raise Exception('the columns in the shared RNAi and RNAp do not match, must be fixed in order to continue')
