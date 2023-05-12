@@ -16,16 +16,16 @@ if __name__ == '__main__':
     # run models
 
     # RNAp
-    model(None, RNAp_X, RNAp_y, model_name="lasso", data_name="pRNA")
-    model(None, RNAp_X, RNAp_y, model_name="xgboost", data_name="pRNA")
+    model(RNAp_X, RNAp_y, model_name="lasso", data_name="pRNA")
+    model(RNAp_X, RNAp_y, model_name="xgboost", data_name="pRNA")
 
     # RNAi
-    model(None, RNAi_X, RNAi_y, model_name="lasso", data_name="iRNA")
-    model(None, RNAi_X, RNAi_y, model_name="xgboost", data_name="iRNA")
+    model(RNAi_X, RNAi_y, model_name="lasso", data_name="iRNA")
+    model(RNAi_X, RNAi_y, model_name="xgboost", data_name="iRNA")
 
     # shared model
-    model(None, X_shared_model, Y_shared_model, model_name="lasso", data_name="shared model")
-    model(None, X_shared_model, Y_shared_model, model_name="xgboost", data_name="shared model")
+    model(X_shared_model, Y_shared_model, model_name="lasso", data_name="shared model")
+    model(X_shared_model, Y_shared_model, model_name="xgboost", data_name="shared model")
 
 
 

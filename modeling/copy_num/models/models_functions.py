@@ -32,7 +32,7 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame):
     return X_train, X_test, y_train, y_test
 
 
-def model(train_test,X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
+def model(X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
     print(f"Running {model_name} for {data_name}")
 
     X_train, X_test, y_train, y_test = prepare_model_data(X, y)
