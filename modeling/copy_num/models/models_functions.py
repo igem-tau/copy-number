@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-
 from modeling.copy_num.models.lasso import run_lasso
 from modeling.copy_num.models.xgboost_model import run_xgboost
 
@@ -17,8 +16,8 @@ def remove_outlires(X: pd.DataFrame, y: pd.DataFrame):
     iqr = q3-q1
     lower_fence = q1 - (1.5*iqr)
     higher_fence = q3 + (1.5*iqr)
-    X = X[y>lower_fence and y<higher_fence]
-    y = y[y > lower_fence and y < higher_fence]
+    X = X[(y>lower_fence) & (y<higher_fence)]
+    y = y[(y>lower_fence) & (y<higher_fence)]
     return X, y
 
 def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame):
