@@ -36,14 +36,17 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, random_state=0):
     return X_train, X_test, y_train, y_test
 
 
-def model(X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
+def model(X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str, best_param=None):
     print(f"Running {model_name} for {data_name}")
 
     X_train, X_test, y_train, y_test = prepare_model_data(X, y)
 
+    if best_param is None:
+        best_param = {}
+
     if model_name == "lasso":
-        run_lasso(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=Best_param)
+        run_lasso(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=best_param)
     elif model_name == "xgboost":
-        run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=Best_param)
+        run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=best_param)
     else:
         raise Exception(f"No such model: {model_name}")
