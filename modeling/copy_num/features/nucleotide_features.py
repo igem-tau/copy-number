@@ -453,11 +453,17 @@ def get_avg_mfe_per_position(df: pd.DataFrame, seq_col: str):
     return avg_mfe_per_position
 
 
-def codon_adaptation_index():
+def codon_adaptation_index(gene_seq: str, codon_to_weight: dict):
     # Todo: CAI - another feature that seems irrelevant in our case
     #  It measures the degree with which genes use preferred codons
     #  So it is related to a gene and its codons (and we work with promotor data)
-    pass
+    weights_product = 1
+    for i in range(0, len(gene_seq)-2, 3):
+        curr_codon = gene_seq[i:i+3]
+        weights_product *= codon_to_weight[curr_codon]
+
+    num_codons = len(gene_seq) / 3
+    return weights_product ** (1 / num_codons)
 
 
 def effective_codons_number():
