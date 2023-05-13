@@ -1,14 +1,11 @@
-import numpy as np
+import Bio
+from Bio.Seq import Seq
 import pandas as pd
 import math
-from pandas import DataFrame
-from Bio import motifs
-# from Bio.Graphics import LogoFormat, LogoGenerator
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import itertools
 from typing import List, Dict, Tuple, Union
 from modeling.copy_num.consts import *
+import subprocess
 
 
 def generate_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
@@ -387,13 +384,25 @@ def entropy(df: pd.DataFrame, seq_col: str):
     return df
 
 
-def folding_energy():
+def run_RNAfold(rna_seq: str):
+    # Todo: You need to download RNAfold before from:
+    #  https://www.tbi.univie.ac.at/RNA/#download
+    #  Include it as part of the project later
+    cmd = ['RNAfold', '-p']
+    result = subprocess.run(cmd, input=rna_seq, capture_output=True, text=True)
+    output = result.stdout.strip().split('\n')
+    return output
+
+
+def folding_energy(rna_seq: str):
     # Todo: It seems irrelevant in our case
     #  check with the team what they think,
     #  In general folding energy is calculated for RNA,
     #  it supposed to predict minimum free-energy secondary structure of RNA sequence
     #  and in our case the data is only the promotor which is not transcribed to RNA
-    pass
+    res = run_RNAfold(rna_seq)
+    min_fold_energy = float(res[1].split(" (")[1].strip()[:-1])
+    return min_fold_energy
 
 
 def codon_adaptation_index():
