@@ -4,3 +4,4 @@ statsmodels==0.13.5
 pymemesuite==0.1.0a2
 minepy==1.2.6
 optuna==3.1.0
+dnacurve==2023.4.30

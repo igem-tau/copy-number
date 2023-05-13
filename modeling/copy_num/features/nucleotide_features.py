@@ -1,5 +1,5 @@
-import Bio
-from Bio.Seq import Seq
+from Bio.SeqUtils import MeltingTemp
+from dnacurve import CurvedDNA
 import pandas as pd
 import math
 import itertools
@@ -473,9 +473,97 @@ def effective_codons_number():
     pass
 
 
-def dna_folding_energy_diff():
-    pass
+def add_mut_in_pos(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
+    def mut_in_pos(seq, pos, base_seq):
+        return seq[pos] != base_seq[pos]
+
+    for i in range(len(wildtype_seq)):
+        df[f"mut_pos_{i}"] = df[seq_col].apply(mut_in_pos, pos=i, base_seq=wildtype_seq)
 
 
-def dna_topology_dist_diff():
-    pass
+def get_short_seq(seq, pos, window_size=31):
+    first_half_window = window_size // 2
+    second_half_window = window_size // 2 + 1 if window_size % 2 == 1 else window_size // 2
+    if len(seq) - pos >= second_half_window:
+        left_i = max(pos - first_half_window, 0)
+        right_i = left_i + window_size
+    else:
+        right_i = len(seq)
+        left_i = right_i - window_size
+    short_seq = seq[left_i:right_i]
+    return short_seq
+
+
+def add_rna_mfe_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
+    def mfe_diff_per_pos(seq, pos, base_seq, window_size=31):
+        short_seq = get_short_seq(seq, pos, window_size)
+        base_short_seq = get_short_seq(base_seq, pos, window_size)
+        ss_mfe = get_mfe(short_seq)
+        bss_mfe = get_mfe(base_short_seq)
+        return ss_mfe - bss_mfe
+
+    for i in range(len(wildtype_seq)):
+        df[f"rna_fe_diff_{i}"] = df[seq_col].apply(mfe_diff_per_pos, pos=i, base_seq=wildtype_seq)
+
+
+def dna_folding_energy_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
+    # Todo: It's just a template
+    #  need to check how to calc properly MATLAB oligoprop func used in the article
+    #  it relates to 4 other resources
+    def gibbs_fe_diff_per_pos(seq, pos, base_seq, window_size=31):
+        short_seq = get_short_seq(seq, pos, window_size)
+        base_short_seq = get_short_seq(base_seq, pos, window_size)
+        ss_gfe = MeltingTemp.Tm_NN(short_seq, nn_table=MeltingTemp.R_DNA_NN1)
+        bss_gfe = MeltingTemp.Tm_NN(base_short_seq, nn_table=MeltingTemp.R_DNA_NN1)
+        return ss_gfe - bss_gfe
+
+    for i in range(len(wildtype_seq)):
+        df[f"dna_fe_diff_{i}"] = df[seq_col].apply(gibbs_fe_diff_per_pos, pos=i, base_seq=wildtype_seq)
+
+
+def run_RNApdist(base_seq: str, seq: str):
+    # Todo 1): You need to download RNApdist before from:
+    #  https://www.tbi.univie.ac.at/RNA/#download
+    #  Include it as part of the project later
+
+    # Todo 2): Verify this is the correct way to run it and results look legit
+    input_seq = f"{base_seq}\n{seq}"
+    result = subprocess.run(["RNApdist", "-Xf"], input=input_seq, text=True, capture_output=True)
+    return result.stdout.strip()
+
+
+def get_topo(base_rna_seq, rna_seq):
+    # Todo: It seems irrelevant in our case
+    #  check with the team what they think
+    """
+    calculates distances between thermodynamic RNA secondary structures ensembles
+    Look at "mRNA topological distance" in the article
+    :param rna_seq:
+    :return:
+    """
+    res = run_RNApdist(base_rna_seq, rna_seq)
+    topo = float(res)
+    return topo
+
+
+def rna_topo_dist(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
+    def topo_dist_per_pos(seq, pos, base_seq, window_size=31):
+        short_seq = get_short_seq(seq, pos, window_size)
+        base_short_seq = get_short_seq(base_seq, pos, window_size)
+        return get_topo(base_short_seq, short_seq)
+
+    for i in range(len(wildtype_seq)):
+        df[f"rna_topo_dist_{i}"] = df[seq_col].apply(topo_dist_per_pos, pos=i, base_seq=wildtype_seq)
+
+
+def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
+    def curved_dna_diff(seq, base_seq):
+        base_seq_params = CurvedDNA(base_seq, model="trifonov")
+        seq_params = CurvedDNA(seq, model="trifonov")
+
+        # Todo: return here relevant diff params
+
+    df[["curvature", "bend_angel", "curvature_angel", "helix_x", "helix_y", "helix_z",
+        "phos_1_x", "phos_1_y", "phos_1_z", "phos_2_x", "phos_2_y", "phos_2_z",
+        "basepair_n_x", "basepair_n_y", "basepair_n_z",
+        "smooth_n_x", "smooth_n_y", "smooth_n_z"]] = df[seq_col].apply(curved_dna_diff, base_seq=wildtype_seq, result_type='expand')
