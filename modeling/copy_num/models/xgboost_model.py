@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 from modeling.copy_num.models.Parameters_Tuning.best_param_to_xl import *
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
-from modeling.copy_num.models.Parameters_Tuning import best_param_to_xl
+
 
 FIGURES_PATH = os.path.join("..", "..", "..", "data", "copy_num", "figures")
+
 
 def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_param: dict = {}):
     if bool(Best_param):
@@ -38,7 +39,6 @@ def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_p
     plt.text(0.8, 0.2, 'MSE=%.4f' % mse_score, transform=ax.transAxes)
     plt.title(f'XGBoost - {data_title}')
     plt.savefig(os.path.join(FIGURES_PATH, f'XGBoost evaluation {data_title}.jpg'))
-
 
 
 def converge_randomsearch(X_train, X_test, y_train, y_test,num_of_steps = 5,nun_iter=7):
