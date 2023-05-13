@@ -394,15 +394,63 @@ def run_RNAfold(rna_seq: str):
     return output
 
 
-def folding_energy(rna_seq: str):
+def get_mfe(rna_seq):
     # Todo: It seems irrelevant in our case
     #  check with the team what they think,
     #  In general folding energy is calculated for RNA,
     #  it supposed to predict minimum free-energy secondary structure of RNA sequence
     #  and in our case the data is only the promotor which is not transcribed to RNA
+    """
+    Get minimal folding energy for rna seq
+    :param rna_seq:
+    :return:
+    """
     res = run_RNAfold(rna_seq)
     min_fold_energy = float(res[1].split(" (")[1].strip()[:-1])
     return min_fold_energy
+
+
+def mfe_per_position(rna_seq: str, window_size: int = 31):
+    first_half_window = window_size // 2
+    second_half_window = window_size // 2 + 1 if window_size%2 == 1 else window_size // 2
+    idx_to_mfe = {}
+    for i in range(len(rna_seq)):
+        if len(rna_seq) - i >= second_half_window:
+            left_i = max(i - first_half_window, 0)
+            right_i = left_i + window_size
+        else:
+            right_i = len(rna_seq)
+            left_i = right_i - window_size
+        seq = rna_seq[left_i:right_i]
+        idx_to_mfe[i] = get_mfe(seq)
+        print(f"seq: {seq}, mfe: {get_mfe(seq)}")
+    return idx_to_mfe
+
+
+def add_dict_vals(base_dict, new_dict):
+    if base_dict == {}:
+        base_dict.update(new_dict)
+    else:
+        for k, v in base_dict.items():
+            base_dict[k] += new_dict[k]
+
+
+def get_avg_mfe_per_position(df: pd.DataFrame, seq_col: str):
+    """
+    This function supposed to give what described in the article under Folding energy
+    :param df:
+    :param seq_col:
+    :return:
+    """
+    avg_mfe_per_position = {}
+    for i, r in df.iterrows():
+        curr_idx_to_mfe = mfe_per_position(r[seq_col])
+        add_dict_vals(avg_mfe_per_position, curr_idx_to_mfe)
+
+    for k, v in avg_mfe_per_position.items():
+        avg_mfe_per_position[k] = v / len(df)
+
+    return avg_mfe_per_position
 
 
 def codon_adaptation_index():
