@@ -11,9 +11,9 @@ from modeling.copy_num.models.Parameters_Tuning import best_param_to_xl
 
 FIGURES_PATH = os.path.join("..", "..", "..", "data", "copy_num", "figures")
 
-def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_param: dict = {}):
+def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_param: dict = {}, save_plots=False):
     if bool(Best_param):
-        xgb_model = xgb.XGBRegressor(Best_param)
+        xgb_model = xgb.XGBRegressor(**Best_param)
     else:
         xgb_model = xgb.XGBRegressor()
 
@@ -26,7 +26,8 @@ def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_p
     print('the mse score for xgboost %.5f' % mse_score)
 
     ax = xgb.plot_importance(xgb_model, max_num_features=20, title=f'{data_title} feature importance - XGBoost')
-    ax.figure.savefig(os.path.join(FIGURES_PATH, f'XGBoost feature importance {data_title}.jpg'))
+    if save_plots:
+        ax.figure.savefig(os.path.join(FIGURES_PATH, f'XGBoost feature importance {data_title}.jpg'))
 
     # evaluation plot
     f, ax = plt.subplots()
@@ -37,7 +38,10 @@ def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_p
     plt.text(0.8, 0.1, 'R2=%.4f' % r2, transform=ax.transAxes)
     plt.text(0.8, 0.2, 'MSE=%.4f' % mse_score, transform=ax.transAxes)
     plt.title(f'XGBoost - {data_title}')
-    plt.savefig(os.path.join(FIGURES_PATH, f'XGBoost evaluation {data_title}.jpg'))
+    if save_plots:
+        plt.savefig(os.path.join(FIGURES_PATH, f'XGBoost evaluation {data_title}.jpg'))
+
+    return r2, mse_score
 
 
 

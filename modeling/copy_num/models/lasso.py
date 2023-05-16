@@ -6,7 +6,8 @@ import os
 
 FIGURES_PATH = os.path.join("..", "..", "..", "data", "copy_num", "figures")
 
-def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_param={}):
+
+def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_param={}, save_plots=False):
     if bool(Best_param):
         lasso_model = Lasso(Best_param)
     else:
@@ -39,8 +40,8 @@ def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_par
     plt.title(f'Lasso model for {data_title}')
     plt.axvline(x=0, color='.5')
     plt.subplots_adjust(left=.3)
-    plt.savefig(os.path.join(FIGURES_PATH, f'Lasso feature importance {data_title}.jpg'))
-
+    if save_plots:
+        plt.savefig(os.path.join(FIGURES_PATH, f'Lasso feature importance {data_title}.jpg'))
 
     # evaluation plot
     f, ax = plt.subplots()
@@ -51,4 +52,7 @@ def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_par
     plt.text(0.8, 0.1, 'R2=%.4f' % r2, transform=ax.transAxes)
     plt.text(0.8, 0.2, 'MSE=%.4f' % mse_score, transform=ax.transAxes)
     plt.title(f'Lasso - {data_title}')
-    plt.savefig(os.path.join(FIGURES_PATH, f'Lasso evaluation {data_title}.jpg'))
+    if save_plots:
+        plt.savefig(os.path.join(FIGURES_PATH, f'Lasso evaluation {data_title}.jpg'))
+
+    return r2, mse_score

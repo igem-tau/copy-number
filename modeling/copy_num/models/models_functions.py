@@ -21,7 +21,8 @@ def remove_outlires(X: pd.DataFrame, y: pd.DataFrame):
     return X, y
 
 def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame):
-    X, y = remove_outlires(X, y)
+
+    # X, y = remove_outlires(X, y)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=0,stratify=is_high_copy_number(y))
     numeric_features = X_train.select_dtypes(include='float64', exclude='int64')
 
@@ -32,19 +33,16 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame):
     return X_train, X_test, y_train, y_test
 
 
-def model(train_test,X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str,Best_param={}):
+def model(X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str,Best_param={}, save_plots=False):
     print(f"Running {model_name} for {data_name}")
 
     X_train, X_test, y_train, y_test = prepare_model_data(X, y)
 
-    # if train_test=='train':
-    #     for i in range(7):
-    #         [ii,kk]=converge_randomsearch(X_train, X_test, y_train, y_test, num_of_steps=5, nun_iter=7)
-    # else:
-
     if model_name == "lasso":
-        run_lasso(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=Best_param)
+        r2, mse_score = run_lasso(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=Best_param, save_plots=save_plots)
     elif model_name == "xgboost":
-        run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=Best_param)
+        r2, mse_score = run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=Best_param, save_plots=save_plots)
     else:
         raise Exception(f"No such model: {model_name}")
+
+    return r2, mse_score
