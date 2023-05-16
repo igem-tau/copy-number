@@ -1,5 +1,6 @@
-from sklearn.linear_model import Lasso, ElasticNet
+from sklearn.linear_model import Lasso
 from sklearn.metrics import r2_score, mean_squared_error
+from scipy.stats import spearmanr
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
@@ -22,6 +23,8 @@ def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_par
     print(f"R^2 value for lasso: {r2}")
     mse_score = mean_squared_error(y_test, y_pred)
     print('the mse score for lasso %.5f' % mse_score)
+    spearman, _ = spearmanr(y_test, y_pred)
+    print(f"spearman correlation value for lasso: {spearman}")
 
     # feature importance
     importance = lasso_model.coef_
@@ -55,4 +58,7 @@ def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_par
     if save_plots:
         plt.savefig(os.path.join(FIGURES_PATH, f'Lasso evaluation {data_title}.jpg'))
 
-    return r2, mse_score
+    return r2, mse_score, spearman
+
+
+

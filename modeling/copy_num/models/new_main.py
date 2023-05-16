@@ -1,10 +1,7 @@
 from modeling.copy_num.data_prep.pre_process import get_features_df
+from modeling.copy_num.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb, \
+    find_optimal_alpha_Lasso
 from modeling.copy_num.models.models_functions import model
-from modeling.copy_num.features.pssm_feature import is_high_copy_number
-from modeling.copy_num.models.models_functions import prepare_model_data
-from modeling.copy_num.models.xgboost_model import converge_randomsearch
-from modeling.copy_num.models.Parameters_Tuning.best_param_to_xl import get_best_params_set
-
 
 if __name__ == '__main__':
     data = get_features_df()
@@ -15,51 +12,26 @@ if __name__ == '__main__':
     X_shared_model = data['X_shared']
     Y_shared_model = data['Y_shared']
 
+    # RNAp
+    Best_param_p_xgb = get_best_params_set_xgb(RNAp_X, RNAp_y, "xgb_RNAp")
+    model(RNAp_X, RNAp_y, "xgboost", "pRNA", Best_param_p_xgb)
 
-    params_status="" # "active i" "active shared"
+    Best_alpha_p = find_optimal_alpha_Lasso(RNAp_X, RNAp_y, "lasso_RNAp")
+    model(RNAp_X, RNAp_y, model_name="lasso", data_name="pRNA", Best_param=Best_alpha_p)
 
+    # RNAi
+    Best_param_i_xgb = get_best_params_set_xgb(RNAi_X, RNAi_y, "xgb_RNAi")
+    model(RNAi_X, RNAi_y, "xgboost", "iRNA", Best_param_i_xgb)
 
+    Best_alpha_i = find_optimal_alpha_Lasso(RNAi_X, RNAi_y, "lasso_RNAi")
+    model(RNAi_X, RNAi_y, model_name="lasso", data_name="iRNA", Best_param=Best_alpha_i)
 
-    if not len(params_status)==0:
-        if params_status=="active p":
-            X_train, X_test, y_train, y_test = prepare_model_data(RNAp_X, RNAp_y)
-            dataset_name = "RNAp"
-        elif params_status=="active i":
-            X_train, X_test, y_train, y_test = prepare_model_data(RNAi_X, RNAi_y)
-            dataset_name = "RNAi"
-        elif params_status == "active shared":
-            X_train, X_test, y_train, y_test = prepare_model_data(X_shared_model,Y_shared_model)
-            dataset_name="RNA_shared"
+    # shared model
+    Best_param_shared_xgb = get_best_params_set_xgb(X_shared_model, Y_shared_model, "xgb_RNA_shared")
+    model(X_shared_model, Y_shared_model, "xgboost", "shared model", Best_param_shared_xgb)
 
-        for i in range(5):
-            [ii, kk] = converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name,num_of_steps=7, nun_iter=7)
-
-    else:
-
-
-
-        # run models
-
-        # RNAp
-        Best_param_p=get_best_params_set("xgb_RNAp")
-        # model(None, RNAp_X, RNAp_y, model_name="lasso", data_name="pRNA")
-        data_name = "pRNA"
-        model_name = "xgboost"
-        model(None, RNAp_X, RNAp_y, model_name, data_name,Best_param_p)
-
-        # RNAi
-        Best_param_i=get_best_params_set("xgb_RNAi")
-        data_name = "iRNA"
-        model_name = "xgboost"
-        # model(None, RNAi_X, RNAi_y, model_name="lasso", data_name="iRNA")
-        model(None, RNAi_X, RNAi_y, model_name, data_name,Best_param_i)
-
-        # shared model
-        Best_param_shared=get_best_params_set("xgb_RNA_shared")
-        data_name = "shared model"
-        model_name = "xgboost"
-        # model(None, X_shared_model, Y_shared_model, model_name="lasso", data_name="shared model")
-        model(None, X_shared_model, Y_shared_model, model_name, data_name,Best_param_shared)
+    Best_alpha_shared = find_optimal_alpha_Lasso(X_shared_model, Y_shared_model, "lasso_shared")
+    model(X_shared_model, Y_shared_model, model_name="lasso", data_name="shared model", Best_param=Best_alpha_shared)
 
 
 
