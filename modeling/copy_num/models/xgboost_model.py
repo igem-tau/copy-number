@@ -13,7 +13,8 @@ FIGURES_PATH = os.path.join("..", "..", "..", "data", "copy_num", "figures")
 
 def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_param: dict = {}):
     if bool(Best_param):
-        xgb_model = xgb.XGBRegressor(Best_param)
+        Best_param['max_depth'],Best_param['n_estimators']=int(Best_param['max_depth']),int(Best_param['n_estimators'])
+        xgb_model = xgb.XGBRegressor(**Best_param)
     else:
         xgb_model = xgb.XGBRegressor()
 
@@ -41,7 +42,7 @@ def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_p
 
 
 
-def converge_randomsearch(X_train, X_test, y_train, y_test,num_of_steps = 5,nun_iter=7):
+def converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name,num_of_steps,nun_iter):
     xgb_tuned = xgb.XGBRegressor(random_state=1)
     parameters_base = {"learning_rate": [0.5 / 2], "n_estimators": [int(2000 / 2)], "max_depth": [int(20 / 2)],
                        "gamma": [0.8 / 2], "subsample": [0.99 / 2], "colsample_bytree": [0.99 / 2]}
@@ -96,5 +97,5 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,num_of_steps = 5,nun_
     # plt.legend()
     # plt.show()
 
-    write_to_xl(param_d, 'xgb')
+    write_to_xl(param_d, "xgb_"+dataset_name)
     return(scores[-1],rand_obj.best_params_)

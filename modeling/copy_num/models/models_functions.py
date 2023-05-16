@@ -1,7 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-
 from modeling.copy_num.models.lasso import run_lasso
 from modeling.copy_num.models.xgboost_model import run_xgboost
 
@@ -27,10 +26,6 @@ def model(train_test,X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_nam
 
     X_train, X_test, y_train, y_test = prepare_model_data(X, y)
 
-    # if train_test=='train':
-    #     for i in range(7):
-    #         [ii,kk]=converge_randomsearch(X_train, X_test, y_train, y_test, num_of_steps=5, nun_iter=7)
-    # else:
 
     if model_name == "lasso":
         run_lasso(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=Best_param)
