@@ -17,8 +17,8 @@ def is_high_copy_number(copy_number: 'pd.Series[int]', type: str='p') -> 'pd.Ser
         PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
     if not os.path.exists(PSSM_THRESHOLD_PATH):
         raise Exception('you need to set pssm thresholds first - run "pssn_feature.py"')
-    pssm_threshold = load(PSSM_THRESHOLD_PATH)
-    return copy_number >= pssm_threshold['high']
+    pssm_data = load(PSSM_THRESHOLD_PATH)
+    return copy_number >= pssm_data['high']
 
 
 # generate the scoring matrix (typically from the highest 20%)
@@ -26,7 +26,7 @@ def calc_pssm_matrix(data: 'pd.Series[str]', log:bool=True) -> pd.DataFrame:
     cp_motifs = motifs.create(data.tolist())
     pwm = pd.DataFrame(cp_motifs.pwm)
     if log:
-        return -(np.log2(pwm) * pwm).fillna(0)
+        return (np.log2(pwm) * pwm).fillna(0)
     else:
         pwm.set_index(np.arange(START_INDEX, pwm.shape[0] + START_INDEX), inplace=True)
         return pwm.fillna(0)
@@ -51,7 +51,8 @@ def set_pssm_thresholds(RNA_df: pd.DataFrame , type:str = 'p') -> None:
     n = int(len(RNA_df) * percentage)
     high_cp = RNA_df.nlargest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
     low_cp = RNA_df.nsmallest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
-    pssm_threshold = {'high': high_cp.min(), 'low': low_cp.max()}
+    RNA_pssm = calc_pssm_matrix(high_cp)
+    pssm_threshold = {'high': high_cp.min(), 'low': low_cp.max(), 'pssm_matrix': RNA_pssm}
     if type == 'p':
         PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
     else:

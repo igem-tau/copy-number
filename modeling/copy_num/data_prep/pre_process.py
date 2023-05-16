@@ -9,6 +9,8 @@ from modeling.copy_num.features.pssm_feature import calc_series_pssm_score
 
 DATA_PATH = os.path.join("..", "..", "..", "data")
 timepoints_df = pd.read_excel(os.path.join("..", "..", "..", "data", "copy_num", "sup_data_3_seq_cnt_p_rna.xlsx")) # priming RNA time points
+PSSM_THRESHOLD_PATH_p = os.path.join("..", "..", "..", "data", "copy_num", f'pssm_threshold_pRNA.pkl')
+PSSM_THRESHOLD_PATH_i = os.path.join("..", "..", "..", "data", "copy_num", f'pssm_threshold_iRNA.pkl')
 
 def get_RNAp_data():
     """
@@ -54,8 +56,17 @@ def generate_features(RNA_data: pd.DataFrame, type:str='p', cp:bool=True) -> pd.
     RNA_features = []
 
     RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
-    RNA_pssm_score = calc_series_pssm_score(RNA_seq, None, type)
+
+    if type == 'p':
+        PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
+    else:
+        PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
+    pssm_data = load(PSSM_THRESHOLD_PATH)
+
+    RNA_pssm_score = calc_series_pssm_score(RNA_seq, pssm_data['pssm_matrix'], type)
     RNA_features.append(RNA_pssm_score)
+
+
     RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(generate_df_from_seq(RNA_seq))
@@ -66,6 +77,10 @@ def generate_features(RNA_data: pd.DataFrame, type:str='p', cp:bool=True) -> pd.
     return RNA_X, RNA_y
 
 def generate_features_combined(RNA_features: pd.DataFrame, type: str='p') -> pd.DataFrame:
+    """
+    RNA_features: pd.DataFrame, RNA features to concat to the original sequence, for example if we calculate features
+     for the original seq of RNAp the RNA_features are for RNAi.
+    """
     RNA_seq_original = pd.Series(RNAp_SEQ_ORIGINAL if type == 'p' else RNAi_SEQ_ORIGINAL)
     RNA_df = pd.concat([RNA_seq_original, calc_predicted_promoter_strength(RNA_seq_original)], axis=1)
     RNA_df.rename(columns={RNA_df.columns[0]: 'Promoter Sequence (-35 to +1)'}, inplace = True)
@@ -99,7 +114,7 @@ def save_features_df():
         raise Exception('the columns in the shared RNAi and RNAp do not match, must be fixed in order to continue')
     else:
         X_shared_model = remove_zero_variance_features(
-            pd.concat([RNAi_X_shared_model, RNAp_X_shared_model], axis=0, ignore_index=True))
+            pd.concat([RNAp_X_shared_model, RNAi_X_shared_model], axis=0, ignore_index=True))
         Y_shared_model = pd.concat([RNAi_y, RNAp_y], axis=0, ignore_index=True)
 
     data = {
