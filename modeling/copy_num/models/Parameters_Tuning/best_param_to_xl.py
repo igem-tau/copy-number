@@ -27,7 +27,7 @@ def get_best_params_set(model_name):
     score=df['scores'].max()
     params=df.iloc[df['scores'].idxmax(),:].dropna().drop('scores')
     print(f'Best params for {model_name} model are:\n{params}\nAnd their predicted score is {score}')
-    return(params)
+    return(dict(params))
 ## example##
 # dic={1200:{'r':4,'t':300}}
 # model_name='xgb'

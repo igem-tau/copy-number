@@ -3,7 +3,6 @@ import pandas as pd
 import os
 import numpy as np
 from modeling.copy_num.consts import *
-from modeling.copy_num.features.motifs import calc_motifs_pv
 from modeling.copy_num.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq
 from modeling.copy_num.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from modeling.copy_num.features.pssm_feature import calc_series_pssm_score
@@ -133,5 +132,7 @@ def get_features_df():
     if os.path.exists(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib')):
         data = load(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
     else:
+        from modeling.copy_num.features.motifs import calc_motifs_pv
         data = save_features_df()
+
     return data
