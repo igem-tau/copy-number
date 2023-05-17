@@ -10,7 +10,7 @@ FIGURES_PATH = os.path.join("..", "..", "..", "data", "copy_num", "figures")
 
 def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_param={}, save_plots=False):
     if bool(Best_param):
-        lasso_model = Lasso(Best_param)
+        lasso_model = Lasso(**Best_param)
     else:
         lasso_model = Lasso(alpha=0.3, max_iter=5000)
     # training the model

@@ -107,12 +107,13 @@ def find_optimal_alpha_Lasso(X, y, model_name):
     if not os.path.exists(os.path.join(os.getcwd(), xl_name)):
         X_train, X_test, y_train, y_test = prepare_model_data(X, y)
         # create a LassoCV object with 10-fold cross-validation
-        lasso_cv = LassoCV(cv=5000, max_iter=5000)
+        print('running LassoCV to find the optimal alpha')
+        lasso_cv = LassoCV(cv=10, max_iter=5000)
         # fit the Lasso model
         lasso_cv.fit(X_train, y_train)
         y_pred = lasso_cv.predict(X_test)
         r2 = r2_score(y_test, y_pred)
-        param_d = {'alpha': lasso_cv.alpha_, 'scores': r2}
+        param_d = {r2: {'alpha': lasso_cv.alpha_}}
         write_to_xl(param_d, model_name)
 
     df = pd.read_excel(xl_name)
