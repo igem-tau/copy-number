@@ -1,6 +1,5 @@
 from modeling.copy_num.data_prep.pre_process import get_features_df
 from modeling.copy_num.models.models_functions import model
-from modeling.copy_num.features.pssm_feature import is_high_copy_number
 from modeling.copy_num.models.models_functions import prepare_model_data
 from modeling.copy_num.models.xgboost_model import converge_randomsearch
 from modeling.copy_num.models.Parameters_Tuning.best_param_to_xl import get_best_params_set
@@ -15,11 +14,7 @@ if __name__ == '__main__':
     X_shared_model = data['X_shared']
     Y_shared_model = data['Y_shared']
 
-
     params_status="" # "active i" "active shared"
-
-
-
     if not len(params_status)==0:
         if params_status=="active p":
             X_train, X_test, y_train, y_test = prepare_model_data(RNAp_X, RNAp_y)
@@ -35,9 +30,6 @@ if __name__ == '__main__':
             [ii, kk] = converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name,num_of_steps=7, nun_iter=7)
 
     else:
-
-
-
         # run models
 
         # RNAp
@@ -45,21 +37,18 @@ if __name__ == '__main__':
         # model(None, RNAp_X, RNAp_y, model_name="lasso", data_name="pRNA")
         data_name = "pRNA"
         model_name = "xgboost"
-        model(None, RNAp_X, RNAp_y, model_name, data_name,Best_param_p)
+        model(RNAp_X, RNAp_y, model_name, data_name,Best_param_p)
 
         # RNAi
         Best_param_i=get_best_params_set("xgb_RNAi")
         data_name = "iRNA"
         model_name = "xgboost"
         # model(None, RNAi_X, RNAi_y, model_name="lasso", data_name="iRNA")
-        model(None, RNAi_X, RNAi_y, model_name, data_name,Best_param_i)
+        model(RNAi_X, RNAi_y, model_name, data_name,Best_param_i)
 
         # shared model
         Best_param_shared=get_best_params_set("xgb_RNA_shared")
         data_name = "shared model"
         model_name = "xgboost"
         # model(None, X_shared_model, Y_shared_model, model_name="lasso", data_name="shared model")
-        model(None, X_shared_model, Y_shared_model, model_name, data_name,Best_param_shared)
-
-
-
+        model(X_shared_model, Y_shared_model, model_name, data_name,Best_param_shared)
