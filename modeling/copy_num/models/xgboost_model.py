@@ -1,17 +1,19 @@
-from sklearn.metrics import r2_score, mean_squared_error
-import xgboost as xgb
 import matplotlib.pyplot as plt
-import warnings
-from scipy.stats import spearmanr
 import os
+from scipy.stats import spearmanr
+from sklearn.metrics import r2_score, mean_squared_error
+from typing import Optional
+import warnings
+import xgboost as xgb
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 FIGURES_PATH = os.path.join("..", "..", "..", "data", "copy_num", "figures")
 
 
-def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_param: dict = {}, save_plots=False):
-    if bool(Best_param):
+def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_param: Optional[dict] = None,
+                save_plots: bool = False):
+    if Best_param is not None:
         Best_param['max_depth'], Best_param['n_estimators'] = int(Best_param['max_depth']), int(Best_param['n_estimators'])
         xgb_model = xgb.XGBRegressor(**Best_param)
     else:
@@ -44,6 +46,3 @@ def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_p
         plt.savefig(os.path.join(FIGURES_PATH, f'XGBoost evaluation {data_title}.jpg'))
 
     return r2, mse_score, spearman
-
-
-

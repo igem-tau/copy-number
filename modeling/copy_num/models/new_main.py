@@ -32,6 +32,3 @@ if __name__ == '__main__':
 
     Best_alpha_shared = find_optimal_alpha_Lasso(X_shared_model, Y_shared_model, "lasso_shared")
     model(X_shared_model, Y_shared_model, model_name="lasso", data_name="shared model", Best_param=Best_alpha_shared, save_plots=True)
-
-
-

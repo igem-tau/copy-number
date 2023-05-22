@@ -8,8 +8,8 @@ import os
 FIGURES_PATH = os.path.join("..", "..", "..", "data", "copy_num", "figures")
 
 
-def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_param={}, save_plots=False):
-    if bool(Best_param):
+def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_param=None, save_plots=False):
+    if Best_param is not None:
         lasso_model = Lasso(**Best_param)
     else:
         lasso_model = Lasso(alpha=0.3, max_iter=5000)
