@@ -23,10 +23,10 @@ def remove_outliers(X: pd.DataFrame, y: pd.DataFrame):
     return X, y
 
 
-def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, random_state=0):
-    X, y = remove_outliers(X, y)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15,
-                                                        random_state=random_state, stratify=is_high_copy_number(y))
+def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, random_state: int = 0):
+    # X, y = remove_outlires(X, y)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=random_state, stratify=is_high_copy_number(y))
+
     numeric_features = X_train.select_dtypes(include='float64', exclude='int64')
 
     scaler = StandardScaler()
@@ -36,7 +36,7 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, random_state=0):
     return X_train, X_test, y_train, y_test
 
 
-def model(X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str, best_param=None):
+def model(X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str, best_param=None, save_plots=False):
     print(f"Running {model_name} for {data_name}")
 
     X_train, X_test, y_train, y_test = prepare_model_data(X, y)
@@ -45,8 +45,12 @@ def model(X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str, bes
         best_param = {}
 
     if model_name == "lasso":
-        run_lasso(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=best_param)
+        r2, mse_score, spearman = run_lasso(X_train, X_test, y_train, y_test, data_title=data_name,
+                                            Best_param=best_param, save_plots=save_plots)
     elif model_name == "xgboost":
-        run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name, Best_param=best_param)
+        r2, mse_score, spearman = run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name,
+                                              Best_param=best_param, save_plots=save_plots)
     else:
         raise Exception(f"No such model: {model_name}")
+
+    return r2, mse_score, spearman
