@@ -42,33 +42,25 @@ if __name__=='__main__':
     ax[0].set_ylabel('copy number')
     plt.show()
 
-    fig, ax = plt.subplots(2, 2, figsize=(7, 7))
-
-    ax[0, 0].hist(RNAp_y[RNAp_X['AA_count'] == 0])
-    ax[0, 1].hist(RNAp_y[RNAp_X['AA_count'] == 1])
-    ax[1, 0].hist(RNAp_y[RNAp_X['AA_count'] == 2])
-    ax[1, 1].hist(RNAp_y[RNAp_X['AA_count'] == 3])
-
-    ax[0, 0].set_title('AA count = 0')
-    ax[0, 1].set_title('AA count = 1')
-    ax[1, 0].set_title('AA count = 2')
-    ax[1, 1].set_title('AA count = 3')
-
+    fig, ax = plt.subplots()
+    ax.hist(RNAp_y[RNAp_X['AA_count'] == 0], label="0", histtype="step", density=True)  # Plot histogram of nums1
+    ax.hist(RNAp_y[RNAp_X['AA_count'] == 1], label="1", histtype="step", density=True)
+    ax.hist(RNAp_y[RNAp_X['AA_count'] == 2], label="2", histtype="step", density=True)  # Plot histogram of nums1
+    ax.hist(RNAp_y[RNAp_X['AA_count'] == 3], label="3", histtype="step", density=True)
+    plt.legend()
     fig.supylabel("copy number")
     plt.suptitle('RNAp - AA count vs. copy number')
+    # plt.show()
 
-    fig, ax = plt.subplots(1, 2, figsize=(5, 4))
-
-    ax[0].hist(RNAi_y[RNAi_X['TT_count'] == 1])
-    ax[1].hist(RNAi_y[RNAi_X['TT_count'] == 2])
-
-    ax[0].set_title('TT count = 1')
-    ax[1].set_title('TT count = 2')
-
+    fig, ax = plt.subplots()
+    ax.hist(RNAi_y[RNAi_X['TT_count'] == 1], label="1", histtype="step", density=True)  # Plot histogram of nums1
+    ax.hist(RNAi_y[RNAi_X['TT_count'] == 2], label="2", histtype="step", density=True)
+    plt.legend()
     fig.supylabel("copy number")
     plt.suptitle('RNAi - TT count vs. copy number')
+    plt.show()
 
-    # pssm score vs. cp
+    # # pssm score vs. cp
     fig, ax = plt.subplots(1, 2, figsize=(8, 5))
     ax[0].scatter(RNAp_X['pssm_score'], RNAp_y)
     ax[1].scatter(RNAi_X['pssm_score'], RNAi_y)
