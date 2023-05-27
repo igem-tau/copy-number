@@ -370,7 +370,7 @@ def get_prob_dict(seq_lst: list):
 # Features from Tamir's article
 # https://www.nature.com/articles/s41598-021-89918-6#Sec8
 # See Methods section
-def entropy(df: pd.DataFrame, seq_col: str):
+def entropy(seq: 'pd.Series[str]') -> pd.DataFrame:
     # calc entropy for seq
     def seq_entropy(seq, prob_dict):
         entropy_val = 0
@@ -379,9 +379,11 @@ def entropy(df: pd.DataFrame, seq_col: str):
             entropy_val += p_i * math.log2(p_i)
         return -entropy_val / 2  # divide by 2 for normalization purposes
 
-    prob_dict = get_prob_dict(df[seq_col].to_list())
-    df['entropy'] = df[seq_col].apply(seq_entropy, prob_dict=prob_dict)
-    return df
+    prob_dict = get_prob_dict(seq.to_list())
+    # df['entropy'] = df[seq_col].apply(seq_entropy, prob_dict=prob_dict)
+    # return df
+    return pd.DataFrame(seq.apply(seq_entropy, prob_dict=prob_dict).tolist(), columns=["entropy"])
+
 
 
 def run_RNAfold(rna_seq: str):

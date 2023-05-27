@@ -4,7 +4,7 @@ import os
 import numpy as np
 from modeling.copy_num.consts import *
 from modeling.copy_num.features.motifs import calc_motifs_pv
-from modeling.copy_num.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq
+from modeling.copy_num.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq, entropy
 from modeling.copy_num.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from modeling.copy_num.features.pssm_feature import calc_series_pssm_score
 
@@ -72,6 +72,7 @@ def generate_features(RNA_data: pd.DataFrame, type:str='p', cp:bool=True) -> pd.
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(generate_df_from_seq(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if type == 'p' else RNAi_EDITED_ZONES))
+    RNA_features.append(entropy(RNA_seq))
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_y = RNA_data['Copy Number'] if cp else None
@@ -129,9 +130,14 @@ def save_features_df():
     dump(data, os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
     return data
 
+
 def get_features_df():
     if os.path.exists(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib')):
         data = load(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
     else:
         data = save_features_df()
     return data
+
+
+if __name__ == '__main__':
+    save_features_df()
