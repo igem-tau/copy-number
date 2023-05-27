@@ -11,3 +11,7 @@ joblib~=1.2.0
 scipy~=1.10.1
 tqdm~=4.65.0
 seaborn~=0.12.2
+dnacurve==2023.4.30
+minepy==1.2.6
+pymemesuite==0.1.0a2
+
