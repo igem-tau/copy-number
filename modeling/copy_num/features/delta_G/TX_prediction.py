@@ -8,7 +8,10 @@ interactions between RNA polymerase, sigma factor, and promoter DNA sequences in
 
 import util
 import numpy as np
-import util, random, sys, pickle, collections, operator, itertools, time, math, os
+import random, sys, pickle, collections, operator, itertools, time, math, os
+
+# Get the directory path of the script
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # constants for the calculation of the Tx_rate in the experiments according to the deltaG model
 # if organism == 'in vitro':
@@ -90,9 +93,12 @@ def calculate_dG_and_Tx(sequence):
     tempspacer = sequence[ TSS - DISC_length - HEX10_length - SPACER_length : TSS - DISC_length - HEX10_length ]
     temp35     = sequence[ TSS - DISC_length - HEX10_length - SPACER_length - HEX35_length : TSS - DISC_length - HEX10_length - SPACER_length]
 
+    # Construct the file path relative to the script's directory
+    model_path = os.path.join(current_dir, 'free_energy_coeffs.npy')
+    inters_path = os.path.join(current_dir, 'model_intercept.npy')
     # load the constant values of the deltaG model
-    model = np.load('./free_energy_coeffs.npy')
-    inters = np.load('./model_intercept.npy')
+    model = np.load(model_path)
+    inters = np.load(inters_path)
 
 
     two_mer_encoder = util.kmer_encoders(k = 2)
@@ -104,6 +110,12 @@ def calculate_dG_and_Tx(sequence):
 
     dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer = linear_free_energy_model(
         temp35, tempspacer, temp10, tempdisc, dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers, model, inters)
+
+    import math
+    results_list = [dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer]
+    for result in results_list:
+        if math.isnan(result) == True:
+            print(sequence, dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer)
 
     Tx_rate = K * math.exp(- BETA * dG_total)
 
