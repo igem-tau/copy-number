@@ -1,6 +1,6 @@
 from joblib import dump
 from modeling.copy_num.data_prep.pre_process import get_features_df
-from modeling.copy_num.models.models_functions import remove_outlires, train_validation_test_split
+from modeling.copy_num.models.models_functions import remove_outliers, train_validation_test_split
 import numpy as np
 import pandas as pd
 import pathlib
@@ -70,7 +70,7 @@ def main():
         print(f'start RNA{rna_type}')
         df = pd.DataFrame([], columns=['features', 'validation score', 'test score'])
         rows = []
-        X, y = remove_outlires(X, y)
+        X, y = remove_outliers(X, y)
         seeds = get_seeds(20)
         for seed in tqdm(seeds):
             X_train, X_valid, X_test, y_train, y_valid, y_test = train_validation_test_split(X, y, seed)

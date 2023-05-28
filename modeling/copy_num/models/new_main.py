@@ -7,8 +7,12 @@ if __name__ == '__main__':
     data = get_features_df()
     RNAp_X = data['RNAp_X']
     RNAp_y = data['RNAp_y']
+    RNAp_X_val = data['RNAp_X_val']
+    RNAp_y_val = data['RNAp_y_val']
     RNAi_X = data['RNAi_X']
     RNAi_y = data['RNAi_y']
+    RNAi_X_val = data['RNAi_X_val']
+    RNAi_y_val = data['RNAi_y_val']
     X_shared_model = data['X_shared']
     Y_shared_model = data['Y_shared']
 

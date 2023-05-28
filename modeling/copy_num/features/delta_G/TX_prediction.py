@@ -6,9 +6,11 @@ The calculations of this code are based on biophysical properties of the binding
 interactions between RNA polymerase, sigma factor, and promoter DNA sequences in bacteria.
 '''
 
-import util
+from modeling.copy_num.features.delta_G import util
 import numpy as np
 import random, sys, pickle, collections, operator, itertools, time, math, os
+import pathlib
+import pandas as pd
 
 # Get the directory path of the script
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +30,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 LOGK   = -2.80271176
 BETA    = 0.81632623
 K = 42.00000
-
 
 def get_matrices(two_mer_encoder, three_mer_encoder, spacer_encoder, coeffs):
 
@@ -87,39 +88,35 @@ def calculate_dG_and_Tx(sequence):
     HEX10_length = 6
     SPACER_length = 17
     HEX35_length = 6
+    def seq_calculate_dG_and_Tx(sequence):
+        tempdisc = sequence[TSS - DISC_length:TSS]
+        temp10     = sequence[ TSS - DISC_length - HEX10_length : TSS - DISC_length]
+        tempspacer = sequence[ TSS - DISC_length - HEX10_length - SPACER_length : TSS - DISC_length - HEX10_length ]
+        temp35     = sequence[ TSS - DISC_length - HEX10_length - SPACER_length - HEX35_length : TSS - DISC_length - HEX10_length - SPACER_length]
 
-    tempdisc = sequence[TSS - DISC_length:TSS]
-    temp10     = sequence[ TSS - DISC_length - HEX10_length : TSS - DISC_length]
-    tempspacer = sequence[ TSS - DISC_length - HEX10_length - SPACER_length : TSS - DISC_length - HEX10_length ]
-    temp35     = sequence[ TSS - DISC_length - HEX10_length - SPACER_length - HEX35_length : TSS - DISC_length - HEX10_length - SPACER_length]
+        # load the constant values of the deltaG model
+        model = np.load(os.path.join(current_dir, 'free_energy_coeffs.npy'))
+        inters = np.load(os.path.join(current_dir,'model_intercept.npy'))
 
-    # Construct the file path relative to the script's directory
-    model_path = os.path.join(current_dir, 'free_energy_coeffs.npy')
-    inters_path = os.path.join(current_dir, 'model_intercept.npy')
-    # load the constant values of the deltaG model
-    model = np.load(model_path)
-    inters = np.load(inters_path)
+        two_mer_encoder = util.kmer_encoders(k = 2)
+        three_mer_encoder = util.kmer_encoders(k = 3)
+        spacer_encoder = util.length_encoders(16, 18)
+        dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers = get_matrices(
+            two_mer_encoder=two_mer_encoder, three_mer_encoder=three_mer_encoder,
+            spacer_encoder=spacer_encoder, coeffs=model)
 
+        dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer = linear_free_energy_model(
+            temp35, tempspacer, temp10, tempdisc, dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers, model, inters)
 
-    two_mer_encoder = util.kmer_encoders(k = 2)
-    three_mer_encoder = util.kmer_encoders(k = 3)
-    spacer_encoder = util.length_encoders(16, 18)
-    dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers = get_matrices(
-        two_mer_encoder=two_mer_encoder, three_mer_encoder=three_mer_encoder,
-        spacer_encoder=spacer_encoder, coeffs=model)
+        import math
+        results_list = [dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer]
+        for result in results_list:
+            if math.isnan(result) == True:
+                print(sequence, dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer)
 
-    dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer = linear_free_energy_model(
-        temp35, tempspacer, temp10, tempdisc, dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers, model, inters)
-
-    import math
-    results_list = [dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer]
-    for result in results_list:
-        if math.isnan(result) == True:
-            print(sequence, dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer)
-
-    Tx_rate = K * math.exp(- BETA * dG_total)
-
-    return dG_total, dG_apparent, Tx_rate
+        Tx_rate = K * math.exp(- BETA * dG_total)
+        return dG_total, dG_apparent, Tx_rate
+    return pd.DataFrame(sequence.apply(seq_calculate_dG_and_Tx).tolist(), columns=["dG_total", "dG_apparent", "Tx_rate"])
 
 
 # check the code

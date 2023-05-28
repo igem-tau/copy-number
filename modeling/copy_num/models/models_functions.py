@@ -22,17 +22,23 @@ def remove_outliers(X: pd.DataFrame, y: pd.DataFrame):
     y = y[(y > lower_fence) & (y < higher_fence)]
     return X, y
 
+def scale(X1, X2):
+    numeric_features = X1.select_dtypes(include='float64', exclude='int64')
+    scaler = StandardScaler()
+    scaler.fit(X1.loc[:, numeric_features.columns])
+    X1.loc[:, numeric_features.columns] = scaler.transform(X1.loc[:, numeric_features.columns])
+    X2.loc[:, numeric_features.columns] = scaler.transform(X2.loc[:, numeric_features.columns])
+    return X1, X2
 
 def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, outliers=False):
     if outliers:
         X, y = remove_outliers(X, y)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=0,stratify=is_high_copy_number(y))
-    numeric_features = X_train.select_dtypes(include='float64', exclude='int64')
 
-    scaler = StandardScaler()
-    scaler.fit(X_train.loc[:, numeric_features.columns])
-    X_train.loc[:, numeric_features.columns] = scaler.transform(X_train.loc[:, numeric_features.columns])
-    X_test.loc[:, numeric_features.columns] = scaler.transform(X_test.loc[:, numeric_features.columns])
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=0,
+                                                        stratify=is_high_copy_number(y))
+
+    X_train, X_test = scale(X_train, X_test)
+
     return X_train, X_test, y_train, y_test
 
 
