@@ -23,10 +23,10 @@ def remove_outliers(X: pd.DataFrame, y: pd.DataFrame):
     return X, y
 
 
-def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, random_state: int = 0):
-    # X, y = remove_outlires(X, y)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=random_state, stratify=is_high_copy_number(y))
-
+def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, outliers=False):
+    if outliers:
+        X, y = remove_outliers(X, y)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=0,stratify=is_high_copy_number(y))
     numeric_features = X_train.select_dtypes(include='float64', exclude='int64')
 
     scaler = StandardScaler()
@@ -52,5 +52,15 @@ def model(X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str, bes
                                               Best_param=best_param, save_plots=save_plots)
     else:
         raise Exception(f"No such model: {model_name}")
-
     return r2, mse_score, spearman
+
+
+def train_validation_test_split(X, y, random_stat):
+    stratify_col = pd.DataFrame(list(is_high_copy_number(y)), columns=['stratify'])
+    X = pd.concat((X, stratify_col), axis=1)
+    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=random_stat, stratify=X['stratify'])
+    X_valid, X_test, y_valid, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=random_stat,
+                                                        stratify=X_temp['stratify'])
+
+    return (X_train.drop('stratify', axis=1), X_valid.drop('stratify', axis=1), X_test.drop('stratify', axis=1),
+            y_train, y_valid, y_test)
