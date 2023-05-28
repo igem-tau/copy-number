@@ -12,6 +12,9 @@ import random, sys, pickle, collections, operator, itertools, time, math, os
 import pathlib
 import pandas as pd
 
+# Get the directory path of the script
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
 # constants for the calculation of the Tx_rate in the experiments according to the deltaG model
 # if organism == 'in vitro':
 #     self.K = 42.00000
@@ -92,9 +95,8 @@ def calculate_dG_and_Tx(sequence):
         temp35     = sequence[ TSS - DISC_length - HEX10_length - SPACER_length - HEX35_length : TSS - DISC_length - HEX10_length - SPACER_length]
 
         # load the constant values of the deltaG model
-        model = np.load(os.path.join(pathlib.Path(__file__).parent.resolve(), 'free_energy_coeffs.npy'))
-        inters = np.load(os.path.join(pathlib.Path(__file__).parent.resolve(),'model_intercept.npy'))
-
+        model = np.load(os.path.join(current_dir, 'free_energy_coeffs.npy'))
+        inters = np.load(os.path.join(current_dir,'model_intercept.npy'))
 
         two_mer_encoder = util.kmer_encoders(k = 2)
         three_mer_encoder = util.kmer_encoders(k = 3)
@@ -106,9 +108,14 @@ def calculate_dG_and_Tx(sequence):
         dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer = linear_free_energy_model(
             temp35, tempspacer, temp10, tempdisc, dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers, model, inters)
 
+        import math
+        results_list = [dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer]
+        for result in results_list:
+            if math.isnan(result) == True:
+                print(sequence, dG_total, dG_apparent, dG_10, dG_35, dG_disc, dG_ext10, dG_spacer)
+
         Tx_rate = K * math.exp(- BETA * dG_total)
         return dG_total, dG_apparent, Tx_rate
-
     return pd.DataFrame(sequence.apply(seq_calculate_dG_and_Tx).tolist(), columns=["dG_total", "dG_apparent", "Tx_rate"])
 
 
