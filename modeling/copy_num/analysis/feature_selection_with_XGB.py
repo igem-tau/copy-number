@@ -9,7 +9,7 @@ from sklearn.metrics import r2_score
 from tqdm import tqdm
 from typing import Literal
 
-                      
+
 RNA_TYPES = Literal['p', 'i']
 RELATIVE_DATA_PATH = pathlib.Path('..', '..', '..', 'data')
 
@@ -38,7 +38,7 @@ def prediction_regressor(X_train, y_train, X_valid, y_valid):
     while True:
         r2_scores = []
         for current_feature in features:
-            model = model = xgb.XGBRegressor()
+            model = xgb.XGBRegressor()
             model.fit(X_train[selected_features + [current_feature]], y_train)
 
             y_pred = model.predict(X_valid[selected_features + [current_feature]])
