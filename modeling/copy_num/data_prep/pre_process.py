@@ -2,12 +2,16 @@ from joblib import dump, load
 import pandas as pd
 import os
 import numpy as np
+from sklearn.model_selection import train_test_split
+
 from modeling.copy_num.consts import *
 from modeling.copy_num.features.motifs import calc_motifs_pv
 from modeling.copy_num.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq, entropy
 from modeling.copy_num.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from modeling.copy_num.features.pssm_feature import calc_series_pssm_score
 from modeling.copy_num.features.delta_G.TX_prediction import calculate_dG_and_Tx
+from modeling.copy_num.models.models_functions import is_high_copy_number
+import pathlib
 
 DATA_PATH = os.path.join("..", "..", "..", "data")
 timepoints_df = pd.read_excel(
@@ -59,26 +63,29 @@ def get_RNAp_merged_data():
     return merged
 
 
-def generate_features(RNA_data: pd.DataFrame, type: str = 'p', cp: bool = True) -> pd.DataFrame:
+def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None, type: str = 'p', cp: bool = True, val: bool = False) -> pd.DataFrame:
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
     RNA_features = []
 
     RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
 
-    if type == 'p':
-        PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
-    else:
-        PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
-    pssm_data = load(PSSM_THRESHOLD_PATH)
-    RNA_pssm_score = calc_series_pssm_score(RNA_seq, pssm_data['pssm_matrix'], type)
-    RNA_features.append(RNA_pssm_score)
-    RNA_features.append(calc_motifs_pv(RNA_seq))
-    RNA_features.append(generate_one_hot_encoding(RNA_seq))
-    RNA_features.append(generate_df_from_seq(RNA_seq))
-    RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if type == 'p' else RNAi_EDITED_ZONES))
-    RNA_features.append(entropy(RNA_seq))
+    # if type == 'p':
+    #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
+    # else:
+    #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
+    # pssm_data = load(PSSM_THRESHOLD_PATH)
+    # if val:
+    #     RNA_pssm_score = calc_series_pssm_score(RNA_data, ref_RNA_data)
+    # else:
+    #     RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
+    # RNA_features.append(RNA_pssm_score)
+    #
+    # RNA_features.append(calc_motifs_pv(RNA_seq))
+    # RNA_features.append(generate_one_hot_encoding(RNA_seq))
+    # RNA_features.append(generate_df_from_seq(RNA_seq))
+    # RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if type == 'p' else RNAi_EDITED_ZONES))
+    # RNA_features.append(entropy(RNA_seq))
     RNA_features.append(calculate_dG_and_Tx(RNA_seq))  # 3 features based on biophysical properties (deltaG)
-
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_y = RNA_data['Copy Number'] if cp else None
@@ -110,13 +117,25 @@ def remove_zero_variance_features(X: pd.DataFrame) -> pd.DataFrame:
     zero_variance_cols = X.columns[X.var() == 0]
     return X.drop(zero_variance_cols, axis=1)
 
+def split_for_validation(RNA_data):
+    RNA_X, RNA_X_val, y, y_val = train_test_split(RNA_data.drop(columns=['Copy Number']), RNA_data['Copy Number'], test_size=0.15, random_state=0,
+                                                        stratify=is_high_copy_number(RNA_data['Copy Number']))
+    RNA_data = pd.concat([RNA_X, pd.DataFrame(y, columns=['Copy Number'])], axis = 1)
+    RNAp_data_val = pd.concat([RNA_X_val, pd.DataFrame(y_val, columns=['Copy Number'])], axis = 1)
+    return RNA_data, RNAp_data_val
+
 
 def save_features_df():
     RNAp_data = get_RNAp_data()
     RNAi_data = get_RNAi_data()
 
-    RNAp_X, RNAp_y = generate_features(RNAp_data, type='p')
-    RNAi_X, RNAi_y = generate_features(RNAi_data, type='i')
+    RNAp_data, RNAp_data_val = split_for_validation(RNAp_data)
+    RNAi_data, RNAi_data_val = split_for_validation(RNAi_data)
+
+    RNAp_X, RNAp_y = generate_features(RNAp_data, type='p', val = False)
+    RNAp_X_val, RNAp_y_val = generate_features(RNAp_data_val, RNAp_data, type='p', val=True)
+    RNAi_X, RNAi_y = generate_features(RNAi_data, type='i', val = False)
+    RNAi_X_val, RNAi_y_val = generate_features(RNAi_data_val, RNAi_data, type='i', val=True)
 
     RNAp_X_shared_model = generate_features_combined(RNAi_X, type='p')
     RNAi_X_shared_model = generate_features_combined(RNAp_X, type='i')
@@ -131,8 +150,12 @@ def save_features_df():
     data = {
         'RNAp_X': remove_zero_variance_features(RNAp_X),
         'RNAp_y': RNAp_y,
+        'RNAp_X_val': remove_zero_variance_features(RNAp_X_val),
+        'RNAp_y_val': RNAp_y_val,
         'RNAi_X': remove_zero_variance_features(RNAi_X),
         'RNAi_y': RNAi_y,
+        'RNAi_X_val': remove_zero_variance_features(RNAi_X_val),
+        'RNAi_y_val': RNAi_y_val,
         'X_shared': X_shared_model,
         'Y_shared': Y_shared_model
     }

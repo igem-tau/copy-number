@@ -6,9 +6,10 @@ The calculations of this code are based on biophysical properties of the binding
 interactions between RNA polymerase, sigma factor, and promoter DNA sequences in bacteria.
 '''
 
-import util
+from modeling.copy_num.features.delta_G import util
 import numpy as np
-import util, random, sys, pickle, collections, operator, itertools, time, math, os
+import random, sys, pickle, collections, operator, itertools, time, math, os
+import pathlib
 
 # constants for the calculation of the Tx_rate in the experiments according to the deltaG model
 # if organism == 'in vitro':
@@ -25,7 +26,6 @@ import util, random, sys, pickle, collections, operator, itertools, time, math, 
 LOGK   = -2.80271176
 BETA    = 0.81632623
 K = 42.00000
-
 
 def get_matrices(two_mer_encoder, three_mer_encoder, spacer_encoder, coeffs):
 
@@ -91,8 +91,8 @@ def calculate_dG_and_Tx(sequence):
     temp35     = sequence[ TSS - DISC_length - HEX10_length - SPACER_length - HEX35_length : TSS - DISC_length - HEX10_length - SPACER_length]
 
     # load the constant values of the deltaG model
-    model = np.load('./free_energy_coeffs.npy')
-    inters = np.load('./model_intercept.npy')
+    model = np.load(os.path.join(pathlib.Path(__file__).parent.resolve(), 'free_energy_coeffs.npy'))
+    inters = np.load(os.path.join(pathlib.Path(__file__).parent.resolve(),'model_intercept.npy'))
 
 
     two_mer_encoder = util.kmer_encoders(k = 2)
