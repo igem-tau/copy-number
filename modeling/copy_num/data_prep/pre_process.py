@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import numpy as np
 from sklearn.model_selection import train_test_split
-
+from functools import partial
 from modeling.copy_num.consts import *
 from modeling.copy_num.features.motifs import calc_motifs_pv
 from modeling.copy_num.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq, entropy
@@ -74,18 +74,18 @@ def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None,
     # else:
     #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
     # pssm_data = load(PSSM_THRESHOLD_PATH)
-    # if val:
-    #     RNA_pssm_score = calc_series_pssm_score(RNA_data, ref_RNA_data)
-    # else:
-    #     RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
-    # RNA_features.append(RNA_pssm_score)
-    #
-    # RNA_features.append(calc_motifs_pv(RNA_seq))
-    # RNA_features.append(generate_one_hot_encoding(RNA_seq))
-    # RNA_features.append(generate_df_from_seq(RNA_seq))
-    # RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if type == 'p' else RNAi_EDITED_ZONES))
-    # RNA_features.append(entropy(RNA_seq))
-    RNA_features.append(calculate_dG_and_Tx(RNA_seq))  # 3 features based on biophysical properties (deltaG)
+    if val:
+        RNA_pssm_score = calc_series_pssm_score(RNA_data, ref_RNA_data)
+    else:
+        RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
+    RNA_features.append(RNA_pssm_score)
+
+    RNA_features.append(calc_motifs_pv(RNA_seq))
+    RNA_features.append(generate_one_hot_encoding(RNA_seq))
+    RNA_features.append(generate_df_from_seq(RNA_seq))
+    RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if type == 'p' else RNAi_EDITED_ZONES))
+    RNA_features.append(entropy(RNA_seq))
+    RNA_features.append(calculate_dG_and_Tx(RNA_seq)) # 3 features based on biophysical properties (deltaG)
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_y = RNA_data['Copy Number'] if cp else None
