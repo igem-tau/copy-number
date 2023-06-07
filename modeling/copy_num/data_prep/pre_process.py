@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from functools import partial
 from modeling.copy_num.consts import *
+from modeling.copy_num.features.denovo_motifs import score_denovo_motifs
 from modeling.copy_num.features.motifs import calc_motifs_pv
 from modeling.copy_num.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq, entropy
 from modeling.copy_num.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
@@ -64,16 +65,12 @@ def get_RNAp_merged_data():
 
 
 def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None, type: str = 'p', cp: bool = True, val: bool = False) -> pd.DataFrame:
+    RNA_data.reset_index(inplace=True)
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
     RNA_features = []
 
     RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
 
-    # if type == 'p':
-    #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
-    # else:
-    #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
-    # pssm_data = load(PSSM_THRESHOLD_PATH)
     if val:
         RNA_pssm_score = calc_series_pssm_score(RNA_data, ref_RNA_data)
     else:
@@ -86,6 +83,7 @@ def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None,
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if type == 'p' else RNAi_EDITED_ZONES))
     RNA_features.append(entropy(RNA_seq))
     RNA_features.append(calculate_dG_and_Tx(RNA_seq)) # 3 features based on biophysical properties (deltaG)
+    RNA_features.append(score_denovo_motifs(RNA_seq))
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_y = RNA_data['Copy Number'] if cp else None

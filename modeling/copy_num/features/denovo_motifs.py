@@ -1,12 +1,13 @@
 import pandas as pd
+import os
 
-HOMER_HIGH_MOTIF_PATH = (
-    "data\\copy_num\\homer_motifs\\homerhigh_reflow.homerMotifs.all.motifs"
-)
-HOMER_LOW_MOTIF_PATH = (
-    "data\\copy_num\\homer_motifs\\homerlow_refhigh.homerMotifs.all.motifs"
-)
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
+HOMER_HIGH_MOTIF_PATH = os.path.join(current_dir, "..", "..", "..", "data", "copy_num", "homer_motifs",
+                                     "homerhigh_reflow.homerMotifs.all.motifs")
+
+HOMER_LOW_MOTIF_PATH = os.path.join(current_dir, "..", "..", "..", "data", "copy_num", "homer_motifs",
+                                    "homerlow_refhigh.homerMotifs.all.motifs")
 
 def get_denovo_motifs_pssms(homer_output_file_loc):
     with open(homer_output_file_loc, "r") as f:
@@ -43,17 +44,19 @@ def calc_max_pssm_score_sliding_window(seq: str, pssm: pd.DataFrame) -> float:
     return max_score
 
 
-def score_denovo_motifs(seq):
+def score_denovo_motifs(df):
     denovo_motifs_features = {}
     high_motifs_dict = get_denovo_motifs_pssms(HOMER_HIGH_MOTIF_PATH)
     low_motifs_dict = get_denovo_motifs_pssms(HOMER_LOW_MOTIF_PATH)
-    for motif_name in high_motifs_dict.keys():
-        score = calc_max_pssm_score_sliding_window(seq, high_motifs_dict[motif_name])
-        denovo_motifs_features[motif_name + "_denovo_HIGH"] = score
-    for motif_name in low_motifs_dict.keys():
-        score = calc_max_pssm_score_sliding_window(seq, low_motifs_dict[motif_name])
-        denovo_motifs_features[motif_name + "_denovo_LOW"] = score
-    return denovo_motifs_features
+    def seq_score_denovo_motifs(seq):
+        for motif_name in high_motifs_dict.keys():
+            score = calc_max_pssm_score_sliding_window(seq, high_motifs_dict[motif_name])
+            denovo_motifs_features[motif_name + "_denovo_HIGH"] = score
+        for motif_name in low_motifs_dict.keys():
+            score = calc_max_pssm_score_sliding_window(seq, low_motifs_dict[motif_name])
+            denovo_motifs_features[motif_name + "_denovo_LOW"] = score
+        return pd.Series(denovo_motifs_features)
+    return pd.DataFrame(df.apply(seq_score_denovo_motifs))
 
 
 if __name__ == "__main__":
