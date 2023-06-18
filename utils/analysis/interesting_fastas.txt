@@ -1,0 +1,637 @@
+C:\Python38\python.exe C:/Users/User1/IGEM/code/copy-number/utils/ref_seqs.py
+C:\Python38\lib\site-packages\Bio\pairwise2.py:278: BiopythonDeprecationWarning: Bio.pairwise2 has been deprecated, and we intend to remove it in a future release of Biopython. As an alternative, please consider using Bio.Align.PairwiseAligner as a replacement, and contact the Biopython developers if you still need the Bio.pairwise2 module.
+  warnings.warn(
+Found 7 alignments for fastas\J01784.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\KT074362.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\KY612500.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_001371.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_001373.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_001537.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_002487.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_005019.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 3 alignments for fastas\NC_005970.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_006881.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 6 alignments for fastas\NC_008444.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_008490.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_009716.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_009789.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_009791.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_010487.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_010898.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_011407.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 4 alignments for fastas\NC_011418.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_011799.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_013368.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_013589.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_013782.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_014235.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_015872.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 3 alignments for fastas\NC_017636.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 3 alignments for fastas\NC_017649.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 4 alignments for fastas\NC_017654.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_017655.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 3 alignments for fastas\NC_017661.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 3 alignments for fastas\NC_017662.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_018996.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_018997.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 9 alignments for fastas\NC_019040.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_019050.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_019051.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_019052.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_019053.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_019054.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_019056.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_019058.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 4 alignments for fastas\NC_019077.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_019080.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_019084.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_019085.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_019086.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_019982.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 8 alignments for fastas\NC_019990.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_023328.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_023912.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_024969.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_025010.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NC_025013.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NC_025058.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NC_025178.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_AP019680.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NZ_AP019766.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NZ_AP019767.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP006633.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP006637.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP006638.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP010156.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NZ_CP010159.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 6 alignments for fastas\NZ_CP010161.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP010162.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP010165.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NZ_CP010185.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NZ_CP010195.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP010205.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NZ_CP010211.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NZ_CP010216.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 9 alignments for fastas\NZ_CP010227.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 8 alignments for fastas\NZ_CP011067.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NZ_CP011137.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NZ_CP011138.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NZ_CP012628.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NZ_CP014109.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NZ_CP015917.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 3 alignments for fastas\NZ_CP017223.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP017224.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 1 alignments for fastas\NZ_CP017845.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP018108.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP018114.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP018120.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP018126.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP018968.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 4 alignments for fastas\NZ_CP018981.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 2 alignments for fastas\NZ_CP018987.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 10 alignments for fastas\NZ_CP019003.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+Found 8 alignments for fastas\NZ_CP019023.1.fasta and prom: TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+
+
+J01784.1.fasta
+ 1 T-TG---AGATCCTT-TTTTTCTG----CGCGTAAT--CTG--C--TG-CTT
+   | ||   |||| ||| |||||.||    || | |||  |||  |  || |||
+79 TATGTACAGAT-CTTGTTTTTTTGTCAACG-G-AATAGCTGTTCGTTGACTT
+  Score=115
+
+KT074362.1.fasta
+  1 TTGAGATCCTTTTTTTCT---GCG-CGTAATCTGCT-GCT
+    |||||||||    |||||   ||| |||||||| || |||
+355 TTGAGATCC----TTTCTGTAGCGTCGTAATCT-CTTGCT
+  Score=130
+
+KY612500.1.fasta
+  1 TTGAGATCCTTTTTTTCT---GCG-CGTAATCTGCT-GCT
+    |||||||||    |||||   ||| |||||||| || |||
+355 TTGAGATCC----TTTCTGTAGCGTCGTAATCT-CTTGCT
+  Score=130
+
+NC_001371.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+    ||||||||||||||||||||||||||||||||||||
+605 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+  Score=180
+
+NC_001373.1.fasta
+   1 TTGAGATCCTTTTTTT-C--TGCG-CGTAATCTGCTGCT-T
+     |||||||||   |||| |  | || ||||||||.||||| |
+5829 TTGAGATCC---TTTTACGAT-CGTCGTAATCTCCTGCTCT
+  Score=130
+
+NC_001537.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||.|||||||||||||||| | |
+2251 TTGAGATCCTTTTTTTCCGCGCGTAATCTGCTGCCTGT
+  Score=165
+
+NC_002487.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+3741 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NC_005019.1.fasta
+ 1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTG-CT-T
+   |||||||||||||||| ||||||.||||||||| || |
+17 TTGAGATCCTTTTTTT-TGCGCGCAATCTGCTGTCTGT
+  Score=157
+
+NC_005970.1.fasta
+   1 TTG-AG--ATC--------CTT-TTTT-TCTGC--GCGT----A-AT-CT---G--C----TGCTT
+     ||| ||  |||        ||| |||| |||||  |.||    | || ||   |  |    ||.||
+3803 TTGCAGATATCATGTTTGACTTGTTTTCTCTGCTAGTGTCTTCAGATGCTATAGAACGGAGTGATT
+  Score=108
+
+NC_006881.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+4641 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NC_008444.1.fasta
+  1 TT-GAG-A---TC---CTTT---TTTT--------CTGCGC--GT--A--A-----T-CTGCTGCTT
+    || ||| |   ||   ||||   ||||        |||| |  ||  |  |     | |||||||||
+933 TTCGAGCAGCGTCAGGCTTTGGCTTTTTATGAATCCTGC-CATGTTGAGTACGGCTTGCTGCTGCTT
+  Score=119
+
+NC_008490.1.fasta
+   1 TTGAGATCCTTTTTTTC--TGCG---CGTAATCTGCT-GCT-T
+     |||||||||   |||||  |  |   |||||||| || ||| |
+5789 TTGAGATCC---TTTTCAAT--GAATCGTAATCT-CTTGCTCT
+  Score=123
+
+NC_009716.1.fasta
+   1 T--TG-----AG----ATCCT-TTTT----------TTCTGCG--C-G---TAATCT-------GCTG-----CTT
+     |  ||     ||    ||.|| ||||          |||||||  | |   ||||||       ||||     |||
+3359 TACTGCCGCCAGGCAAATTCTGTTTTATCAGACCGCTTCTGCGTTCTGATTTAATCTGTATCAGGCTGAAAATCTT
+  Score=111
+
+NC_009789.1.fasta
+   1 T--TGA----GA-----TCCTTTTTTTC----------TGC----GCG-T---AAT--CTGCTGC-TT
+     |  |||    ||     |||||||||||          |||    ||| |   |||  |.||||| ||
+1125 TCGTGAAAACGAAATATTCCTTTTTTTCTTTTAATTCATGCAGTTGCGATGAAAATCGCGGCTGCGTT
+  Score=121
+
+NC_009791.1.fasta
+   1 TTG--------A-GATCCTTT-----T--T-TTCT----GC-G--C--GT----AAT-CTG---CTGCTT
+     |||        | |.||||||     |  | ||||    || |  |  ||    ||| |||   ||||||
+3842 TTGCTCATAAAATGCTCCTTTCAGCCTGATATTCTTCCCGCCGTTCGGGTCTGCAATGCTGATACTGCTT
+  Score=113
+
+NC_010487.1.fasta
+   1 TTGA-------G----AT-C---CTTT-TT------TT---C-TGC-------GCG-TAATCTGCT-GCTT
+     ||||       |    || |   |||| ||      ||   | |||       ||| |.||||||. ||||
+1028 TTGAATCTAATGTATAATACAGGCTTTCTTCGCCTGTTGCCCATGCTGATATGGCGCTTATCTGCGAGCTT
+  Score=105
+
+NC_010898.1.fasta
+   1 T-TG----AG--ATC-CTT-T------TTT-----T--CTGC--------GCGT-AA-TCTGCTGCTT
+     | ||    ||  ||| ||| |      |||     |  ||||        |||| || || | |||||
+4419 TCTGCATCAGTTATCTCTTGTACACCCTTTACCAGTGGCTGCCGCCAGTGGCGTTAAGTC-G-TGCTT
+  Score=110
+
+NC_011407.1.fasta
+   1 T-TGAG-A-T--CCTTT--TT---------TTCTGCGCG-TAA-TCTGC-----TGCT
+     | |||| | |  |||||  ||         |||| |||. ||| |||||     ||||
+5143 TCTGAGTAGTAACCTTTGATTATTTGTAGCTTCT-CGCCATAAATCTGCAGTAATGCT
+  Score=117
+
+NC_011418.1.fasta
+5 GATCCT-TT-TT-----TTC--TG-CG-CGTAATCTGC-T--GCT-T
+  |||||| || ||     |||  || || |||||||| | |  .|| |
+1 GATCCTCTTGTTATCCCTTCGATGTCGTCGTAATCT-CATACCCTGT
+  Score=110
+
+NC_011799.1.fasta
+   1 T-TGAGATCC--TT--TT---TTTCT---GC-GCGT-AA--TCTG-CTGCTT
+     | ||.| |||  ||  ||   .||||   || |||| ||  |||| ||.|||
+2148 TCTGCG-TCCAGTTCGTTGAGCTTCTCCAGCAGCGTTAATGTCTGGCTTCTT
+  Score=111
+
+NC_013368.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+5652 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NC_013589.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+    |||||||||||||||||||||||||||||||||| | |
+605 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NC_013782.1.fasta
+   1 TTGA-G---ATCCT------TT--TTTTCTGCG-------CG--T-----------AATC-TG----C-TG-CTT
+     |||| |   || ||      ||  ||||| |||       ||  |           |||| ||    | || |||
+1041 TTGATGAATAT-CTAACCAATTCATTTTC-GCGAGAACAACGAATAACCACTCCCGAATCATGAAGCCATGTCTT
+  Score=103
+
+NC_014235.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCT-GCT-T
+     ||||||||||||||||||.|||||||||| || ||| |
+2331 TTGAGATCCTTTTTTTCTACGCGTAATCT-CTAGCTCT
+  Score=157
+
+NC_015872.1.fasta
+    1 TTGAGA---TCC------------T-TTT-T-TTCTGC--GCGTAATCTG-C-T-GCTT
+      ||  ||   |||            | ||| | ||||||  ||||  |||| | | ||||
+14618 TT--GACCTTCCCCACAACACAAATATTTCTATTCTGCTGGCGT--TCTGTCATAGCTT
+  Score=111
+
+NC_017636.1.fasta
+   1 TTG-AG--ATC--------CTT-TTTT-TCTGC--GCGT----A-AT-CT---G--C----TGCTT
+     ||| ||  |||        ||| |||| |||||  |.||    | || ||   |  |    ||.||
+4495 TTGCAGATATCATGTTTGACTTGTTTTCTCTGCTAGTGTCTTCAGATGCTATAGAACGGAGTGATT
+  Score=108
+
+NC_017649.1.fasta
+ 1 TTGAGATCCTTTTTTTCTGCGCGTAATCT-G---CTGCT
+   ||||||||||||||||||||||||||||| |   ||| |
+18 TTGAGATCCTTTTTTTCTGCGCGTAATCTTGGACCTG-T
+  Score=159
+
+NC_017654.1.fasta
+   1 TTG--AGATC--CTT----T--TTT---TCTGCG-CGTAATC---TG--CTGCT
+     |||  |||||  |||    |  |||   ||| || ||||.||   ||  ||| |
+7757 TTGATAGATCTTCTTGAGATCATTTGGATCT-CGTCGTAGTCTTTTGTCCTG-T
+  Score=115
+
+NC_017655.1.fasta
+   2 TGAGATCCTTTT----T---T---T-CTGCGCGTAATCTGCT-GC-TT
+     |.|||||||.||    |   |   | ||||||||||||| || || ||
+2181 TAAGATCCTCTTGAGATCGATGGCTGCTGCGCGTAATCT-CTTGCCTT
+  Score=124
+
+NC_017661.1.fasta
+   1 TTG-AG--ATC--------CTT-TTTT-TCTGC--GCGT----A-AT-CT---G--C----TGCTT
+     ||| ||  |||        ||| |||| |||||  |.||    | || ||   |  |    ||.||
+4495 TTGCAGATATCATGTTTGACTTGTTTTCTCTGCTAGTGTCTTCAGATGCTATAGAACGGAGTGATT
+  Score=108
+
+NC_017662.1.fasta
+   1 TTG-AG--ATC--------CTT-TTTT-TCTGC--GCGT----A-AT-CT---G--C----TGCTT
+     ||| ||  |||        ||| |||| |||||  |.||    | || ||   |  |    ||.||
+4495 TTGCAGATATCATGTTTGACTTGTTTTCTCTGCTAGTGTCTTCAGATGCTATAGAACGGAGTGATT
+  Score=108
+
+NC_018996.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+2109 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NC_018997.1.fasta
+ 1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC
+   ||||||||||||||||||||||||||||||||||
+12 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC
+  Score=170
+
+NC_019040.1.fasta
+   1 TTGA-G---AT----CCTTTTTTTC-TGC-----G---CGT-----AATCTG--CTGC-TT
+     |||| |   ||    |||.|||||| |||     |   |||     ||.|||  || | ||
+4270 TTGATGTTCATGCCGCCTGTTTTTCCTGCTCATTGGCACGTTTCGCAACCTGTTCT-CATT
+  Score=111
+
+NC_019050.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+    ||||||||||||||||||||||||||||||||||||
+171 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+  Score=180
+
+NC_019051.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+    ||||||||||||||||||||||||||||||||||||
+171 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+  Score=180
+
+NC_019052.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+    ||||||||||||||||||||||||||||||||||||
+171 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+  Score=180
+
+NC_019053.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+    ||||||||||||||||||||||||||||||||||||
+171 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+  Score=180
+
+NC_019054.1.fasta
+   1 TTG------AGAT--CC-TT---TTT---TTCT-G----CGCGTAATC--T---------GC---TGC-TT
+     |||      | ||  || ||   |||   |||| |    | |||||||  |         ||   ||| ||
+5575 TTGTTCACTA-ATCACCATTGGATTTCCGTTCTTGTTATC-CGTAATCCATTGGTTGAGAGCCATTGCGTT
+  Score=107
+
+NC_019056.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCG-CGTAATC---TG--CTGC
+     ||||||||||||.|.| |||| |||||||   ||  ||||
+6012 TTGAGATCCTTTCTGT-TGCGTCGTAATCTCATGTCCTGC
+  Score=132
+
+NC_019058.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+    ||||||||||||||||||||||||||||||||||||
+171 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+  Score=180
+
+NC_019077.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCT-G--CT
+     ||||||||.|||.|.|||||||||||||| || |  ||
+3580 TTGAGATCATTTATATCTGCGCGTAATCT-CTTGCACT
+  Score=133
+
+NC_019080.1.fasta
+   2 TG--AG-ATC---CTTT--T--TTTC--TGCGCG----TAA--TC--TG--CT-GCT
+     ||  || |||   ||||  |  ||||  || |||    |||  ||  ||  || |.|
+5949 TGAAAGTATCATTCTTTGGTCCTTTCTATG-GCGGTTATAACGTCATTGCACTCGAT
+  Score=108
+
+NC_019084.1.fasta
+1 TTGAGATCCTTTTTTTCT---GCG-CGTAATCTGCT-GCT-T
+  |||||||||    |||||   ||| |||||||| || ||| |
+8 TTGAGATCC----TTTCTGTGGCGTCGTAATCT-CTTGCTCT
+  Score=132
+
+NC_019085.1.fasta
+1 TTGAGATCCTTTTTTTCT---GCG-CGTAATCTGCT-GCT-T
+  |||||||||    |||||   ||| |||||||| || ||| |
+8 TTGAGATCC----TTTCTGTGGCGTCGTAATCT-CTTGCTCT
+  Score=132
+
+NC_019086.1.fasta
+   2 TG-------AG-ATC--C------TTTTTT-TCTGC--GCGT-AA-----TCTG-CTG-------C-TT
+     ||       || |||  |      |||||| |||||  |||| ||     ||.| |||       | ||
+1565 TGCGGCAACAGCATCATCAAGAAATTTTTTCTCTGCAGGCGTCAAGTTTGTCAGTCTGGCCATAACGTT
+  Score=110
+
+NC_019982.1.fasta
+ 1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTG-CT-T
+   |||||||||||||||| |||||||||||||||| || |
+17 TTGAGATCCTTTTTTT-TGCGCGTAATCTGCTGTCTGT
+  Score=166
+
+NC_019990.1.fasta
+   1 T-T----GA-GATC--CTT----TTTT-TC---TGCG-CGTAATCTGCT-GCT-T
+     | |    || ||||  |||    |.|| ||   |||| |||||||| || ||| |
+4900 TATCACAGATGATCTTCTTGAGATCTTGTCCGTTGCGTCGTAATCT-CTTGCTCT
+  Score=124
+
+NC_023328.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+6258 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NC_023912.1.fasta
+   3 GA-----GATCCT--TTTTTTCTGCGCGTAATCTGC-TG-CT-T
+     ||     |.||||  |..||||||||||   ||||| || || |
+1492 GAAAAACGTTCCTGATGATTTCTGCGCG---TCTGCATGGCTAT
+  Score=103
+
+NC_024969.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCT-GCT-T
+     ||||||||||||||||||||||||||||| || ||| |
+6835 TTGAGATCCTTTTTTTCTGCGCGTAATCT-CTTGCTCT
+  Score=166
+
+NC_025010.1.fasta
+   1 T-T---GA-GATCCTTT----TTTTCTGCGCGTAA-TCTG-CTGCT
+     | |   || ||||||||    ||||||.||.|    |||| | |||
+1896 TCTCAAGAAGATCCTTTGATCTTTTCTACGGG---GTCTGAC-GCT
+  Score=106
+
+NC_025013.1.fasta
+1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+  |||||||||||||||||||||||||||||||||| | |
+9 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NC_025058.1.fasta
+   2 TGAG-----AT-CCTT--T---TT-TTC---TGCG-CG-T-AAT--C-T---GCTGCT
+     ||||     || ||||  |   || |||   |||| || | |||  | |   | ||||
+5653 TGAGGGTGAATTCCTTCATTGGTTATTCGAATGCGTCGATGAATGCCATAGAG-TGCT
+  Score=114
+
+NC_025178.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+     ||||||||||||||||||||||||||||||||||||
+1937 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+  Score=180
+
+NZ_AP019680.1.fasta
+   1 T-TG--AG-ATC--CTT----TTTTT----CTGC-GCGTAATCTGCT-GCT-T
+     | ||  || |||  |||    |||||    .||| |||||.||| || ||| |
+1456 TGTGTAAGGATCGTCTTGAGATTTTTGAGAGTGCAGCGTAGTCT-CTTGCTCT
+  Score=119
+
+NZ_AP019766.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+5651 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NZ_AP019767.1.fasta
+ 1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+   |||.|||||||||||||||||||||||||||||| | |
+91 TTGTGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=165
+
+NZ_CP006633.1.fasta
+   1 TTGA-G------AT-CC-----TTTT------TTTCTGCGC------GT-AATCTGC--T--GC-T
+     || | |      || ||     ||||      ||||| |.|      || |||||||  |  || |
+2284 TT-ACGGCGTTCATACCGTCTGTTTTCGACAGTTTCT-CTCCGGGAAGTTAATCTGCCATAAGCCT
+  Score=99
+
+NZ_CP006637.1.fasta
+  1 TTGAG-AT-CC--TTTTTTT-CT-GC-----GCG-T-AATC-----------TGC----TGCT--T
+    ||  | || ||  ||||||| || ||     ||| | ||.|           |||    ||||  |
+664 TT--GCATTCCGTTTTTTTTACTTGCTGGTTGCGCTCAAACAAAACCGCAAATGCCAGATGCTAAT
+  Score=105
+
+NZ_CP006638.1.fasta
+   1 TTG---AGATCCTTTT------TTTC---TGCG-CGT-AA-----------TCTG----CTGCTT
+     |||   |.||||||||      ||||   |||. ||| ||           ||||    || |||
+3867 TTGCTAATATCCTTTTTGGCTCTTTCAATTGCCTCGTTAAGGGAGAGTTTTTCTGTTTTCT-CTT
+  Score=111
+
+NZ_CP010156.1.fasta
+   1 TTGAGATCC--TTTTTTTCTGCGCGTAA-T--CT-G---CTGC---TT
+     |||||  ||  ||||||||| |.||||| |  || |   |.||   ||
+3535 TTGAG--CCGATTTTTTTCT-CCCGTAAATGCCTTGAATCAGCCTATT
+  Score=116
+
+NZ_CP010159.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+2280 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NZ_CP010161.1.fasta
+   1 T-TGAG-ATCCT-TT---T------T-TTC-TGC-GCGTAATC---TGCTGCT-T
+     | |||| ||  | ||   |      | ||| | | ||||||||   |||| || |
+3249 TGTGAGTAT--TGTTGACTCCTGGCTGTTCAT-CAGCGTAATCTTTTGCT-CTGT
+  Score=111
+
+NZ_CP010162.1.fasta
+   2 TGAGA-TCC-TTTTTTTC----------TGC----GCG-T---AAT--CTGCTGC-TT
+     | | | ||| ||||||||          |||    ||| |   |||  |.||||| ||
+2893 T-A-ACTCCATTTTTTTCATTTAATTCATGCAGTTGCGATAAAAATCGCGGCTGCGTT
+  Score=111
+
+NZ_CP010165.1.fasta
+   2 TGA---GATCCTTT-TTTT----C-TG--------------CGCGT-------AATCTG-CT---G---CTT
+     |||   | |||||| ||||    | ||              |||||       |||||| ||   |   |||
+2864 TGATATG-TCCTTTATTTTTAGCCATGAGGTAATGATCTTCCGCGTTCAACAAAATCTGGCTAAAGTTTCTT
+  Score=112
+
+NZ_CP010185.1.fasta
+   1 TTGAGATCCTTTTTT------TCTGCGC-GTAATCTG------------CTGCTT
+     ||   ||  ||||||      ||||||| |.||||||            ||||||
+3826 TT---AT--TTTTTTCACTAATCTGCGCAGCAATCTGATTTTTCTGGTTCTGCTT
+  Score=112
+
+NZ_CP010195.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+    |||.|||||||||.||||||||||||||||||||||
+258 TTGTGATCCTTTTCTTCTGCGCGTAATCTGCTGCTT
+  Score=162
+
+NZ_CP010205.1.fasta
+   1 TTGAGAT-CCTTTT-----T----TT-CTGCGCGTAATC-TG-CTGCT-T
+     ||  ||| ||||||     |    || |||||| ||||. || ||||| |
+2439 TT--GATACCTTTTAGCGCTAGAATTGCTGCGC-TAATGATGGCTGCTAT
+  Score=121
+
+NZ_CP010211.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+5680 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NZ_CP010216.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+1188 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NZ_CP010227.1.fasta
+   1 TTGAGATCCTTTTTTT-CTGCGCGTAATCTGCT--G-CT
+     |||||||.|||.|.|| |.|| |||||||| ||  | ||
+2298 TTGAGATTCTTGTGTTACAGC-CGTAATCT-CTTGGTCT
+  Score=113
+
+NZ_CP011067.1.fasta
+   2 TGAGATCCTT-TT-------TTTCTG-C---GCGTAATCTGCT-GCT
+     || ||| ||| ||       |||.|| |   ||||||||| || |||
+1932 TG-GAT-CTTCTTGAGATCATTTATGGCAGAGCGTAATCT-CTTGCT
+  Score=114
+
+NZ_CP011137.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+3306 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NZ_CP011138.1.fasta
+1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+  |||||||||||||||||||||||||||||||||| | |
+9 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NZ_CP012628.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+    ||||||||||||||||||||||||||||||||||||
+345 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+  Score=180
+
+NZ_CP014109.1.fasta
+   1 TTGAGAT--CCT-T--TTTTTCTGCGCG-TAA--TC--TG-CTGCTT
+     |||.|||  ||| |  ||||||    || |||  ||  || ||||||
+5787 TTGTGATCACCTCTGCTTTTTC----CGATAAATTCCTTGTCTGCTT
+  Score=120
+
+NZ_CP015917.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+     ||||||||||||||||||||||||||||||||||||
+7308 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT
+  Score=180
+
+NZ_CP017223.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCT-G---CTGCT
+     ||||||||||||||||||||||||||||| |   ||| |
+2216 TTGAGATCCTTTTTTTCTGCGCGTAATCTTGGACCTG-T
+  Score=159
+
+NZ_CP017224.1.fasta
+  1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCT-GCT-T
+    ||||||||.||||..|||||||||||||| || ||| |
+653 TTGAGATCGTTTTGGTCTGCGCGTAATCT-CTTGCTCT
+  Score=139
+
+NZ_CP017845.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCT-GCT-T
+     ||||||||||||||||||.|||||||||| || ||| |
+4122 TTGAGATCCTTTTTTTCTACGCGTAATCT-CTAGCTCT
+  Score=157
+
+NZ_CP018108.1.fasta
+   1 T--TG----AG------ATCC-TT-T-T--T-TTCTGCGC-GTA-ATCTG-CT---GC-TT
+     |  ||    ||      |||| || | |  | |||| ||| ||| |.||| ||   || ||
+4815 TCCTGCATCAGCCGTTCATCCCTTATCTCCTGTTCT-CGCTGTATAACTGGCTCAAGCGTT
+  Score=112
+
+NZ_CP018114.1.fasta
+   1 T--TG----AG------ATCC-TT-T-T--T-TTCTGCGC-GTA-ATCTG-CT---GC-TT
+     |  ||    ||      |||| || | |  | |||| ||| ||| |.||| ||   || ||
+4815 TCCTGCATCAGCCGTTCATCCCTTATCTCCTGTTCT-CGCTGTATAACTGGCTCAAGCGTT
+  Score=112
+
+NZ_CP018120.1.fasta
+   1 T--TG----AG------ATCC-TT-T-T--T-TTCTGCGC-GTA-ATCTG-CT---GC-TT
+     |  ||    ||      |||| || | |  | |||| ||| ||| |.||| ||   || ||
+4815 TCCTGCATCAGCCGTTCATCCCTTATCTCCTGTTCT-CGCTGTATAACTGGCTCAAGCGTT
+  Score=112
+
+NZ_CP018126.1.fasta
+   1 T--TG----AG------ATCC-TT-T-T--T-TTCTGCGC-GTA-ATCTG-CT---GC-TT
+     |  ||    ||      |||| || | |  | |||| ||| ||| |.||| ||   || ||
+4815 TCCTGCATCAGCCGTTCATCCCTTATCTCCTGTTCT-CGCTGTATAACTGGCTCAAGCGTT
+  Score=112
+
+NZ_CP018968.1.fasta
+   1 TTGAG--AT-CCTTTTTT--TC----------T-GC-------GCG--T----AA-TC--TGCTG--CT
+     |||||  || ||||||||  ||          | ||       |||  |    || ||  |||||  ||
+9880 TTGAGTAATTCCTTTTTTCCTCAAACGCTCAATAGCTCAAGGAGCGCATATGCAAGTCATTGCTGTACT
+  Score=119
+
+NZ_CP018981.1.fasta
+    2 TG---AGA--TCCT-TTTT----TTC-TG-CGC-GTAATC--TGCT---GCT-T
+      ||   |||  |.|| ||||    ||| || ||| | || |  ||||   ||| |
+10406 TGGTAAGAGGTGCTCTTTTGCGGTTCATGGCGCAG-AA-CGGTGCTGAGGCTGT
+  Score=111
+
+NZ_CP018987.1.fasta
+   1 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGC-T-T
+     |||||||||||||||||||||||||||||||||| | |
+5439 TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCCTGT
+  Score=174
+
+NZ_CP019003.1.fasta
+   1 TTGAG-A--TCCTTT-------TTTTCT-GC-------GCG-----------TAATCTGCTGC-T
+     ||||| |  ||.|||       |||||| ||       |||           |||||||||.| |
+2404 TTGAGGAGTTCATTTTCCATCGTTTTCTTGCCGAGCAGGCGCTGGAGTTCTTTAATCTGCTTCAT
+  Score=113
+
+NZ_CP019023.1.fasta
+   2 TGAGATC-C-TTTT------TTTCTGC-G--CGT-AAT--CTG-CTGC-TT
+     ||||| | | ||||      ||| | | |  ||| |||  ||| || | ||
+2290 TGAGA-CACATTTTCGGACATTT-T-CAGTTCGTGAATCCCTGACT-CATT
+  Score=109
+
+
+Process finished with exit code 0
