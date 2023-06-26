@@ -63,10 +63,10 @@ def model(X: pd.DataFrame, y: pd.DataFrame, model_name: str, data_name: str, bes
 
 def train_validation_test_split(X, y, random_stat):
     stratify_col = pd.DataFrame(list(is_high_copy_number(y)), columns=['stratify'])
-    X = pd.concat((X, stratify_col), axis=1)
+    X = pd.concat([X.reset_index(), stratify_col], axis=1)
     X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=random_stat, stratify=X['stratify'])
     X_valid, X_test, y_valid, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=random_stat,
                                                         stratify=X_temp['stratify'])
 
-    return (X_train.drop('stratify', axis=1), X_valid.drop('stratify', axis=1), X_test.drop('stratify', axis=1),
-            y_train, y_valid, y_test)
+    return (X_train.drop('stratify', axis=1).drop('index', axis=1), X_valid.drop('stratify', axis=1).drop('index', axis=1),
+            X_test.drop('stratify', axis=1).drop('index', axis=1), y_train, y_valid, y_test)
