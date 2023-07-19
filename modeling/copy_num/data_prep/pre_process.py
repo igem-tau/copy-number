@@ -14,6 +14,7 @@ from modeling.copy_num.features.delta_G.TX_prediction import calculate_dG_and_Tx
 from modeling.copy_num.models.models_functions import is_high_copy_number
 import pathlib
 import datetime
+import sys
 
 DATA_PATH = os.path.join("..", "..", "..", "data")
 timepoints_df = pd.read_excel(
@@ -66,11 +67,9 @@ def get_RNAp_merged_data():
 
 
 def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None, type: str = 'p', cp: bool = True, val: bool = False) -> pd.DataFrame:
-    RNA_data.reset_index(inplace=True)
-    RNA_data.drop(columns=['index'], inplace=True)
+    RNA_data.reset_index(drop=True, inplace=True)
     if ref_RNA_data is not None:
-        ref_RNA_data.reset_index(inplace=True)
-        ref_RNA_data.drop(columns=['index'], inplace=True)
+        ref_RNA_data.reset_index(drop=True, inplace=True)
 
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
     RNA_features = []
@@ -97,6 +96,7 @@ def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None,
     RNA_features.append(score_denovo_motifs(RNA_seq))
 
     RNA_X = pd.concat(RNA_features, axis=1)
+    RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)
     RNA_y = RNA_data['Copy Number'] if cp else None
     return RNA_X, RNA_y
 

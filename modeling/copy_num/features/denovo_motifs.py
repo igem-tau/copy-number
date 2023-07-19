@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import numpy as np
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -39,7 +40,7 @@ def calc_max_pssm_score_sliding_window(seq: str, pssm: pd.DataFrame) -> float:
             score = 0
             for i in range(len(pssm)):
                 nt = seq[i + j]
-                score += float(pssm.loc[i, nt])
+                score += np.log2(float(pssm.loc[i, nt])/0.25)
             scores.append(score)
         max_score = max(scores)
     return max_score
