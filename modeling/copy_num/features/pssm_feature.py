@@ -22,14 +22,11 @@ def is_high_copy_number(copy_number: 'pd.Series[int]', type: str='p') -> 'pd.Ser
 
 
 # generate the scoring matrix (typically from the highest 20%)
-def calc_pssm_matrix(data: 'pd.Series[str]', log:bool=True) -> pd.DataFrame:
+def calc_pssm_matrix(data: 'pd.Series[str]') -> pd.DataFrame:
     cp_motifs = motifs.create(data.tolist())
     pwm = pd.DataFrame(cp_motifs.pwm)
-    if log:
-        return (np.log2(pwm) * pwm).fillna(0)
-    else:
-        pwm.set_index(np.arange(START_INDEX, pwm.shape[0] + START_INDEX), inplace=True)
-        return pwm.fillna(0)
+    return (np.log2(pwm/0.25)).fillna(0)
+
 
 
 def calc_pssm_score(seq: str, pssm: pd.DataFrame) -> float:
@@ -39,7 +36,7 @@ def calc_pssm_score(seq: str, pssm: pd.DataFrame) -> float:
     return score
 
 
-def calc_series_pssm_score(seq: 'pd.Series[str]', ref_seq: 'pd.Series[str]'=None, pssm=None) -> 'pd.Series[float]':
+def calc_series_pssm_score(seq: 'pd.Series[str]', ref_seq: 'pd.Series[str]', pssm=None) -> 'pd.Series[float]':
     if pssm is None:
         # top_20_percent = ref_seq.loc[is_high_copy_number(ref_seq)]
         # pssm = calc_pssm_matrix(top_20_percent)

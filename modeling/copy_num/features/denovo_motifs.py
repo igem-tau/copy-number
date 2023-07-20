@@ -1,11 +1,14 @@
 import pandas as pd
+import os
+import numpy as np
 
-HOMER_HIGH_MOTIF_PATH = (
-    "data\\copy_num\\homer_motifs\\homerhigh_reflow.homerMotifs.all.motifs"
-)
-HOMER_LOW_MOTIF_PATH = (
-    "data\\copy_num\\homer_motifs\\homerlow_refhigh.homerMotifs.all.motifs"
-)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+HOMER_HIGH_MOTIF_PATH = os.path.join(current_dir, "..", "..", "..", "data", "copy_num", "homer_motifs",
+                                     "high.motifs")
+
+HOMER_LOW_MOTIF_PATH = os.path.join(current_dir, "..", "..", "..", "data", "copy_num", "homer_motifs",
+                                    "low.motifs")
 
 
 def get_denovo_motifs_pssms(homer_output_file_loc):
@@ -37,23 +40,25 @@ def calc_max_pssm_score_sliding_window(seq: str, pssm: pd.DataFrame) -> float:
             score = 0
             for i in range(len(pssm)):
                 nt = seq[i + j]
-                score += float(pssm.loc[i, nt])
+                score += np.log2(float(pssm.loc[i, nt])/0.25)
             scores.append(score)
         max_score = max(scores)
     return max_score
 
 
-def score_denovo_motifs(seq):
+def score_denovo_motifs(df):
     denovo_motifs_features = {}
     high_motifs_dict = get_denovo_motifs_pssms(HOMER_HIGH_MOTIF_PATH)
     low_motifs_dict = get_denovo_motifs_pssms(HOMER_LOW_MOTIF_PATH)
-    for motif_name in high_motifs_dict.keys():
-        score = calc_max_pssm_score_sliding_window(seq, high_motifs_dict[motif_name])
-        denovo_motifs_features[motif_name + "_denovo_HIGH"] = score
-    for motif_name in low_motifs_dict.keys():
-        score = calc_max_pssm_score_sliding_window(seq, low_motifs_dict[motif_name])
-        denovo_motifs_features[motif_name + "_denovo_LOW"] = score
-    return denovo_motifs_features
+    def seq_score_denovo_motifs(seq):
+        for motif_name in high_motifs_dict.keys():
+            score = calc_max_pssm_score_sliding_window(seq, high_motifs_dict[motif_name])
+            denovo_motifs_features[motif_name + "_denovo_HIGH"] = score
+        for motif_name in low_motifs_dict.keys():
+            score = calc_max_pssm_score_sliding_window(seq, low_motifs_dict[motif_name])
+            denovo_motifs_features[motif_name + "_denovo_LOW"] = score
+        return pd.Series(denovo_motifs_features)
+    return pd.DataFrame(df.apply(seq_score_denovo_motifs))
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from functools import partial
 from modeling.copy_num.consts import *
+from modeling.copy_num.features.denovo_motifs import score_denovo_motifs
 from modeling.copy_num.features.motifs import calc_motifs_pv
 from modeling.copy_num.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq, entropy
 from modeling.copy_num.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
@@ -12,6 +13,8 @@ from modeling.copy_num.features.pssm_feature import calc_series_pssm_score
 from modeling.copy_num.features.delta_G.TX_prediction import calculate_dG_and_Tx
 from modeling.copy_num.models.models_functions import is_high_copy_number
 import pathlib
+import datetime
+import sys
 
 DATA_PATH = os.path.join("..", "..", "..", "data")
 timepoints_df = pd.read_excel(
@@ -64,16 +67,15 @@ def get_RNAp_merged_data():
 
 
 def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None, type: str = 'p', cp: bool = True, val: bool = False) -> pd.DataFrame:
+    RNA_data.reset_index(drop=True, inplace=True)
+    if ref_RNA_data is not None:
+        ref_RNA_data.reset_index(drop=True, inplace=True)
+
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
     RNA_features = []
 
     RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
 
-    # if type == 'p':
-    #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
-    # else:
-    #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
-    # pssm_data = load(PSSM_THRESHOLD_PATH)
     if val:
         RNA_pssm_score = calc_series_pssm_score(RNA_data, ref_RNA_data)
     else:
@@ -86,8 +88,10 @@ def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None,
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if type == 'p' else RNAi_EDITED_ZONES))
     RNA_features.append(entropy(RNA_seq))
     RNA_features.append(calculate_dG_and_Tx(RNA_seq)) # 3 features based on biophysical properties (deltaG)
+    RNA_features.append(score_denovo_motifs(RNA_seq))
 
     RNA_X = pd.concat(RNA_features, axis=1)
+    RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)
     RNA_y = RNA_data['Copy Number'] if cp else None
     return RNA_X, RNA_y
 
@@ -125,53 +129,82 @@ def split_for_validation(RNA_data):
     return RNA_data, RNAp_data_val
 
 
-def save_features_df():
-    RNAp_data = get_RNAp_data()
-    RNAi_data = get_RNAi_data()
+def save_features_df(p=True, i=True, shared=True, specify_date = False):
+    data = {}
+    if p:
+        RNAp_data = get_RNAp_data()
+        RNAp_data, RNAp_data_val = split_for_validation(RNAp_data)
+        RNAp_X, RNAp_y = generate_features(RNAp_data, type='p', val=False)
+        RNAp_X_val, RNAp_y_val = generate_features(RNAp_data_val, RNAp_data, type='p', val=True)
+        data['RNAp_X'] = remove_zero_variance_features(RNAp_X)
+        data['RNAp_y'] = RNAp_y
+        data['RNAp_X_val'] = remove_zero_variance_features(RNAp_X_val)
+        data['RNAp_y_val'] = RNAp_y_val
+    if i:
+        RNAi_data = get_RNAi_data()
+        RNAi_data, RNAi_data_val = split_for_validation(RNAi_data)
+        RNAi_X, RNAi_y = generate_features(RNAi_data, type='i', val=False)
+        RNAi_X_val, RNAi_y_val = generate_features(RNAi_data_val, RNAi_data, type='i', val=True)
+        data['RNAi_X'] = remove_zero_variance_features(RNAi_X)
+        data['RNAi_y'] = RNAi_y
+        data['RNAi_X_val'] = remove_zero_variance_features(RNAi_X_val)
+        data['RNAi_y_val'] = RNAi_y_val
 
-    RNAp_data, RNAp_data_val = split_for_validation(RNAp_data)
-    RNAi_data, RNAi_data_val = split_for_validation(RNAi_data)
+    if i and p and shared:
+        RNAp_X_shared_model = generate_features_combined(RNAi_X, type='p')
+        RNAi_X_shared_model = generate_features_combined(RNAp_X, type='i')
+        if (RNAi_X_shared_model.columns != RNAp_X_shared_model.columns).any():
+            raise Exception('the columns in the shared RNAi and RNAp do not match, must be fixed in order to continue')
+        else:
+            X_shared_model = remove_zero_variance_features(
+                pd.concat([RNAp_X_shared_model, RNAi_X_shared_model], axis=0, ignore_index=True))
+            Y_shared_model = pd.concat([RNAi_y, RNAp_y], axis=0, ignore_index=True)
+        data['X_shared'] = X_shared_model
+        data['Y_shared'] = Y_shared_model
 
-    RNAp_X, RNAp_y = generate_features(RNAp_data, type='p', val = False)
-    RNAp_X_val, RNAp_y_val = generate_features(RNAp_data_val, RNAp_data, type='p', val=True)
-    RNAi_X, RNAi_y = generate_features(RNAi_data, type='i', val = False)
-    RNAi_X_val, RNAi_y_val = generate_features(RNAi_data_val, RNAi_data, type='i', val=True)
-
-    RNAp_X_shared_model = generate_features_combined(RNAi_X, type='p')
-    RNAi_X_shared_model = generate_features_combined(RNAp_X, type='i')
-
-    if (RNAi_X_shared_model.columns != RNAp_X_shared_model.columns).any():
-        raise Exception('the columns in the shared RNAi and RNAp do not match, must be fixed in order to continue')
+    # data = {
+    #     'RNAp_X': remove_zero_variance_features(RNAp_X),
+    #     'RNAp_y': RNAp_y,
+    #     'RNAp_X_val': remove_zero_variance_features(RNAp_X_val),
+    #     'RNAp_y_val': RNAp_y_val,
+    #     'RNAi_X': remove_zero_variance_features(RNAi_X),
+    #     'RNAi_y': RNAi_y,
+    #     'RNAi_X_val': remove_zero_variance_features(RNAi_X_val),
+    #     'RNAi_y_val': RNAi_y_val,
+    #     'X_shared': X_shared_model,
+    #     'Y_shared': Y_shared_model
+    # }
+    if specify_date:
+        date = datetime.date
+        dump(data, os.path.join(DATA_PATH, date.strftime("%m/%d/%Y") + '_DataFrames_with_features.joblib'))
     else:
-        X_shared_model = remove_zero_variance_features(
-            pd.concat([RNAp_X_shared_model, RNAi_X_shared_model], axis=0, ignore_index=True))
-        Y_shared_model = pd.concat([RNAi_y, RNAp_y], axis=0, ignore_index=True)
-
-    data = {
-        'RNAp_X': remove_zero_variance_features(RNAp_X),
-        'RNAp_y': RNAp_y,
-        'RNAp_X_val': remove_zero_variance_features(RNAp_X_val),
-        'RNAp_y_val': RNAp_y_val,
-        'RNAi_X': remove_zero_variance_features(RNAi_X),
-        'RNAi_y': RNAi_y,
-        'RNAi_X_val': remove_zero_variance_features(RNAi_X_val),
-        'RNAi_y_val': RNAi_y_val,
-        'X_shared': X_shared_model,
-        'Y_shared': Y_shared_model
-    }
-    dump(data, os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
+        dump(data, os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
     return data
 
 
-def get_features_df():
+def get_features_df(p=True, i=True, shared=True, specify_date = False):
     if os.path.exists(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib')):
         data = load(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
     else:
         from modeling.copy_num.features.motifs import calc_motifs_pv
-        data = save_features_df()
+        data = save_features_df(p=p, i=i, shared=shared, specify_date = specify_date)
 
     return data
 
+
+def create_fasta_file(RNA_df):
+    percentage = 0.15
+    n = int(len(RNA_df) * percentage)
+    high_cp = RNA_df.nlargest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
+    low_cp = RNA_df.nsmallest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
+    output_file_high = os.path.join(DATA_PATH, 'pRNA high copy number.fasta')
+    output_file_low = os.path.join(DATA_PATH, 'pRNA low copy number.fasta')
+    with open(output_file_high, 'w') as file:
+        for idx, sequence in high_cp.items():
+            file.write(f'>{idx}\n{sequence}\n')
+    with open(output_file_low, 'w') as file:
+        for idx, sequence in low_cp.items():
+            file.write(f'>{idx}\n{sequence}\n')
 
 if __name__ == '__main__':
     save_features_df()
