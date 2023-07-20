@@ -76,11 +76,6 @@ def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None,
 
     RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
 
-    # if type == 'p':
-    #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
-    # else:
-    #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
-    # pssm_data = load(PSSM_THRESHOLD_PATH)
     if val:
         RNA_pssm_score = calc_series_pssm_score(RNA_data, ref_RNA_data)
     else:
