@@ -1,30 +1,27 @@
 from joblib import dump
-from src.data_prep.pre_process import get_features_df
-from src.models.models_functions import remove_outliers, train_validation_test_split
 import numpy as np
 import pandas as pd
-import pathlib
-import xgboost as xgb
+from pathlib import Path
+from src.data_prep.pre_process import get_features_df
+from src.models.models_functions import remove_outliers, train_validation_test_split
+from src.utils import get_current_file_parent_path
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 from typing import Literal
+import xgboost as xgb
 
 
 RNA_TYPES = Literal['p', 'i']
-RELATIVE_DATA_PATH = pathlib.Path('..', '..', 'data')
-
-
-def get_current_file_path() -> pathlib.Path:
-    return pathlib.Path(__file__).parent.resolve()
+RELATIVE_DATA_PATH = Path('..', '..', 'data')
 
 
 def get_seeds(num_seeds: int) -> np.ndarray:
     return np.random.randint(low=0, high=2 ** 30, size=num_seeds)
 
 
-def get_save_path(rna_type: RNA_TYPES, file_type='joblib') -> pathlib.Path:
-    return pathlib.Path(
-        get_current_file_path(),
+def get_save_path(rna_type: RNA_TYPES, file_type='joblib') -> Path:
+    return Path(
+        get_current_file_parent_path(),
         RELATIVE_DATA_PATH,
         f'new_XGB_features_selection_RNA{rna_type}.'+file_type
     )

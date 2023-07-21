@@ -1,5 +1,5 @@
-from src.data_prep.pre_process import get_features_df
 import matplotlib.pyplot as plt
+from src.data_prep.pre_process import get_features_df
 
 if __name__=='__main__':
     data = get_features_df()

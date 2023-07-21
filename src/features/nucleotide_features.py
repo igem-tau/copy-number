@@ -1,23 +1,23 @@
 from Bio.SeqUtils import MeltingTemp
 from dnacurve import CurvedDNA
-import pandas as pd
-import math
 import itertools
-from typing import List, Dict, Tuple, Union
+import math
+import pandas as pd
 from src.consts import *
 import subprocess
+from typing import List, Dict, Tuple, Union
 
 
 def generate_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
-    def encode(single_nucleotid: pd.Series, index:int=None) -> pd.DataFrame:
+    def encode(single_nucleotid: pd.Series, index: int = None) -> pd.DataFrame:
         columns = []
         for nucleotide in NUCLEOTIDES:
-          columns.append((single_nucleotid == nucleotide).astype(int))
+            columns.append((single_nucleotid == nucleotide).astype(int))
         encoded = pd.concat(columns, axis=1)
         if index is not None:
-          columns = [f'{nucleotide}_{index}' for nucleotide in NUCLEOTIDES]
+            columns = [f'{nucleotide}_{index}' for nucleotide in NUCLEOTIDES]
         else:
-          columns = list(NUCLEOTIDES)
+            columns = list(NUCLEOTIDES)
         encoded.columns = columns
         return encoded
 
@@ -114,13 +114,13 @@ def get_k_gap_description(nucleotides: Tuple[str], before_gap: int, after_gap: i
 
 def mono_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___1
     ### g-gap
-    '''
+    """
     AA      0-gap (2-mer)
     A_A     1-gap
     A__A    2-gap
     A___A   3-gap
     A____A  4-gap
-    '''
+    """
 
     d = {}
     m = m2
@@ -385,7 +385,6 @@ def entropy(seq: 'pd.Series[str]') -> pd.DataFrame:
     return pd.DataFrame(seq.apply(seq_entropy, prob_dict=prob_dict).tolist(), columns=['entropy'])
 
 
-
 def run_RNAfold(rna_seq: str):
     # Todo: You need to download RNAfold before from:
     #  https://www.tbi.univie.ac.at/RNA/#download
@@ -402,11 +401,11 @@ def get_mfe(rna_seq):
     #  In general folding energy is calculated for RNA,
     #  it supposed to predict minimum free-energy secondary structure of RNA sequence
     #  and in our case the data is only the promotor which is not transcribed to RNA
-    '''
+    """
     Get minimal folding energy for rna seq
     :param rna_seq:
     :return:
-    '''
+    """
     res = run_RNAfold(rna_seq)
     min_fold_energy = float(res[1].split(' (')[1].strip()[:-1])
     return min_fold_energy
@@ -414,7 +413,7 @@ def get_mfe(rna_seq):
 
 def mfe_per_position(rna_seq: str, window_size: int = 31):
     first_half_window = window_size // 2
-    second_half_window = window_size // 2 + 1 if window_size%2 == 1 else window_size // 2
+    second_half_window = window_size // 2 + 1 if window_size % 2 == 1 else window_size // 2
     idx_to_mfe = {}
     for i in range(len(rna_seq)):
         if len(rna_seq) - i >= second_half_window:
@@ -438,12 +437,12 @@ def add_dict_vals(base_dict, new_dict):
 
 
 def get_avg_mfe_per_position(df: pd.DataFrame, seq_col: str):
-    '''
+    """
     This function supposed to give what described in the article under Folding energy
     :param df:
     :param seq_col:
     :return:
-    '''
+    """
     avg_mfe_per_position = {}
     for i, r in df.iterrows():
         curr_idx_to_mfe = mfe_per_position(r[seq_col])
@@ -460,8 +459,8 @@ def codon_adaptation_index(gene_seq: str, codon_to_weight: dict):
     #  It measures the degree with which genes use preferred codons
     #  So it is related to a gene and its codons (and we work with promotor data)
     weights_product = 1
-    for i in range(0, len(gene_seq)-2, 3):
-        curr_codon = gene_seq[i:i+3]
+    for i in range(0, len(gene_seq) - 2, 3):
+        curr_codon = gene_seq[i:i + 3]
         weights_product *= codon_to_weight[curr_codon]
 
     num_codons = len(gene_seq) / 3
@@ -537,12 +536,12 @@ def run_RNApdist(base_seq: str, seq: str):
 def get_topo(base_rna_seq, rna_seq):
     # Todo: It seems irrelevant in our case
     #  check with the team what they think
-    '''
+    """
     calculates distances between thermodynamic RNA secondary structures ensembles
     Look at 'mRNA topological distance' in the article
     :param rna_seq:
     :return:
-    '''
+    """
     res = run_RNApdist(base_rna_seq, rna_seq)
     topo = float(res)
     return topo
@@ -568,4 +567,5 @@ def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
     df[['curvature', 'bend_angel', 'curvature_angel', 'helix_x', 'helix_y', 'helix_z',
         'phos_1_x', 'phos_1_y', 'phos_1_z', 'phos_2_x', 'phos_2_y', 'phos_2_z',
         'basepair_n_x', 'basepair_n_y', 'basepair_n_z',
-        'smooth_n_x', 'smooth_n_y', 'smooth_n_z']] = df[seq_col].apply(curved_dna_diff, base_seq=wildtype_seq, result_type='expand')
+        'smooth_n_x', 'smooth_n_y', 'smooth_n_z']] = df[seq_col].apply(curved_dna_diff, base_seq=wildtype_seq,
+                                                                       result_type='expand')

@@ -1,8 +1,10 @@
-import shap
-from xgboost import XGBRegressor
-from joblib import dump, load
-import os
+from joblib import load
 import pandas as pd
+from pathlib import Path
+import shap
+from src.utils import get_current_file_parent_path
+from xgboost import XGBRegressor
+
 
 '''
 https://shap.readthedocs.io/en/latest/example_notebooks/tabular_examples/tree_based_models/Basic%20SHAP%20Interaction%20Value%20Example%20in%20XGBoost.html
@@ -12,10 +14,9 @@ https://www.kaggle.com/code/bryanb/xgboost-explainability-with-shap
 '''
 
 
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(current_dir,'..',  '..', 'data')
-data = load(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
+data = load(Path(DATA_PATH, 'DataFrames_with_features.joblib'))
 
 model = XGBRegressor()  # TODO: import the trained model + X_train
 X_train = pd.DataFrame(None)

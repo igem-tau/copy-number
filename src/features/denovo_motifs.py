@@ -1,13 +1,15 @@
-import pandas as pd
-import os
 import numpy as np
+import pandas as pd
+from pathlib import Path
+from src.utils import get_current_file_parent_path
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(current_dir, '..', '..', 'data')
 
-HOMER_HIGH_MOTIF_PATH = os.path.join(DATA_PATH, 'homer_motifs', 'high.motifs')
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
-HOMER_LOW_MOTIF_PATH = os.path.join(DATA_PATH, 'homer_motifs', 'low.motifs')
+HOMER_HIGH_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'high.motifs')
+
+HOMER_LOW_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'low.motifs')
 
 
 def get_denovo_motifs_pssms(homer_output_file_loc):

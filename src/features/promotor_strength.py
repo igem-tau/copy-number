@@ -1,13 +1,15 @@
-from src.consts import *
-import pandas as pd
-import numpy as np
-import seaborn as sns
-from typing import List, Tuple, Union
 from functools import partial
-import os
+import numpy as np
+import pandas as pd
+from pathlib import Path
+import seaborn as sns
+from src.consts import *
+from src.utils import get_current_file_parent_path
+from typing import List, Tuple, Union
+
 
 def get_energy_matrix_for_rna_polymeras() -> pd.DataFrame:
-    '''
+    """
     from https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002811
         data link: https://doi.org/10.1371/journal.pcbi.1002811.s003
         Energy matrix for RNAP in kT. Inferred from an experiment done in
@@ -17,9 +19,10 @@ def get_energy_matrix_for_rna_polymeras() -> pd.DataFrame:
         each column corresponds to a value for that base pair. The columns
         are ordered [A,C,G,T].
     :return:
-    '''
+    """
     FIRST_INDEX = -40
-    RAW_DATA = np.loadtxt(os.path.join('..', '..', 'data', 'pcbi.1002811.s003.txt'))
+    CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+    RAW_DATA = np.loadtxt(Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'pcbi.1002811.s003.txt'))
     return pd.DataFrame(RAW_DATA, columns=list(NUCLEOTIDES), index=np.arange(FIRST_INDEX, FIRST_INDEX + len(RAW_DATA)))
 
 
@@ -41,19 +44,19 @@ def plot_energy_matrix():
 def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) -> pd.DataFrame:
     energy_matrix = get_energy_matrix_for_rna_polymeras()
 
-    def calc_zone_strength(seq:str, zone: Tuple[int], energy_matrix) -> 'pd.Series[float]':
+    def calc_zone_strength(seq:str, zone: Tuple[int], energy_matrix_) -> 'pd.Series[float]':
         seq = seq[:-1] # delete +1 position
         start_zone, end_zone = zone
         strength = 0
 
         for i in range(start_zone, end_zone + 1):
-            strength += energy_matrix.loc[i, seq[i - START_INDEX]]
+            strength += energy_matrix_.loc[i, seq[i - START_INDEX]]
         return strength
 
     zones_strength = {}
     for zone in zones:
         strength = seq.apply(
-            partial(calc_zone_strength, zone=zone, energy_matrix=energy_matrix)
+            partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
         )
         zones_strength[f'{zone} predicted strength'] = strength
 
@@ -61,5 +64,5 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
 
 
 def calc_predicted_promoter_strength(seq: Union[str, 'pd.Series[str]']) -> Union[float, 'pd.Series[float]']:
-    predicted_promoter_strength = calc_promoter_zones_strength(seq, [(-35,-1)])['(-35, -1) predicted strength']
+    predicted_promoter_strength = calc_promoter_zones_strength(seq, [(-35, -1)])['(-35, -1) predicted strength']
     return predicted_promoter_strength.rename('Predicted Promoter Strength (KbT)')

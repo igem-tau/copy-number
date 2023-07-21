@@ -1,14 +1,16 @@
 import matplotlib.pyplot as plt
-import os
+from pathlib import Path
 from scipy.stats import spearmanr
 from sklearn.metrics import r2_score, mean_squared_error
+from src.utils import get_current_file_parent_path
 from typing import Optional
 import warnings
 import xgboost as xgb
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-FIGURES_PATH = os.path.join('..', '..', 'data', 'figures')
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 
 
 def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_param: Optional[dict] = None,
@@ -31,7 +33,7 @@ def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_p
 
     ax = xgb.plot_importance(xgb_model, max_num_features=20, title=f'{data_title} feature importance - XGBoost')
     if save_plots:
-        ax.figure.savefig(os.path.join(FIGURES_PATH, f'XGBoost feature importance {data_title}.jpg'))
+        ax.figure.savefig(Path(FIGURES_PATH, f'XGBoost feature importance {data_title}.jpg'))
 
     # evaluation plot
     f, ax = plt.subplots()
@@ -43,6 +45,6 @@ def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_p
     plt.text(0.8, 0.2, 'MSE=%.4f' % mse_score, transform=ax.transAxes)
     plt.title(f'XGBoost - {data_title}')
     if save_plots:
-        plt.savefig(os.path.join(FIGURES_PATH, f'XGBoost evaluation {data_title}.jpg'))
+        plt.savefig(Path(FIGURES_PATH, f'XGBoost evaluation {data_title}.jpg'))
 
     return r2, mse_score, spearman

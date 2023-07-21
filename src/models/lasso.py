@@ -1,11 +1,14 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+from pathlib import Path
+from scipy.stats import spearmanr
 from sklearn.linear_model import Lasso
 from sklearn.metrics import r2_score, mean_squared_error
-from scipy.stats import spearmanr
-import pandas as pd
-import matplotlib.pyplot as plt
-import os
+from src.utils import get_current_file_parent_path
 
-FIGURES_PATH = os.path.join('..', '..', 'data', 'figures')
+
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 
 
 def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_param=None, save_plots=False):
@@ -44,7 +47,7 @@ def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_par
     plt.axvline(x=0, color='.5')
     plt.subplots_adjust(left=.3)
     if save_plots:
-        plt.savefig(os.path.join(FIGURES_PATH, f'Lasso feature importance {data_title}.jpg'))
+        plt.savefig(Path(FIGURES_PATH, f'Lasso feature importance {data_title}.jpg'))
 
     # evaluation plot
     f, ax = plt.subplots()
@@ -56,7 +59,7 @@ def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_par
     plt.text(0.8, 0.2, 'MSE=%.4f' % mse_score, transform=ax.transAxes)
     plt.title(f'Lasso - {data_title}')
     if save_plots:
-        plt.savefig(os.path.join(FIGURES_PATH, f'Lasso evaluation {data_title}.jpg'))
+        plt.savefig(Path(FIGURES_PATH, f'Lasso evaluation {data_title}.jpg'))
 
     return r2, mse_score, spearman
 

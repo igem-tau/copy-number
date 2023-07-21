@@ -1,8 +1,8 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.stats import pearsonr
 from scipy.stats import spearmanr
 import seaborn as sns
-import matplotlib.pyplot as plt
 from src.data_prep.pre_process import get_RNAp_data, get_RNAp_merged_data
 
 

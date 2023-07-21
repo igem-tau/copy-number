@@ -1,15 +1,15 @@
-'''
+"""
 this code is based on the articles (https://www.nature.com/articles/s41467-022-32829-50) code
 'Promoter_Calculator_v1_0' (https://github.com/hsalis/SalisLabCode/tree/master/Promoter_Calculator)
 
 The calculations of this code are based on biophysical properties of the binding of the
 interactions between RNA polymerase, sigma factor, and promoter DNA sequences in bacteria.
-'''
+"""
 
-from src.features.delta_G import util
 import numpy as np
 import os
 import pandas as pd
+from src.features.delta_G import delta_G_utils
 
 # Get the directory path of the script
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -30,6 +30,7 @@ LOGK   = -2.80271176
 BETA    = 0.81632623
 K = 42.00000
 
+
 def get_matrices(two_mer_encoder, three_mer_encoder, spacer_encoder, coeffs):
 
     #Extract dG values from model coefficients
@@ -42,13 +43,13 @@ def get_matrices(two_mer_encoder, three_mer_encoder, spacer_encoder, coeffs):
     spacs   = coeffs.tolist()[256+64+16:256+64+16+3]
 
     # make dG matrices for each feature
-    dg10_0  = util.get_dg_matrices(ref10_0, three_mer_encoder)
-    dg10_3  = util.get_dg_matrices(ref10_3, three_mer_encoder)
-    dg35_0  = util.get_dg_matrices(ref35_0, three_mer_encoder)
-    dg35_3  = util.get_dg_matrices(ref35_3, three_mer_encoder)
-    dmers   = util.get_dg_matrices(discs, three_mer_encoder)
-    x10mers = util.get_dg_matrices(x10, two_mer_encoder)
-    spacers = util.get_dg_matrices(spacs, spacer_encoder)
+    dg10_0  = delta_G_utils.get_dg_matrices(ref10_0, three_mer_encoder)
+    dg10_3  = delta_G_utils.get_dg_matrices(ref10_3, three_mer_encoder)
+    dg35_0  = delta_G_utils.get_dg_matrices(ref35_0, three_mer_encoder)
+    dg35_3  = delta_G_utils.get_dg_matrices(ref35_3, three_mer_encoder)
+    dmers   = delta_G_utils.get_dg_matrices(discs, three_mer_encoder)
+    x10mers = delta_G_utils.get_dg_matrices(x10, two_mer_encoder)
+    spacers = delta_G_utils.get_dg_matrices(spacs, spacer_encoder)
 
     return dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers
 
@@ -97,9 +98,9 @@ def calculate_dG_and_Tx(sequence):
         model = np.load(os.path.join(current_dir, 'free_energy_coeffs.npy'))
         inters = np.load(os.path.join(current_dir, 'model_intercept.npy'))
 
-        two_mer_encoder = util.kmer_encoders(k = 2)
-        three_mer_encoder = util.kmer_encoders(k = 3)
-        spacer_encoder = util.length_encoders(16, 18)
+        two_mer_encoder = delta_G_utils.kmer_encoders(k = 2)
+        three_mer_encoder = delta_G_utils.kmer_encoders(k = 3)
+        spacer_encoder = delta_G_utils.length_encoders(16, 18)
         dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers = get_matrices(
             two_mer_encoder=two_mer_encoder, three_mer_encoder=three_mer_encoder,
             spacer_encoder=spacer_encoder, coeffs=model)

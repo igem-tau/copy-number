@@ -1,12 +1,12 @@
 from joblib import dump, load
 from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
+from pathlib import Path
+import seaborn as sns
 from src.data_prep.pre_process import get_features_df
 from src.models.models_functions import prepare_model_data
-import numpy as np
-import os
-import pandas as pd
-import pathlib
-import seaborn as sns
+from src.utils import get_current_file_parent_path
 from sklearn.linear_model import Lasso
 from sklearn.metrics import r2_score
 from tqdm import tqdm
@@ -17,29 +17,25 @@ from xgboost import XGBRegressor
 NUM_RUNS = 5000
 RNA_TYPES = Literal['p', 'i']
 MODEL_TYPES = Literal['lasso', 'xgboost']
-RELATIVE_DATA_PATH = pathlib.Path('..', '..', 'data')
-RELATIVE_FIGURES_PATH = os.path.join('..', '..', 'data', 'figures')
-
-
-def get_current_file_path() -> pathlib.Path:
-    return pathlib.Path(__file__).parent.resolve()
+RELATIVE_DATA_PATH = Path('..', '..', 'data')
+RELATIVE_FIGURES_PATH = Path(RELATIVE_DATA_PATH, 'figures')
 
 
 def get_seeds(num_seeds: int) -> np.ndarray:
     return np.random.randint(low=0, high=2 ** 32 - 1, size=num_seeds)
 
 
-def get_features_exploration_path(model_type: MODEL_TYPES, rna_type: RNA_TYPES) -> pathlib.Path:
-    return pathlib.Path(
-        get_current_file_path(),
+def get_features_exploration_path(model_type: MODEL_TYPES, rna_type: RNA_TYPES) -> Path:
+    return Path(
+        get_current_file_parent_path(),
         RELATIVE_DATA_PATH,
         f'{model_type}_features_importance_RNA{rna_type}_exploration_data.joblib'
     )
 
 
-def get_features_exploration_plot_path(model_type: MODEL_TYPES, rna_type: RNA_TYPES) -> pathlib.Path:
-    return pathlib.Path(
-        get_current_file_path(),
+def get_features_exploration_plot_path(model_type: MODEL_TYPES, rna_type: RNA_TYPES) -> Path:
+    return Path(
+        get_current_file_parent_path(),
         RELATIVE_FIGURES_PATH,
         f'{model_type}_RNA{rna_type}_features_importance_exploration.jpg'
     )
@@ -48,7 +44,7 @@ def get_features_exploration_plot_path(model_type: MODEL_TYPES, rna_type: RNA_TY
 def get_features_exploration_data(X: pd.DataFrame, y: 'pd.Series[int]', model_type: MODEL_TYPES, rna_type: RNA_TYPES) -> pd.DataFrame:
     file_path = get_features_exploration_path(model_type, rna_type)
 
-    if os.path.exists(file_path) and os.path.isfile(file_path):
+    if Path(file_path).exists() and Path(file_path).is_file():
         return load(file_path)
 
     seed_array = get_seeds(NUM_RUNS)

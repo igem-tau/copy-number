@@ -1,18 +1,28 @@
-import util, random, pickle, collections, operator, time, math, os
+import collections
+import math
 import numpy as np
+import operator
+import os
+import pickle
+import random
+from src.features.delta_G import delta_G_utils
+import time
 
 # k and BETA for La Fleur dataset
 LOGK   = -2.80271176
 BETA    = 0.81632623
+
 
 def unpickler(infile):
     with open(infile, 'rb') as handle:
         obj= pickle.load(handle)
     return obj
 
+
 def _revcomp(seq):
     revcomp = {'U' : 'A', 'A' : 'T', 'G' : 'C', 'T' : 'A', 'C' : 'G'}
     return ''.join([revcomp[letter] for letter in seq[::-1] ])
+
 
 def get_matrices(two_mer_encoder, three_mer_encoder, spacer_encoder, coeffs):
 
@@ -26,15 +36,16 @@ def get_matrices(two_mer_encoder, three_mer_encoder, spacer_encoder, coeffs):
     spacs   = coeffs.tolist()[256+64+16:256+64+16+3]
 
     # make dG matrices for each feature
-    dg10_0  = util.get_dg_matrices(ref10_0, three_mer_encoder)
-    dg10_3  = util.get_dg_matrices(ref10_3, three_mer_encoder)
-    dg35_0  = util.get_dg_matrices(ref35_0, three_mer_encoder)
-    dg35_3  = util.get_dg_matrices(ref35_3, three_mer_encoder)
-    dmers   = util.get_dg_matrices(discs, three_mer_encoder)
-    x10mers = util.get_dg_matrices(x10, two_mer_encoder)
-    spacers = util.get_dg_matrices(spacs, spacer_encoder)
+    dg10_0  = delta_G_utils.get_dg_matrices(ref10_0, three_mer_encoder)
+    dg10_3  = delta_G_utils.get_dg_matrices(ref10_3, three_mer_encoder)
+    dg35_0  = delta_G_utils.get_dg_matrices(ref35_0, three_mer_encoder)
+    dg35_3  = delta_G_utils.get_dg_matrices(ref35_3, three_mer_encoder)
+    dmers   = delta_G_utils.get_dg_matrices(discs, three_mer_encoder)
+    x10mers = delta_G_utils.get_dg_matrices(x10, two_mer_encoder)
+    spacers = delta_G_utils.get_dg_matrices(spacs, spacer_encoder)
 
     return dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers
+
 
 # Scan sequence left to right with no TSS information. Calc dG of all possible promoter configurations.
 def scan_arbitrary(inputSequence, two_mer_encoder, three_mer_encoder, model, inters, constraints, dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers):
@@ -70,6 +81,7 @@ def scan_arbitrary(inputSequence, two_mer_encoder, three_mer_encoder, model, int
     best = (collections.OrderedDict(sorted(seq_query.items())), min(seq_query.items(), key=operator.itemgetter(0)))
     return best, seq_query
 
+
 def linear_free_energy_model(UP, h35, spacer, h10, disc, ITR, dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers, coeffs, inters):
 
     prox_UP = UP[-int(len(UP)/2)::]
@@ -85,11 +97,11 @@ def linear_free_energy_model(UP, h35, spacer, h10, disc, ITR, dg10_0, dg10_3, dg
     spacer_length   = str(len(spacer))
 
     # NUMERICAL FEATURES
-    dg_dna,dg_rna,dg_ITR     = util.calc_DNA_RNA_hybrid_energy(ITR) # calc R-loop strength
-    rigidity                 = util.calc_rigidity(seq =UP + h35 + spacer[0:14])
+    dg_dna,dg_rna,dg_ITR     = delta_G_utils.calc_DNA_RNA_hybrid_energy(ITR) # calc R-loop strength
+    rigidity                 = delta_G_utils.calc_rigidity(seq =UP + h35 + spacer[0:14])
 
-    width_proxy_prox = util.calc_groove_width(prox_UP)
-    width_proxy_dist = util.calc_groove_width(dist_UP)
+    width_proxy_prox = delta_G_utils.calc_groove_width(prox_UP)
+    width_proxy_dist = delta_G_utils.calc_groove_width(dist_UP)
 
     # NORMALIZE NUMERICAL FEATURES BY MAX IN TRAINING SET
     numericals         = np.array([width_proxy_dist, width_proxy_prox, dg_ITR, rigidity])
@@ -112,15 +124,16 @@ def linear_free_energy_model(UP, h35, spacer, h10, disc, ITR, dg10_0, dg10_3, dg
 
     return dG_total, dG_apparent, dg10, dg35, dg_disc, dg_ITR, dg_ext10, dg_spacer, dg_UP
 
+
 def predict(sequence, constraints):
 
     # Initialize model and matrices
     layer1 = np.load('free_energy_coeffs.npy')
     inters = np.load('model_intercept.npy')
 
-    two_mer_encoder   = util.kmer_encoders(k = 2)
-    three_mer_encoder = util.kmer_encoders(k = 3)
-    spacer_encoder    = util.length_encoders(16, 18)
+    two_mer_encoder   = delta_G_utils.kmer_encoders(k = 2)
+    three_mer_encoder = delta_G_utils.kmer_encoders(k = 3)
+    spacer_encoder    = delta_G_utils.length_encoders(16, 18)
     dg10_0, dg10_3, dg35_0, dg35_3, dmers, x10mers, spacers = get_matrices(two_mer_encoder = two_mer_encoder, three_mer_encoder = three_mer_encoder, spacer_encoder = spacer_encoder, coeffs = layer1)
 
     # Scan DNA and return predictions
@@ -132,8 +145,8 @@ def predict(sequence, constraints):
 
     return dG_total, query, UP, h35, spacer, h10, disc, ITR
 
-class Promoter_Calculator(object):
 
+class Promoter_Calculator(object):
     def __init__(self, organism = 'Escherichia coli str. K-12 substr. MG1655',
                        sigmaLevels = {'70' : 1.0, '19' : 0.0, '24' : 0.0, '28' : 0.0, '32' : 0.0, '38' : 0.0, '54' : 0.0}):
 
@@ -142,9 +155,9 @@ class Promoter_Calculator(object):
         self.layer1 = np.load(path + '/free_energy_coeffs.npy')
         self.inters = np.load(path + '/model_intercept.npy')
 
-        self.two_mer_encoder   = util.kmer_encoders(k = 2)
-        self.three_mer_encoder = util.kmer_encoders(k = 3)
-        self.spacer_encoder    = util.length_encoders(16, 18)
+        self.two_mer_encoder   = delta_G_utils.kmer_encoders(k = 2)
+        self.three_mer_encoder = delta_G_utils.kmer_encoders(k = 3)
+        self.spacer_encoder    = delta_G_utils.length_encoders(16, 18)
         self.dg10_0, self.dg10_3, self.dg35_0, self.dg35_3, self.dmers, self.x10mers, self.spacers = get_matrices(two_mer_encoder = self.two_mer_encoder, three_mer_encoder = self.three_mer_encoder, spacer_encoder = self.spacer_encoder, coeffs = self.layer1)
 
         self.model = self.layer1
@@ -294,6 +307,7 @@ class Promoter_Calculator(object):
 
         best = (collections.OrderedDict(sorted(seq_query.items())), min(seq_query.items(), key=operator.itemgetter(0)))
         return best, seq_query
+
 
 if __name__ == '__main__':
 

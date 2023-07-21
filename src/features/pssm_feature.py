@@ -1,12 +1,16 @@
-import pandas as pd
-import numpy as np
 from Bio import motifs
 from functools import partial
 from joblib import load
-import os
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from src.utils import get_current_file_parent_path
 
-PSSM_THRESHOLD_PATH_p = os.path.join('..', '..', 'data', 'pssm_threshold_pRNA.pkl')
-PSSM_THRESHOLD_PATH_i = os.path.join('..', '..', 'data', 'pssm_threshold_iRNA.pkl')
+
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
+PSSM_THRESHOLD_PATH_p = Path(DATA_PATH, 'pssm_threshold_pRNA.pkl')
+PSSM_THRESHOLD_PATH_i = Path(DATA_PATH, 'pssm_threshold_iRNA.pkl')
 
 # a function to calculate is a copy-number part of the top 20% in relation to all the others
 def is_high_copy_number(copy_number: 'pd.Series[int]', type: str='p') -> 'pd.Series[int]':
@@ -14,7 +18,7 @@ def is_high_copy_number(copy_number: 'pd.Series[int]', type: str='p') -> 'pd.Ser
         PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
     else:
         PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
-    if not os.path.exists(PSSM_THRESHOLD_PATH):
+    if not PSSM_THRESHOLD_PATH.exists():
         raise Exception('you need to set pssm thresholds first - run "pssm_feature.py"')
     pssm_data = load(PSSM_THRESHOLD_PATH)
     return copy_number >= pssm_data['high']
@@ -58,7 +62,7 @@ def set_pssm_thresholds(RNA_df: pd.DataFrame , type:str = 'p') -> None:
     return RNA_pssm
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     from src.data_prep.pre_process import get_RNAp_data, get_RNAi_data
     RNA_type = 'p'
     RNAp_df = get_RNAp_data()

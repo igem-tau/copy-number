@@ -1,9 +1,12 @@
+import matplotlib.pyplot as plt
+from pathlib import Path
 from src.data_prep.pre_process import get_features_df
 from src.models.models_functions import model
-import matplotlib.pyplot as plt
-import os
+from src.utils import get_current_file_parent_path
 
-FIGURES_PATH = os.path.join('..', '..', 'data', 'figures')
+
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 
 
 def elbow_graphs(estimator, estimator_range, X, y, data_name):
@@ -19,7 +22,7 @@ def elbow_graphs(estimator, estimator_range, X, y, data_name):
     fig, ax1 = plt.subplots()
 
     color = 'tab:red'
-    ax1.set_xlabel('number of trees' if estimator=='n_estimators' else 'maximum depth of a tree')
+    ax1.set_xlabel('number of trees' if estimator == 'n_estimators' else 'maximum depth of a tree')
     ax1.set_ylabel('r2 score', color=color)
     ax1.plot(estimator_range, r2_list, color=color)
     ax1.scatter(estimator_range, r2_list, color=color)
@@ -35,7 +38,7 @@ def elbow_graphs(estimator, estimator_range, X, y, data_name):
     plt.title(f'XGBoost {estimator} vs. scores for {data_name}')
     fig.tight_layout()
 
-    plt.savefig(os.path.join(FIGURES_PATH, f'XGBoost {estimator} vs scores {data_name}.jpg'))
+    plt.savefig(Path(FIGURES_PATH, f'XGBoost {estimator} vs scores {data_name}.jpg'))
 
 
 if __name__ == '__main__':

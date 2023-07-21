@@ -1,11 +1,10 @@
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from Bio.Seq               import Seq
-from scipy                 import stats
-import numpy as np
-
-import itertools
 import collections
+import itertools
+import numpy as np
 import operator
+from scipy                 import stats
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 
 groove_access = {'CG' : 43,
                  'CA':  42, 'TG' : 42,  #revcomp

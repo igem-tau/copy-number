@@ -1,16 +1,18 @@
 from joblib import dump, load
-import matplotlib.pyplot as plt
-import pandas as pd
-from scipy.stats import pearsonr, spearmanr
-
-from src.data_prep.pre_process import get_features_df
-from minepy import MINE
 import numpy as np
-import os
+import matplotlib.pyplot as plt
+from minepy import MINE
+import pandas as pd
+from pathlib import Path
+from scipy.stats import pearsonr, spearmanr
+from src.data_prep.pre_process import get_features_df
+from src.utils import get_current_file_parent_path
 from typing import Dict
 
 CORRELATIONS_METHODS = ['pearson', 'kendall', 'spearman']
-DATA_PATH = os.path.join('..', '..', 'data')
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
+
 
 def calc_MIC_pv(original_mine: 'MINE', RNA_Series: 'pd.Series', RNA_copynumber: 'pd.Series') -> dict:
     mics = []
@@ -118,8 +120,8 @@ if __name__ == '__main__':
     PSSM_corr_plot(RNAi_X['pssm_score'], RNAi_y, 'RNAi PSSM')
 
     # other features
-    SAVED_CORRELATIONS_PATH = os.path.join(DATA_PATH, 'correlations_DataFrames.joblib')
-    if os.path.exists(SAVED_CORRELATIONS_PATH):
+    SAVED_CORRELATIONS_PATH = Path(DATA_PATH, 'correlations_DataFrames.joblib')
+    if SAVED_CORRELATIONS_PATH.exists():
         data = load(SAVED_CORRELATIONS_PATH)
         RNAp_correlations_df = data['RNAp_correlations']
         RNAp_permutations_df = data['RNAp_permutations']

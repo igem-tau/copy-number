@@ -1,10 +1,12 @@
-import os
-import pandas as pd
 import logomaker
+import pandas as pd
+from pathlib import Path
 from src.data_prep.pre_process import get_RNAp_data, get_RNAi_data
 from src.features.pssm_feature import calc_pssm_matrix
+from src.utils import get_current_file_parent_path
 
-FIGURES_PATH = os.path.join('..', '..', 'data', 'figures')
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 
 
 def low_high_cp(df: pd.DataFrame):
@@ -32,10 +34,10 @@ def plot_pssm(type:str = 'p', save=False):
     fig_low = calc_pssm_matrix(low_cp, False).plot.bar(stacked=True, title=f'{type}RNA - Low copy number', ylabel='probabilities', xlabel='position')
 
     if save:
-        high_logo.fig.savefig(os.path.join(FIGURES_PATH, f'{type}RNA High copy number logo'))
-        low_logo.fig.savefig(os.path.join(FIGURES_PATH, f'{type}RNA Low copy number logo'))
-        fig_high.figure.savefig(os.path.join(FIGURES_PATH, f'{type}RNA - High copy number bar plot.jpg'))
-        fig_low.figure.savefig(os.path.join(FIGURES_PATH, f'{type}RNA - Low copy number bar plot.jpg'))
+        high_logo.fig.savefig(Path(FIGURES_PATH, f'{type}RNA High copy number logo'))
+        low_logo.fig.savefig(Path(FIGURES_PATH, f'{type}RNA Low copy number logo'))
+        fig_high.figure.savefig(Path(FIGURES_PATH, f'{type}RNA - High copy number bar plot.jpg'))
+        fig_low.figure.savefig(Path(FIGURES_PATH, f'{type}RNA - Low copy number bar plot.jpg'))
 
 
 if __name__=='__main__':

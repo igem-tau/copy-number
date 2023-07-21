@@ -1,7 +1,8 @@
+import datetime
 from joblib import dump, load
-import pandas as pd
-import os
 import numpy as np
+import pandas as pd
+from pathlib import Path
 from sklearn.model_selection import train_test_split
 from src.consts import *
 from src.features.denovo_motifs import score_denovo_motifs
@@ -11,22 +12,23 @@ from src.features.promotor_strength import calc_promoter_zones_strength, calc_pr
 from src.features.pssm_feature import calc_series_pssm_score
 from src.features.delta_G.TX_prediction import calculate_dG_and_Tx
 from src.models.models_functions import is_high_copy_number
-import datetime
+from src.utils import get_current_file_parent_path
 import sys
 
-DATA_PATH = os.path.join('..', '..', 'data')
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 timepoints_df = pd.read_excel(
-    os.path.join(DATA_PATH, 'sup_data_3_seq_cnt_p_rna.xlsx'))  # priming RNA time points
-PSSM_THRESHOLD_PATH_p = os.path.join(DATA_PATH, 'pssm_threshold_pRNA.pkl')
-PSSM_THRESHOLD_PATH_i = os.path.join(DATA_PATH, 'pssm_threshold_iRNA.pkl')
+    Path(DATA_PATH, 'sup_data_3_seq_cnt_p_rna.xlsx'))  # priming RNA time points
+PSSM_THRESHOLD_PATH_p = Path(DATA_PATH, 'pssm_threshold_pRNA.pkl')
+PSSM_THRESHOLD_PATH_i = Path(DATA_PATH, 'pssm_threshold_iRNA.pkl')
 
 
 def get_RNAp_data():
-    '''
+    """
     get RNA_P df, with additional columns
     :return:
-    '''
-    RNAp_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_1_p_rna.xlsx'),
+    """
+    RNAp_df = pd.read_excel(Path(DATA_PATH, 'sup_data_1_p_rna.xlsx'),
                             names=RNA_DATA_COLUMNS)  # priming RNA
     RNAp_df['cnt_grw'] = RNAp_df['Final Counts'] / RNAp_df['Initial Counts']
     shift = abs(RNAp_df['Copy Number'].min()) + 1e-10
@@ -35,24 +37,24 @@ def get_RNAp_data():
 
 
 def get_RNAi_data():
-    '''
+    """
     get RNA_I df, with additional columns
     :return:
-    '''
-    RNAi_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_2_i_rna.xlsx'),
+    """
+    RNAi_df = pd.read_excel(Path(DATA_PATH, 'sup_data_2_i_rna.xlsx'),
                             names=RNA_DATA_COLUMNS)  # inhibitory RNA
     RNAi_df['cnt_grw'] = RNAi_df['Final Counts'] / RNAi_df['Initial Counts']
     return RNAi_df
 
 
 def get_RNAp_merged_data():
-    '''
+    """
     get RNA_p df merged with the timepoints and additional columns
     :return:
-    '''
-    RNAp_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_1_p_rna.xlsx'))  # priming RNA
+    """
+    RNAp_df = pd.read_excel(Path(DATA_PATH, 'sup_data_1_p_rna.xlsx'))  # priming RNA
     timepoints_df = pd.read_excel(
-        os.path.join(DATA_PATH, 'sup_data_3_seq_cnt_p_rna.xlsx'))  # priming RNA time points
+        Path(DATA_PATH, 'sup_data_3_seq_cnt_p_rna.xlsx'))  # priming RNA time points
     RNAp_df['cnt_grw'] = RNAp_df['Final Counts'] / RNAp_df['Initial Counts']
     timepoints_df['avg_dup_rate'] = ((timepoints_df['Timepoint 2 Counts'] / timepoints_df['Timepoint 1 Counts']) +
                                      (timepoints_df['Timepoint 3 Counts'] / timepoints_df['Timepoint 2 Counts']) +
@@ -95,10 +97,10 @@ def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None,
 
 
 def generate_features_combined(RNA_features: pd.DataFrame, type: str = 'p') -> pd.DataFrame:
-    '''
+    """
     RNA_features: pd.DataFrame, RNA features to concat to the original sequence, for example if we calculate features
      for the original seq of RNAp the RNA_features are for RNAi.
-    '''
+    """
     RNA_seq_original = pd.Series(RNAp_SEQ_ORIGINAL if type == 'p' else RNAi_SEQ_ORIGINAL)
     RNA_df = pd.concat([RNA_seq_original, calc_predicted_promoter_strength(RNA_seq_original)], axis=1)
     RNA_df.rename(columns={RNA_df.columns[0]: 'Promoter Sequence (-35 to +1)'}, inplace=True)
@@ -174,15 +176,15 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
     # }
     if specify_date:
         date = datetime.date
-        dump(data, os.path.join(DATA_PATH, date.strftime('%m/%d/%Y') + '_DataFrames_with_features.joblib'))
+        dump(data, Path(DATA_PATH, date.strftime('%m/%d/%Y') + '_DataFrames_with_features.joblib'))
     else:
-        dump(data, os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
+        dump(data, Path(DATA_PATH, 'DataFrames_with_features.joblib'))
     return data
 
 
 def get_features_df(p=True, i=True, shared=True, specify_date = False):
-    if os.path.exists(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib')):
-        data = load(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
+    if Path(DATA_PATH, 'DataFrames_with_features.joblib').exists():
+        data = load(Path(DATA_PATH, 'DataFrames_with_features.joblib'))
     else:
         from src.features.motifs import calc_motifs_pv
         data = save_features_df(p=p, i=i, shared=shared, specify_date = specify_date)
@@ -195,8 +197,8 @@ def create_fasta_file(RNA_df):
     n = int(len(RNA_df) * percentage)
     high_cp = RNA_df.nlargest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
     low_cp = RNA_df.nsmallest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
-    output_file_high = os.path.join(DATA_PATH, 'pRNA high copy number.fasta')
-    output_file_low = os.path.join(DATA_PATH, 'pRNA low copy number.fasta')
+    output_file_high = Path(DATA_PATH, 'pRNA high copy number.fasta')
+    output_file_low = Path(DATA_PATH, 'pRNA low copy number.fasta')
     with open(output_file_high, 'w') as file:
         for idx, sequence in high_cp.items():
             file.write(f'>{idx}\n{sequence}\n')

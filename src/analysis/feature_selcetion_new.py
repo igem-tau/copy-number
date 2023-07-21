@@ -1,15 +1,15 @@
-from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.model_selection import train_test_split
-from scipy.stats import spearmanr
 from boruta import BorutaPy
 from BorutaShap import BorutaShap
-from sklearn.feature_selection import SelectFromModel
-from xgboost import XGBRegressor
-import pandas as pd
-import numpy as np
-import os
 from joblib import load
-from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from scipy.stats import spearmanr
+from sklearn.feature_selection import mutual_info_regression, mutual_info_classif, SelectFromModel
+from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.model_selection import train_test_split
+from src.utils import get_current_file_parent_path
+from xgboost import XGBRegressor
 
 '''
 https://github.com/Ekeany/Boruta-Shap
@@ -17,8 +17,8 @@ https://towardsdatascience.com/boruta-explained-the-way-i-wish-someone-explained
 https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html
 '''
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(current_dir, '..', '..', 'data')
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
 if __name__ == '__main__':
     # # load data
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # data['RNAp_y'] = RNAp_y
     # pd.concat([data['RNAp_X'], data['RNAp_y']]).to_csv(os.path.join(DATA_PATH, 'p_RNA_DataFrames_with_features.csv'))
 
-    data = load(os.path.join(DATA_PATH, 'DataFrames_with_features.joblib'))
+    data = load(Path(DATA_PATH, 'DataFrames_with_features.joblib'))
     RNAp_X = data['RNAp_X']
     RNAp_y = data['RNAp_y']
 
@@ -161,8 +161,3 @@ if __name__ == '__main__':
     print(f'spearman correlation value for xgboost with boruta shap: {spearman_boruta_shap}')
     spearman_selector, _ = spearmanr(y_test, y_pred_2)
     print(f'spearman correlation value for xgboost with selector: {spearman_selector}')
-
-
-
-
-
