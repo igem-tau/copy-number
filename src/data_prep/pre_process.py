@@ -11,9 +11,9 @@ from src.features.nucleotide_features import generate_one_hot_encoding, generate
 from src.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from src.features.pssm_feature import calc_series_pssm_score
 from src.features.delta_G.TX_prediction import calculate_dG_and_Tx
-from src.models.models_functions import is_high_copy_number
 from src.utils import get_current_file_parent_path
 import sys
+from typing import Optional, Tuple, Union
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
@@ -21,6 +21,7 @@ timepoints_df = pd.read_excel(
     Path(DATA_PATH, 'sup_data_3_seq_cnt_p_rna.xlsx'))  # priming RNA time points
 PSSM_THRESHOLD_PATH_p = Path(DATA_PATH, 'pssm_threshold_pRNA.pkl')
 PSSM_THRESHOLD_PATH_i = Path(DATA_PATH, 'pssm_threshold_iRNA.pkl')
+TARGET_COLUMN = 'Copy Number'
 
 
 def get_RNAp_data():
@@ -31,8 +32,8 @@ def get_RNAp_data():
     RNAp_df = pd.read_excel(Path(DATA_PATH, 'sup_data_1_p_rna.xlsx'),
                             names=RNA_DATA_COLUMNS)  # priming RNA
     RNAp_df['cnt_grw'] = RNAp_df['Final Counts'] / RNAp_df['Initial Counts']
-    shift = abs(RNAp_df['Copy Number'].min()) + 1e-10
-    RNAp_df['copy_num_log'] = np.log(RNAp_df['Copy Number'] + shift)
+    shift = abs(RNAp_df[TARGET_COLUMN].min()) + 1e-10
+    RNAp_df['copy_num_log'] = np.log(RNAp_df[TARGET_COLUMN] + shift)
     return RNAp_df
 
 
@@ -66,18 +67,15 @@ def get_RNAp_merged_data():
     return merged
 
 
-def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None, type: str = 'p', cp: bool = True, val: bool = False) -> pd.DataFrame:
-    RNA_data.reset_index(drop=True, inplace=True)
-    if ref_RNA_data is not None:
-        ref_RNA_data.reset_index(drop=True, inplace=True)
-
+def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
+                      reference_RNA_data: Optional[pd.DataFrame] = None, cp: bool = True) -> pd.DataFrame:
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
     RNA_features = []
 
     RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
 
-    if val:
-        RNA_pssm_score = calc_series_pssm_score(RNA_data, ref_RNA_data)
+    if reference_RNA_data is not None:
+        RNA_pssm_score = calc_series_pssm_score(RNA_data, reference_RNA_data)
     else:
         RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
     RNA_features.append(RNA_pssm_score)
@@ -121,44 +119,108 @@ def remove_zero_variance_features(X: pd.DataFrame) -> pd.DataFrame:
     zero_variance_cols = X.columns[X.var() == 0]
     return X.drop(zero_variance_cols, axis=1)
 
-def split_for_validation(RNA_data):
-    RNA_X, RNA_X_val, y, y_val = train_test_split(RNA_data.drop(columns=['Copy Number']), RNA_data['Copy Number'], test_size=0.15, random_state=0,
-                                                        stratify=is_high_copy_number(RNA_data['Copy Number']))
-    RNA_data = pd.concat([RNA_X, pd.DataFrame(y, columns=['Copy Number'])], axis = 1)
-    RNAp_data_val = pd.concat([RNA_X_val, pd.DataFrame(y_val, columns=['Copy Number'])], axis = 1)
-    return RNA_data, RNAp_data_val
+
+def is_high_copy_number(copy_number: 'pd.Series[int]') -> 'pd.Series[int]':
+    percentage = 0.2
+    n = int(copy_number.shape[0] * percentage)
+    high_cp = copy_number.nlargest(n)
+    return (copy_number >= high_cp.min()).astype(int)
+
+
+def split_for_testing(X: pd.DataFrame, y: Union[pd.DataFrame, pd.Series],
+                      stratify_by=None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    RNA_X, RNA_X_test, y, y_test = train_test_split(X, y,
+                                                    test_size=0.15, random_state=0,
+                                                    stratify=stratify_by)
+    RNA_data_train_val = pd.concat([RNA_X, pd.DataFrame(y, columns=[TARGET_COLUMN])], axis=1).\
+        reset_index(drop=True)
+    RNA_data_test = pd.concat([RNA_X_test, pd.DataFrame(y_test, columns=[TARGET_COLUMN])], axis=1).\
+        reset_index(drop=True)
+    return RNA_data_train_val, RNA_data_test
+
+
+def train_validation_split(X, y, stratify_by: pd.Series,
+                           random_state: int = 0) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15, random_state=random_state,
+                                                      stratify=stratify_by)
+    return X_train, X_val, y_train, y_val
+
+
+# def train_validation_test_split(X: pd.DataFrame, y: pd.Series, random_state: int = 0):
+#     TARGET_COLUMN_NAME = TARGET_COLUMN
+#     y.rename(TARGET_COLUMN_NAME)
+#     data = pd.concat((X, y), axis=1)
+#     stratify_col = is_high_copy_number(y)
+#     data_temp, data_test = split_for_testing(data)
+#     data_train, data_validation = train_validation_split(data_temp, stratify_col, random_state)
+#     X_train = data_train.drop(TARGET_COLUMN_NAME, axis=1)
+#     y_train = data_train[TARGET_COLUMN_NAME]
+#     X_valid = data_validation.drop(TARGET_COLUMN_NAME, axis=1)
+#     y_valid = data_validation[TARGET_COLUMN_NAME]
+#     X_test = data_test.drop(TARGET_COLUMN_NAME, axis=1)
+#     y_test = data_test[TARGET_COLUMN_NAME]
+#
+#     return X_train, X_valid, X_test, y_train, y_valid, y_test
 
 
 def save_features_df(p=True, i=True, shared=True, specify_date = False):
     data = {}
     if p:
+        print('start generating RNAp features')
         RNAp_data = get_RNAp_data()
-        RNAp_data, RNAp_data_val = split_for_validation(RNAp_data)
-        RNAp_X, RNAp_y = generate_features(RNAp_data, type='p', val=False)
-        RNAp_X_val, RNAp_y_val = generate_features(RNAp_data_val, RNAp_data, type='p', val=True)
-        data['RNAp_X'] = remove_zero_variance_features(RNAp_X)
-        data['RNAp_y'] = RNAp_y
-        data['RNAp_X_val'] = remove_zero_variance_features(RNAp_X_val)
-        data['RNAp_y_val'] = RNAp_y_val
+        RNAp_X = RNAp_data.drop(TARGET_COLUMN, axis=1)
+        RNAp_y = RNAp_data[TARGET_COLUMN]
+        RNAp_stratify_col = is_high_copy_number(RNAp_y).rename('stratify')
+        RNAp_data_train_val, RNAp_data_test = split_for_testing(RNAp_X, RNAp_y, stratify_by=RNAp_stratify_col)
+        RNAp_stratify_train_val, RNAp_stratify_test = split_for_testing(RNAp_stratify_col, RNAp_y,
+                                                                            stratify_by=RNAp_stratify_col)
+        RNAp_stratify_train_val = RNAp_stratify_train_val['stratify']
+        RNAp_X_train_val, RNAp_y_train_val = generate_features(RNAp_data_train_val, rna_type='p')
+        RNAp_X_test, RNAp_y_test = generate_features(RNAp_data_test, reference_RNA_data=RNAp_data_train_val, rna_type='p')
+        final_RNAp_X_train_val = remove_zero_variance_features(RNAp_X_train_val)
+        final_RNAp_X_test = RNAp_X_test[final_RNAp_X_train_val.columns]
+        data['RNAp_X_train_val'] = final_RNAp_X_train_val
+        data['RNAp_y_train_val'] = RNAp_y_train_val
+        data['RNAp_X_test'] = final_RNAp_X_test
+        data['RNAp_y_test'] = RNAp_y_test
+        data['RNAp_stratify_by'] = RNAp_stratify_train_val
+        data['RNAp_X'] = pd.concat((final_RNAp_X_train_val, final_RNAp_X_test), ignore_index=True)
+        data['RNAp_y'] = pd.concat((RNAp_y_train_val, RNAp_y_test), ignore_index=True)
     if i:
+        print('start generating RNAi features')
         RNAi_data = get_RNAi_data()
-        RNAi_data, RNAi_data_val = split_for_validation(RNAi_data)
-        RNAi_X, RNAi_y = generate_features(RNAi_data, type='i', val=False)
-        RNAi_X_val, RNAi_y_val = generate_features(RNAi_data_val, RNAi_data, type='i', val=True)
-        data['RNAi_X'] = remove_zero_variance_features(RNAi_X)
-        data['RNAi_y'] = RNAi_y
-        data['RNAi_X_val'] = remove_zero_variance_features(RNAi_X_val)
-        data['RNAi_y_val'] = RNAi_y_val
+        RNAi_X = RNAi_data.drop(TARGET_COLUMN, axis=1)
+        RNAi_y = RNAi_data[TARGET_COLUMN]
+        RNAi_stratify_col = is_high_copy_number(RNAi_y).rename('stratify')
+        RNAi_data_train_val, RNAi_data_test = split_for_testing(RNAi_X, RNAi_y, stratify_by=RNAi_stratify_col)
+        RNAi_stratify_train_val, RNAi_stratify_test = split_for_testing(RNAi_stratify_col, RNAi_y,
+                                                                            stratify_by=RNAi_stratify_col)
+        RNAi_stratify_train_val = RNAi_stratify_train_val['stratify']
+        RNAi_X_train_val, RNAi_y_train_val = generate_features(RNAi_data_train_val, rna_type='p')
+        RNAi_X_test, RNAi_y_test = generate_features(RNAi_data_test, reference_RNA_data=RNAi_data_train_val, rna_type='p')
+        final_RNAi_X_train_val = remove_zero_variance_features(RNAi_X_train_val)
+        final_RNAi_X_test = RNAi_X_test[final_RNAi_X_train_val.columns]
+        data['RNAi_X_train_val'] = final_RNAi_X_train_val
+        data['RNAi_y_train_val'] = RNAi_y_train_val
+        data['RNAi_X_test'] = RNAi_X_test[final_RNAi_X_train_val.columns]
+        data['RNAi_y_test'] = RNAi_y_test
+        data['RNAi_stratify_by'] = RNAi_stratify_train_val
+        data['RNAi_X'] = pd.concat((final_RNAi_X_train_val, final_RNAi_X_test), ignore_index=True)
+        data['RNAi_y'] = pd.concat((RNAi_y_train_val, RNAi_y_test), ignore_index=True)
 
     if i and p and shared:
-        RNAp_X_shared_model = generate_features_combined(RNAi_X, type='p')
-        RNAi_X_shared_model = generate_features_combined(RNAp_X, type='i')
+        # TODO - fix the pssm score calculation fir the original sequence
+        #  (if we already have the matrix from the RNAi and RNAp features we can use it
+        #  which means we need to save it somehow)
+        print('start generating shared RNA features')
+        RNAp_X_shared_model = generate_features_combined(RNAp_X_train_val, rna_type='p')
+        RNAi_X_shared_model = generate_features_combined(RNAi_X_train_val, rna_type='i')
         if (RNAi_X_shared_model.columns != RNAp_X_shared_model.columns).any():
             raise Exception('the columns in the shared RNAi and RNAp do not match, must be fixed in order to continue')
         else:
             X_shared_model = remove_zero_variance_features(
                 pd.concat([RNAp_X_shared_model, RNAi_X_shared_model], axis=0, ignore_index=True))
-            Y_shared_model = pd.concat([RNAi_y, RNAp_y], axis=0, ignore_index=True)
+            Y_shared_model = pd.concat([RNAp_y_train_val, RNAi_y_train_val], axis=0, ignore_index=True)
         data['X_shared'] = X_shared_model
         data['Y_shared'] = Y_shared_model
 
@@ -195,8 +257,8 @@ def get_features_df(p=True, i=True, shared=True, specify_date = False):
 def create_fasta_file(RNA_df):
     percentage = 0.15
     n = int(len(RNA_df) * percentage)
-    high_cp = RNA_df.nlargest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
-    low_cp = RNA_df.nsmallest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
+    high_cp = RNA_df.nlargest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
+    low_cp = RNA_df.nsmallest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
     output_file_high = Path(DATA_PATH, 'pRNA high copy number.fasta')
     output_file_low = Path(DATA_PATH, 'pRNA low copy number.fasta')
     with open(output_file_high, 'w') as file:
@@ -205,6 +267,7 @@ def create_fasta_file(RNA_df):
     with open(output_file_low, 'w') as file:
         for idx, sequence in low_cp.items():
             file.write(f'>{idx}\n{sequence}\n')
+
 
 if __name__ == '__main__':
     save_features_df()

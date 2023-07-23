@@ -105,8 +105,8 @@ def plot_features_exploration(runs_df, model_type: MODEL_TYPES, rna_type: RNA_TY
 
 def main() -> None:
     data = get_features_df()
-    RNAp_data = (data['RNAp_X'], data['RNAp_y'])
-    RNAi_data = (data['RNAi_X'], data['RNAi_y'])
+    RNAp_data = (data['RNAp_X_train_val'], data['RNAp_y_train_val'])
+    RNAi_data = (data['RNAi_X_train_val'], data['RNAi_y_train_val'])
 
     for model_type in ['lasso', 'xgboost']:
         for (X, y), rna_type in [(RNAp_data, 'p'), (RNAi_data, 'i')]:
