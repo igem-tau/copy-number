@@ -85,35 +85,35 @@ def generate_features(RNA_data: pd.DataFrame, ref_RNA_data: pd.DataFrame = None,
     RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(generate_df_from_seq(RNA_seq))
-    RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if type == 'p' else RNAi_EDITED_ZONES))
+    RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
     RNA_features.append(entropy(RNA_seq))
     RNA_features.append(calculate_dG_and_Tx(RNA_seq)) # 3 features based on biophysical properties (deltaG)
     RNA_features.append(score_denovo_motifs(RNA_seq))
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)
-    RNA_y = RNA_data['Copy Number'] if cp else None
+    RNA_y = RNA_data[TARGET_COLUMN] if cp else None
     return RNA_X, RNA_y
 
 
-def generate_features_combined(RNA_features: pd.DataFrame, type: str = 'p') -> pd.DataFrame:
+def generate_features_combined(RNA_features: pd.DataFrame, rna_type: str = 'p') -> pd.DataFrame:
     """
     RNA_features: pd.DataFrame, RNA features to concat to the original sequence, for example if we calculate features
      for the original seq of RNAp the RNA_features are for RNAi.
     """
-    RNA_seq_original = pd.Series(RNAp_SEQ_ORIGINAL if type == 'p' else RNAi_SEQ_ORIGINAL)
+    RNA_seq_original = pd.Series(RNAp_SEQ_ORIGINAL if rna_type == 'p' else RNAi_SEQ_ORIGINAL)
     RNA_df = pd.concat([RNA_seq_original, calc_predicted_promoter_strength(RNA_seq_original)], axis=1)
     RNA_df.rename(columns={RNA_df.columns[0]: 'Promoter Sequence (-35 to +1)'}, inplace=True)
-    RNA_X, _ = generate_features(RNA_df, type, cp=False)
+    RNA_X, _ = generate_features(RNA_df, rna_type, cp=False)
     RNA_original_features = pd.DataFrame(np.repeat(RNA_X.values, RNA_features.shape[0], axis=0), columns=RNA_X.columns)
-    if type == 'p':
+    if rna_type == 'p':
         RNA_X_shared_model = pd.merge(RNA_original_features, RNA_features, left_index=True, right_index=True,
                                       suffixes=('_p', '_i'))
     else:
         RNA_X_shared_model = pd.merge(RNA_features, RNA_original_features, left_index=True, right_index=True,
                                       suffixes=('_p', '_i'))
 
-    RNA_X_shared_model['changed RNA type'] = 0 if type == 'p' else 1  # RNAp will be 0 (and RNAi will be 1)
+    RNA_X_shared_model['changed RNA type'] = 0 if rna_type == 'p' else 1  # RNAp will be 0 (and RNAi will be 1)
     return RNA_X_shared_model
 
 

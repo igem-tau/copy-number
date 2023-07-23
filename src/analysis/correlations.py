@@ -83,12 +83,12 @@ def PSSM_corr_plot(RNA_pssm_score: pd.Series, copy_number: pd.Series, title:str)
     pd.DataFrame(RNAp_pssm_correlations).plot.bar(figsize=(15, 5))
     plt.title(title)
 
-def promoter_strength_plot(RNA_X, RNA_y, RNA_correlations_df, type:str='p'):
+def promoter_strength_plot(RNA_X, RNA_y, RNA_correlations_df, rna_type:str= 'p'):
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
     ax.scatter(RNA_X['Predicted Promoter Strength (KbT)'], RNA_y)
-    ax.set_xlabel(f'RNA{type} Promoter Strength')
-    ax.set_ylabel(f'RNA{type} Predicted Copy Number')
-    ax.set_title(f'RNA{type} Promoter Strength correlation with copy number')
+    ax.set_xlabel(f'RNA{rna_type} Promoter Strength')
+    ax.set_ylabel(f'RNA{rna_type} Predicted Copy Number')
+    ax.set_title(f'RNA{rna_type} Promoter Strength correlation with copy number')
     ax.text(0.8, 0.8, 'MIC=%.4f' % RNA_correlations_df.loc['MIC', 'Predicted Promoter Strength (KbT)'],
             transform=ax.transAxes)
     ax.text(0.8, 0.7, 'MIC pv=%.4f' % RNA_correlations_df.loc['MIC pv', 'Predicted Promoter Strength (KbT)'],
@@ -144,6 +144,6 @@ if __name__ == '__main__':
 
     # Display correlations
     # promoter strength:
-    promoter_strength_plot(RNAp_X, RNAp_y, RNAp_correlations_df, type='p')
-    promoter_strength_plot(RNAi_X, RNAi_y, RNAi_correlations_df, type='i')
+    promoter_strength_plot(RNAp_X, RNAp_y, RNAp_correlations_df, rna_type='p')
+    promoter_strength_plot(RNAi_X, RNAi_y, RNAi_correlations_df, rna_type='i')
 

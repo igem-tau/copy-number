@@ -12,9 +12,11 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 PSSM_THRESHOLD_PATH_p = Path(DATA_PATH, 'pssm_threshold_pRNA.pkl')
 PSSM_THRESHOLD_PATH_i = Path(DATA_PATH, 'pssm_threshold_iRNA.pkl')
 
+
+# TODO - check redundancy - not in use
 # a function to calculate is a copy-number part of the top 20% in relation to all the others
-def is_high_copy_number(copy_number: 'pd.Series[int]', type: str='p') -> 'pd.Series[int]':
-    if type == 'p':
+def is_high_copy_number(copy_number: 'pd.Series[int]', rna_type: str = 'p') -> 'pd.Series[int]':
+    if rna_type == 'p':
         PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
     else:
         PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
@@ -47,14 +49,14 @@ def calc_series_pssm_score(seq: 'pd.Series[str]', ref_seq: 'pd.Series[str]', pss
     pssm_scores = seq['Promoter Sequence (-35 to +1)'].apply(partial(calc_pssm_score, pssm=pssm))
     return pssm_scores.rename('pssm_score')
 
-def set_pssm_thresholds(RNA_df: pd.DataFrame , type:str = 'p') -> None:
+def set_pssm_thresholds(RNA_df: pd.DataFrame, rna_type:str = 'p') -> None:
     percentage = 0.2
     n = int(len(RNA_df) * percentage)
     high_cp = RNA_df.nlargest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
     low_cp = RNA_df.nsmallest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
     RNA_pssm = calc_pssm_matrix(high_cp)
     # pssm_threshold = {'high': high_cp.min(), 'low': low_cp.max(), 'pssm_matrix': RNA_pssm}
-    # if type == 'p':
+    # if rna_type == 'p':
     #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
     # else:
     #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
