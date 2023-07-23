@@ -27,7 +27,7 @@ def get_seeds(num_seeds: int) -> np.ndarray:
 
 def get_features_exploration_path(model_type: MODEL_TYPES, rna_type: RNA_TYPES) -> Path:
     return Path(
-        get_current_file_parent_path(),
+        get_current_file_parent_path(__file__),
         RELATIVE_DATA_PATH,
         f'{model_type}_features_importance_RNA{rna_type}_exploration_data.joblib'
     )
@@ -35,7 +35,7 @@ def get_features_exploration_path(model_type: MODEL_TYPES, rna_type: RNA_TYPES) 
 
 def get_features_exploration_plot_path(model_type: MODEL_TYPES, rna_type: RNA_TYPES) -> Path:
     return Path(
-        get_current_file_parent_path(),
+        get_current_file_parent_path(__file__),
         RELATIVE_FIGURES_PATH,
         f'{model_type}_RNA{rna_type}_features_importance_exploration.jpg'
     )
