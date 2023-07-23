@@ -1,11 +1,8 @@
-from joblib import dump
-import pandas as pd
 from pathlib import Path
+from src.analysis.forward_features_selection import multi_split_forward_selection
 from src.utils import get_current_file_parent_path
-
-from src.analysis.feature_selection_with_XGB import xgb_feature_selection
-from src.data_prep.pre_process import get_RNAp_data, split_for_validation, \
-    generate_features, remove_zero_variance_features, create_fasta_file
+from src.data_prep.pre_process import get_RNAp_data, split_for_testing, create_fasta_file, get_features_df
+from xgboost import XGBRegressor
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
@@ -15,23 +12,15 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
 
 if __name__ == '__main__':
-    # load data
-    RNAp_data = get_RNAp_data()
-
-    # split data to train and validation
-    RNAp_data, RNAp_data_val = split_for_validation(RNAp_data)
-    create_fasta_file(RNAp_data)
-
-    # features extraction
-    data = {}
-    RNAp_X, RNAp_y = generate_features(RNAp_data, type='p', val=False)
-    data['RNAp_X'] = remove_zero_variance_features(RNAp_X)
-    data['RNAp_y'] = RNAp_y
-    dump(data, Path(DATA_PATH, 'DataFrames_with_features.joblib'))
-    pd.concat([data['RNAp_X'], data['RNAp_y']]).to_csv(Path(DATA_PATH, 'p_RNA_DataFrames_with_features.csv'))
+    # load data with features
+    data = get_features_df(p=True, i=False)
+    RNAp_X_train_val = data['RNAp_X_train_val']
+    RNAp_y_train_val = data['RNAp_y_train_val']
+    RNAp_X_test = data['RNAp_X_test']
+    RNAp_y_test = data['RNAp_y_test']
 
     # features selection
-    fs_df = xgb_feature_selection(RNAp_X, RNAp_y)
+    fs_df = multi_split_forward_selection(data, rna_type='p', model=XGBRegressor(), model_type='xgboost')
     chosen_features = []
     # hyperparameters tuning
 
