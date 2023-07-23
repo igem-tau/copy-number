@@ -1,13 +1,12 @@
 from boruta import BorutaPy
 from BorutaShap import BorutaShap
-from joblib import load
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from scipy.stats import spearmanr
 from sklearn.feature_selection import mutual_info_regression, mutual_info_classif, SelectFromModel
 from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.model_selection import train_test_split
+from src.data_prep.pre_process import get_features_df, train_validation_split
 from src.utils import get_current_file_parent_path
 from xgboost import XGBRegressor
 
@@ -21,22 +20,10 @@ CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
 if __name__ == '__main__':
-    # # load data
-    # RNAp_data = get_RNAp_data()
-    #
-    # # split data to train and validation
-    # RNAp_data, RNAp_data_val = split_for_validation(RNAp_data)
-    #
-    # # features extraction
-    # data = {}
-    # RNAp_X, RNAp_y = generate_features(RNAp_data, type='p', val=False)
-    # data['RNAp_X'] = remove_zero_variance_features(RNAp_X)
-    # data['RNAp_y'] = RNAp_y
-    # pd.concat([data['RNAp_X'], data['RNAp_y']]).to_csv(os.path.join(DATA_PATH, 'p_RNA_DataFrames_with_features.csv'))
-
-    data = load(Path(DATA_PATH, 'DataFrames_with_features.joblib'))
-    RNAp_X = data['RNAp_X']
-    RNAp_y = data['RNAp_y']
+    data = get_features_df(p=True, i=False)
+    RNAp_X = data['RNAp_X_train_val']
+    RNAp_y = data['RNAp_y_train_val']
+    RNAp_stratify_train_val = data['RNAp_stratify_by']
 
     # feature vetting: select features based on correlations only
     # correlation between features and copy number (maximal) with MI
@@ -82,7 +69,7 @@ if __name__ == '__main__':
     RNAp_X_new = RNAp_X_new.loc[:, new_features]
 
     # feature selection
-    X_train, X_test, y_train, y_test = train_test_split(RNAp_X_new, RNAp_y, test_size=0.15) # TODO: stratify
+    X_train, X_val, y_train, y_val = train_validation_split(RNAp_X_new, RNAp_y, stratify_by=RNAp_stratify_train_val)
     estimator = XGBRegressor(max_depth=3, n_estimators=10)  # XGBoost regressor with minimal properties (default is 6 and 100)
     # randomized the estimator parameters?
     selected_features_list = []
@@ -123,7 +110,7 @@ if __name__ == '__main__':
     # Feature_Selector.plot(which_features='all')
     features_to_remove = Feature_Selector.features_to_remove
     X_train_boruta_shap = X_train.drop(columns=features_to_remove)
-    X_test_boruta_shap = X_test.drop(columns=features_to_remove)
+    X_val_boruta_shap = X_val.drop(columns=features_to_remove)
     print(f'number of selected features with boruta shap: {len(X_train_boruta_shap.columns)}')
     print(f'selected features with boruta shap: {list(X_train_boruta_shap.columns)}')
 
@@ -131,33 +118,33 @@ if __name__ == '__main__':
     # evaluation of three methods:
     xgb_model = XGBRegressor()
     X_train_boruta = pd.concat([X_train.iloc[:, boruta.support_], X_train.iloc[:, boruta.support_weak_]], axis=1)
-    X_test_boruta = pd.concat([X_test.iloc[:, boruta.support_], X_test.iloc[:, boruta.support_weak_]], axis=1)
+    X_val_boruta = pd.concat([X_val.iloc[:, boruta.support_], X_val.iloc[:, boruta.support_weak_]], axis=1)
     xgb_model.fit(X_train_boruta, y_train)
-    y_pred_boruta = xgb_model.predict(X_test_boruta)
+    y_pred_boruta = xgb_model.predict(X_val_boruta)
 
     xgb_model.fit(X_train_boruta_shap, y_train)
-    y_pred_boruta_shap = xgb_model.predict(X_test_boruta_shap)
+    y_pred_boruta_shap = xgb_model.predict(X_val_boruta_shap)
 
     xgb_model.fit(X_train.loc[:, selected_features_final1], y_train)
-    y_pred_2 = xgb_model.predict(X_test.loc[:, selected_features_final1])
+    y_pred_2 = xgb_model.predict(X_val.loc[:, selected_features_final1])
 
-    r2_boruta = r2_score(y_test, y_pred_boruta)
+    r2_boruta = r2_score(y_val, y_pred_boruta)
     print(f'R^2 value for xgboost with boruta: {r2_boruta}')
-    r2_boruta_shap = r2_score(y_test, y_pred_boruta_shap)
+    r2_boruta_shap = r2_score(y_val, y_pred_boruta_shap)
     print(f'R^2 value for xgboost with boruta shap: {r2_boruta_shap}')
-    r2_selector = r2_score(y_test, y_pred_2)
+    r2_selector = r2_score(y_val, y_pred_2)
     print(f'R^2 value for xgboost with selector: {r2_selector}')
 
-    mse_score_boruta = mean_squared_error(y_test, y_pred_boruta)
+    mse_score_boruta = mean_squared_error(y_val, y_pred_boruta)
     print('the mse score for xgboost %.5f with boruta' % mse_score_boruta)
-    mse_score_boruta_shap = mean_squared_error(y_test, y_pred_boruta_shap)
+    mse_score_boruta_shap = mean_squared_error(y_val, y_pred_boruta_shap)
     print('the mse score for xgboost %.5f with boruta shap' % mse_score_boruta_shap)
-    mse_score_selector = mean_squared_error(y_test, y_pred_2)
+    mse_score_selector = mean_squared_error(y_val, y_pred_2)
     print('the mse score for xgboost %.5f with selector' % mse_score_selector)
 
-    spearman_boruta, _ = spearmanr(y_test, y_pred_boruta)
+    spearman_boruta, _ = spearmanr(y_val, y_pred_boruta)
     print(f'spearman correlation value for xgboost with boruta: {spearman_boruta}')
-    spearman_boruta_shap, _ = spearmanr(y_test, y_pred_boruta_shap)
+    spearman_boruta_shap, _ = spearmanr(y_val, y_pred_boruta_shap)
     print(f'spearman correlation value for xgboost with boruta shap: {spearman_boruta_shap}')
-    spearman_selector, _ = spearmanr(y_test, y_pred_2)
+    spearman_selector, _ = spearmanr(y_val, y_pred_2)
     print(f'spearman correlation value for xgboost with selector: {spearman_selector}')
