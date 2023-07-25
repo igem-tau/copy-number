@@ -13,7 +13,7 @@ from xgboost import XGBRegressor
 
 
 RNA_TYPES = Literal['p', 'i']
-RELATIVE_DATA_PATH = Path('..', '..', 'data')
+RELATIVE_DATA_PATH = Path('..', '..', 'data', 'feature_selection')
 
 
 def get_seeds(num_seeds: int) -> np.ndarray:
@@ -57,19 +57,20 @@ def forward_selection(X_train: pd.DataFrame, y_train: pd.Series, X_valid: pd.Dat
 
 def multi_split_forward_selection(data: Dict[str, Union[pd.DataFrame, pd.Series]], rna_type: RNA_TYPES,
                                   model: Any, model_type:  str) -> pd.DataFrame:
+    X_train_val, y_train_val = data[f'RNA{rna_type}_X_train_val'], data[f'RNA{rna_type}_y_train_val']
     rows = []
     # X, y = remove_outliers(X, y)
     seeds = get_seeds(20)
     for seed in tqdm(seeds):
         X_train, X_val, y_train, y_val = train_validation_split(
-            data[f'RNA{rna_type}_X_train_val'], data[f'RNA{rna_type}_y_train_val'],
+            X_train_val, y_train_val,
             stratify_by=data[f'RNA{rna_type}_stratify_by'], random_state=seed
         )
         X_test = data[f'RNA{rna_type}_X_test']
         y_test = data[f'RNA{rna_type}_y_test']
 
         selected_features, validation_score = forward_selection(X_train, y_train, X_val, y_val, model)
-        model.fit(X_train[selected_features], y_train)
+        model.fit(X_train_val[selected_features], y_train_val)
         y_pred = model.predict(X_test[selected_features])
         test_score = r2_score(y_test, y_pred)
         new_row = pd.Series({'features': selected_features, 'validation_score': validation_score,
@@ -87,8 +88,7 @@ def main():
     RNA_TYPE_RUNS = ('p', 'i')
     MODEL_RUNS = (
         (LinearRegression(), 'linear_regression'),
-        (XGBRegressor(), 'xgboost'),
-        (Lasso(alpha=0.3, max_iter=5000), 'lasso')
+        (XGBRegressor(), 'xgboost')
     )
 
     for rna_type in RNA_TYPE_RUNS:
