@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from sklearn.model_selection import train_test_split
+from src.config.config import get_model_features
 from src.consts import *
 from src.features.denovo_motifs import score_denovo_motifs
 from src.features.motifs import calc_motifs_pv
@@ -65,6 +66,49 @@ def get_RNAp_merged_data():
     timepoints_df.rename(columns={'Promoter Sequence (-35 to +1)': 'Promoter Sequence'}, inplace=True)
     merged = pd.merge(RNAp_df, timepoints_df, on='Promoter Sequence')
     return merged
+
+
+def generate_features_from_config(RNA_data: pd.DataFrame, rna_type: str = 'p',
+                      reference_RNA_data: Optional[pd.DataFrame] = None, cp: bool = True) -> pd.DataFrame:
+    RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
+    RNA_features = []
+
+    model_features = get_model_features()
+    if model_features.get("promoter_strength"):
+        RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
+
+    if model_features.get("pssm_score"):
+        if reference_RNA_data is not None:
+            RNA_pssm_score = calc_series_pssm_score(RNA_data, reference_RNA_data)
+        else:
+            RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
+        RNA_features.append(RNA_pssm_score)
+
+    if model_features.get("motifs"):
+        RNA_features.append(calc_motifs_pv(RNA_seq))
+
+    if model_features.get("one_hot_encoding"):
+        RNA_features.append(generate_one_hot_encoding(RNA_seq))
+
+    if model_features.get("seq_nucli_relations"):
+        RNA_features.append(generate_df_from_seq(RNA_seq))
+
+    if model_features.get("promoter_zones_strength"):
+        RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
+
+    if model_features.get("entropy"):
+        RNA_features.append(entropy(RNA_seq))
+
+    if model_features.get("dG_and_Tx"):
+        RNA_features.append(calculate_dG_and_Tx(RNA_seq))  # 3 features based on biophysical properties (deltaG)
+
+    if model_features.get("denovo_motifs"):
+        RNA_features.append(score_denovo_motifs(RNA_seq))
+
+    RNA_X = pd.concat(RNA_features, axis=1)
+    RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)
+    RNA_y = RNA_data[TARGET_COLUMN] if cp else None
+    return RNA_X, RNA_y
 
 
 def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
