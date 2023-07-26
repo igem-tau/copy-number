@@ -20,7 +20,7 @@ def get_denovo_motifs_pssms(homer_output_file_loc):
     motifs_dict = {}
     for motif in motifs:
         if motif and not ('NNNNNNNN' in motif):
-            table_motif = motif.split('\n', 1)[1]
+            table_motif = motif.strip().split('\n', 1)[1]
             motif_name = motif.split('\t')[0]
             motif_df = pd.DataFrame(
                 [x.split('\t') for x in table_motif.split('\n')],
