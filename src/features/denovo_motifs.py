@@ -47,7 +47,7 @@ def calc_max_pssm_score_sliding_window(seq: str, pssm: pd.DataFrame) -> float:
     return max_score
 
 
-def score_denovo_motifs(df):
+def score_denovo_motifs(sequences: 'pd.Series[str]'):
     denovo_motifs_features = {}
     high_motifs_dict = get_denovo_motifs_pssms(HOMER_HIGH_MOTIF_PATH)
     low_motifs_dict = get_denovo_motifs_pssms(HOMER_LOW_MOTIF_PATH)
@@ -59,9 +59,14 @@ def score_denovo_motifs(df):
             score = calc_max_pssm_score_sliding_window(seq, low_motifs_dict[motif_name])
             denovo_motifs_features[motif_name + '_denovo_LOW'] = score
         return pd.Series(denovo_motifs_features)
-    return pd.DataFrame(df.apply(seq_score_denovo_motifs))
+    return pd.DataFrame(sequences.apply(seq_score_denovo_motifs))
 
 
 if __name__ == '__main__':
-    example_seq = 'A' * 30
-    print(score_denovo_motifs(example_seq))
+    seq1 = 'A' * 30
+    seq2 = 'C' * 30
+    seq3 = 'G' * 30
+    seq4 = 'T' * 30
+    seq5 = 'TCAATCCTTT' + 'T' * 20
+    seq6 = 'TCAATCCTTT' + 'TAACTGCT' + 'CAGCAGCATACG'
+    print(score_denovo_motifs(pd.Series([seq1, seq2, seq3, seq4, seq5, seq6], name='sequence')))
