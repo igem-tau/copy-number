@@ -1,4 +1,6 @@
 biopython~=1.81
+Boruta==0.3
+BorutaShap==1.0.16
 xgboost~=1.7.5
 statsmodels~=0.13.5
 numpy~=1.24.2
