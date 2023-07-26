@@ -99,6 +99,7 @@ def get_promoter_alignment(fasta_file, prom_seq):
     gap_open_penalty = -3
     gap_extend_penalty = -1
 
+    # assuming there is only one seq in the fasta
     for record in SeqIO.parse(fasta_file, "fasta"):
         sequence = str(record.seq)
 
@@ -236,5 +237,6 @@ if __name__ == '__main__':
     #     find_promoter_alignment_2(os.path.join(fastas_dir, fasta_file), promoter_sequence_p)
 
     # match_promoter_vs_rna_p()
-    check_low_dist_fastas()
+    # check_low_dist_fastas()
+    parse_fastas()
 
