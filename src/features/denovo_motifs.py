@@ -35,8 +35,8 @@ def get_denovo_motifs_pssms(homer_output_file_loc):
 def calc_max_pssm_score_sliding_window(seq: str, pssm: pd.DataFrame) -> float:
     max_score = 0
     scores = []
-    num_windows = len(seq) - len(pssm)
-    if num_windows >= 0:
+    num_windows = len(seq) - len(pssm) + 1
+    if num_windows > 0:
         for j in range(num_windows):
             score = 0
             for i in range(len(pssm)):
