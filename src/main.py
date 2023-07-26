@@ -39,9 +39,6 @@ def combine_all_features(df: pd.DataFrame, x_col: str, y_col: str, **kwargs):
     return X, y
 
 
-
-
-
 def main():
     warnings.simplefilter(action='ignore', category=FutureWarning)
 

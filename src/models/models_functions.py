@@ -15,6 +15,7 @@ def remove_outliers(X: pd.DataFrame, y: pd.DataFrame):
     y = y[(y > lower_fence) & (y < higher_fence)]
     return X, y
 
+
 def scale(X1, X2):
     numeric_features = X1.select_dtypes(include='float64', exclude='int64')
     scaler = StandardScaler()
