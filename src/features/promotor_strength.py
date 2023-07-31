@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import seaborn as sns
+from src.config.config import get_section_features
 from src.consts import *
 from src.utils import get_current_file_parent_path
 from typing import List, Tuple, Union
@@ -53,8 +54,11 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
             strength += energy_matrix_.loc[i, seq[i - START_INDEX]]
         return strength
 
+    conf_zones = get_section_features(CONF_ZONES_SEC_NAME)
+    wanted_zones = [zones[i] for i, v in enumerate(conf_zones) if conf_zones[v]]
+
     zones_strength = {}
-    for zone in zones:
+    for zone in wanted_zones:
         strength = seq.apply(
             partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
         )
@@ -66,3 +70,13 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
 def calc_predicted_promoter_strength(seq: Union[str, 'pd.Series[str]']) -> Union[float, 'pd.Series[float]']:
     predicted_promoter_strength = calc_promoter_zones_strength(seq, [(-35, -1)])['(-35, -1) predicted strength']
     return predicted_promoter_strength.rename('Predicted Promoter Strength (KbT)')
+
+
+if __name__ == '__main__':
+    seq = pd.Series(["TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT",
+                     "TTGAAATCCTTTTTTTCTGCGCGTAATCTTTTGCTT",
+                     "TAGCGATCCTTTTTTTCTGCCGGTAATCTGCTGCTT",
+                     "GTTAGATCCTTTTTTTCTGCGCGTTATACACTGCTT",
+                     "TTAGAATCGCCTTTTTCTGCGCGTAATCTGCTAAAT"])
+    zones = [(-33, -30), (-11, -8)]
+    calc_promoter_zones_strength(seq, zones)

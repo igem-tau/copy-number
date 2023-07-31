@@ -4,11 +4,12 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from sklearn.model_selection import train_test_split
-from src.config.config import get_model_features
+from src.config.config import get_model_features, get_nonempty_section_names
 from src.consts import *
 from src.features.denovo_motifs import score_denovo_motifs
 from src.features.motifs import calc_motifs_pv
-from src.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq, entropy
+# from src.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq, entropy
+from src.features.nucleotide_features import generate_one_hot_encoding, extract_features, entropy
 from src.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from src.features.pssm_feature import calc_series_pssm_score
 from src.features.delta_G.TX_prediction import calculate_dG_and_Tx
@@ -70,10 +71,13 @@ def get_RNAp_merged_data():
 
 def generate_features_from_config(RNA_data: pd.DataFrame, rna_type: str = 'p',
                       reference_RNA_data: Optional[pd.DataFrame] = None, cp: bool = True) -> pd.DataFrame:
+    feature_select_flag = True  # set to True if feature selection was applied
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
     RNA_features = []
 
-    model_features = get_model_features()
+    # model_features = get_model_features()
+    model_features = get_nonempty_section_names()
+
     if model_features.get("promoter_strength"):
         RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
 
@@ -87,11 +91,15 @@ def generate_features_from_config(RNA_data: pd.DataFrame, rna_type: str = 'p',
     if model_features.get("motifs"):
         RNA_features.append(calc_motifs_pv(RNA_seq))
 
-    if model_features.get("one_hot_encoding"):
-        RNA_features.append(generate_one_hot_encoding(RNA_seq))
+    # if model_features.get("one_hot_encoding"):
+    #     RNA_features.append(generate_one_hot_encoding(RNA_seq))
+    if "OneHotEncoding" in model_features:
+        RNA_features.append(generate_one_hot_encoding(RNA_seq, feature_select_flag))
 
-    if model_features.get("seq_nucli_relations"):
-        RNA_features.append(generate_df_from_seq(RNA_seq))
+    # if model_features.get("seq_nucli_relations"):
+    #     RNA_features.append(generate_df_from_seq(RNA_seq))
+    if 'NucleotidesRelations' in model_features:
+        RNA_features.append(extract_features(RNA_seq, feature_select_flag))
 
     if model_features.get("promoter_zones_strength"):
         RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))

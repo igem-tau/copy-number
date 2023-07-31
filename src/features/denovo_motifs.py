@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from src.config.config import get_section_features
+from src.consts import *
 from src.utils import get_current_file_parent_path
 
 
@@ -17,18 +19,21 @@ def get_denovo_motifs_pssms(homer_output_file_loc):
         motifs = f.read()
     motifs = motifs.split('>')
 
+    wanted_denovo_motifs = get_section_features(CONF_DENOVO_SEC_NAME)
+
     motifs_dict = {}
     for motif in motifs:
         if motif and not ('NNNNNNNN' in motif):
             table_motif = motif.strip().split('\n', 1)[1]
             motif_name = motif.split('\t')[0]
-            motif_df = pd.DataFrame(
-                [x.split('\t') for x in table_motif.split('\n')],
-                columns=['A', 'C', 'G', 'T'],
-            )
-            motif_df = motif_df.fillna(0)
-            motif_df = motif_df.replace('', 0)
-            motifs_dict[motif_name] = motif_df
+            if motif_name in wanted_denovo_motifs and wanted_denovo_motifs[motif_name]:
+                motif_df = pd.DataFrame(
+                    [x.split('\t') for x in table_motif.split('\n')],
+                    columns=['A', 'C', 'G', 'T'],
+                )
+                motif_df = motif_df.fillna(0)
+                motif_df = motif_df.replace('', 0)
+                motifs_dict[motif_name] = motif_df
     return motifs_dict
 
 
@@ -51,6 +56,7 @@ def score_denovo_motifs(sequences: 'pd.Series[str]'):
     denovo_motifs_features = {}
     high_motifs_dict = get_denovo_motifs_pssms(HOMER_HIGH_MOTIF_PATH)
     low_motifs_dict = get_denovo_motifs_pssms(HOMER_LOW_MOTIF_PATH)
+
     def seq_score_denovo_motifs(seq):
         for motif_name in high_motifs_dict.keys():
             score = calc_max_pssm_score_sliding_window(seq, high_motifs_dict[motif_name])
@@ -59,6 +65,7 @@ def score_denovo_motifs(sequences: 'pd.Series[str]'):
             score = calc_max_pssm_score_sliding_window(seq, low_motifs_dict[motif_name])
             denovo_motifs_features[motif_name + '_denovo_LOW'] = score
         return pd.Series(denovo_motifs_features)
+
     return pd.DataFrame(sequences.apply(seq_score_denovo_motifs))
 
 

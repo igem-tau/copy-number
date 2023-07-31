@@ -1,30 +1,49 @@
 from Bio.SeqUtils import MeltingTemp
+from Bio.Seq import Seq
 from dnacurve import CurvedDNA
 import itertools
 import math
 import pandas as pd
+from src.config.config import get_section_features, get_features_titles_from_section
 from src.consts import *
 import subprocess
 from typing import List, Dict, Tuple, Union
+from tqdm import tqdm
+from datetime import datetime
 
 
-def generate_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
-    def encode(single_nucleotid: pd.Series, index: int = None) -> pd.DataFrame:
+def generate_one_hot_encoding(seq: pd.Series, feature_select: bool = False) -> pd.DataFrame:
+    def encode(single_nucleotide: pd.Series, reference_nucleotide: str, index: int = None) -> pd.DataFrame:
+        # single_nucleotide - the nucleotide from the sequence, reference_nucleotide - the nucleotide checked for one hot encoding
+        # index - the index checked in the loop
         columns = []
-        for nucleotide in NUCLEOTIDES:
-            columns.append((single_nucleotid == nucleotide).astype(int))
+        # for nucleotide in NUCLEOTIDES:
+        #     columns.append((single_nucleotide == nucleotide).astype(int))
+        columns.append((single_nucleotide == reference_nucleotide).astype(int))
         encoded = pd.concat(columns, axis=1)
         if index is not None:
-            columns = [f'{nucleotide}_{index}' for nucleotide in NUCLEOTIDES]
+            # columns = [f'{nucleotide}_{index}' for nucleotide in NUCLEOTIDES]
+            columns = [f'{reference_nucleotide}_{index}']
         else:
             columns = list(NUCLEOTIDES)
         encoded.columns = columns
         return encoded
 
+    # wanted_indices = get_section_features(CONF_ONE_HOT_ENC_SEC_NAME)
+
     full_encoding = []
-    for current_nucleotide_index in range(PROMOTER_LENGTH):
-        current_nucleotide_encoding = encode(seq.str[current_nucleotide_index], current_nucleotide_index + START_INDEX)
-        full_encoding.append(current_nucleotide_encoding)
+    if feature_select:  # if True calculates only the features from the list, else calculates all the features
+        features_list = get_section_features(CONF_ONE_HOT_ENC_SEC_NAME)  # list of the names of the features: 'A_-30', G_-23', etc
+        for feature in features_list:
+            ref_nucleotide, index = feature.split('_')
+            current_nucleotide_encoding = encode(seq.str[int(index) - START_INDEX], ref_nucleotide, int(index))
+            full_encoding.append(current_nucleotide_encoding)
+    else:
+        # for current_nucleotide_index in wanted_indices:
+        for current_nucleotide_index in range(PROMOTER_LENGTH):
+            for ref_nucleotide in NUCLEOTIDES:
+                current_nucleotide_encoding = encode(seq.str[current_nucleotide_index], ref_nucleotide, current_nucleotide_index + START_INDEX)
+                full_encoding.append(current_nucleotide_encoding)
 
     return pd.concat(full_encoding, axis=1)
 
@@ -37,314 +56,562 @@ k_gap = 2
 k_tuple = 2
 
 
-def kmers(seq: str, k: int) -> List[int]:
+def kmers(seq: str, k: int) -> List[str]:
     v = []
     for i in range(len(seq) - k + 1):
         v.append(seq[i:i + k])
     return v
 
 
-def pseudo_knc(seq: str, k: int) -> Dict[str, int]:
+def pseudo_knc(sequences: 'pd.Series[str]', k: int, reference_sequences: List[str] = None) -> pd.DataFrame:
+    # reference_sequences - list of the features i.e ['ACG_frequency', 'CGCT_frequency', etc]
+    # will be provided only if feature_select = True
     ### k-mer ###
     ### A, AA, AAA
 
     d = {}
-    for i in range(1, k + 1):
-        v = list(itertools.product(NUCLEOTIDES, repeat=i))
-        for j in v:
+    bio_sequences = sequences.apply(Seq)
+    if reference_sequences:  # in case that a feature selection was applied and a list of the desired features is given
+        for feature in reference_sequences:
+            search_seq = feature.split('_')[0]
+            key = f'{search_seq}_frequency'
+            res = bio_sequences.apply(
+                lambda sequence: sequence.count_overlap(search_seq) / (len(sequence) - len(j) + 1))
+            d[key] = res
+    else:
+        v = list(itertools.product(NUCLEOTIDES, repeat=k))  # look for kmers of length k
+        for j in tqdm(v):
             search_seq = ''.join(j)
-            key = f'{search_seq}_count'
-            res = seq.count(search_seq)
-            d.update({key: res})
-    return d
+            key = f'{search_seq}_frequency'
+            res = bio_sequences.apply(
+                lambda sequence: sequence.count_overlap(search_seq) / (len(sequence) - len(j) + 1))
+            d[key] = res
+
+    return pd.DataFrame(d)
 
 
-def z_curve(seq: str) -> Dict[str, int]:
+def z_curve(sequences: 'pd.Series[str]', features_list: List[str] = None) -> pd.DataFrame:
     ### Z-Curve ### total = 3
 
-    T = seq.count('T')
-    A = seq.count('A')
-    C = seq.count('C')
-    G = seq.count('G')
+    T = sequences.str.count('T')
+    A = sequences.str.count('A')
+    C = sequences.str.count('C')
+    G = sequences.str.count('G')
 
-    x_ = (A + G) - (C + T)
-    y_ = (A + C) - (G + T)
-    z_ = (A + T) - (C + G)
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        d = {}
+        if 'z_curve_x' in features_list:
+            d['z_curve_x'] = (A + G) - (C + T)
+        if 'z_curve_y' in features_list:
+            d['z_curve_y'] = (A + C) - (G + T)
+        if 'z_curve_z' in features_list:
+            d['z_curve_z'] = (A + T) - (C + G)
 
-    d = {'z_curve_x_': x_, 'z_curve_y_': y_, 'z_curve_z_': z_}
-    return d
+        return pd.DataFrame(d)
+
+    else:
+        x_ = (A + G) - (C + T)
+        y_ = (A + C) - (G + T)
+        z_ = (A + T) - (C + G)
+
+        return pd.DataFrame({'z_curve_x': x_, 'z_curve_y': y_, 'z_curve_z': z_})
 
 
-def gc_content(seq: str) -> Dict[str, float]:
-    T = seq.count('T')
-    A = seq.count('A')
-    C = seq.count('C')
-    G = seq.count('G')
+def gc_content(sequences: 'pd.Series[str]') -> 'pd.Series[float]':
+    T = sequences.str.count('T')
+    A = sequences.str.count('A')
+    C = sequences.str.count('C')
+    G = sequences.str.count('G')
 
     gc_content = (G + C) / (A + C + G + T)
-    return {'gc_content': gc_content}
+    return gc_content.rename('GC content')
 
 
-def cumulative_skew(seq: str) -> Dict[str, float]:
-    T = seq.count('T')
-    A = seq.count('A')
-    C = seq.count('C')
-    G = seq.count('G')
+def cumulative_skew(sequences: 'pd.Series[str]', features_list: List[str] = None) -> pd.DataFrame:
+    T = sequences.str.count('T')
+    A = sequences.str.count('A')
+    C = sequences.str.count('C')
+    G = sequences.str.count('G')
 
-    GCSkew = (G - C) / (G + C)
-    ATSkew = (A - T) / (A + T)
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        d = {}
+        if 'gc_skew' in features_list:
+            d['gc_skew'] = (G - C) / (G + C)
+        if 'at_skew' in features_list:
+            d['at_skew'] = (A - T) / (A + T)
 
-    d = {'gc_skew': GCSkew, 'at_skew': ATSkew}
-    return d
+        return pd.DataFrame(d)
+
+    else:
+        GCSkew = (G - C) / (G + C)
+        ATSkew = (A - T) / (A + T)
+
+        return pd.DataFrame({'gc_skew': GCSkew, 'at_skew': ATSkew})
 
 
-def atgc_ratio(seq: str) -> Dict[str, float]:
-    T = seq.count('T')
-    A = seq.count('A')
-    C = seq.count('C')
-    G = seq.count('G')
+def atgc_ratio(sequences: 'pd.Series[str]') -> 'pd.Series[float]':
+    T = sequences.str.count('T')
+    A = sequences.str.count('A')
+    C = sequences.str.count('C')
+    G = sequences.str.count('G')
 
     atgc_ratio = (A + T) / (G + C)
-    return {'atgc_ratio': atgc_ratio}
+    return atgc_ratio.rename('at/gc_ratio')
 
 
 def get_k_gap_description(nucleotides: Tuple[str], before_gap: int, after_gap: int, k: int, gap: str = '_') -> str:
-    return f'{"".join(nucleotides[:before_gap])}{k * gap}{"".join(nucleotides[before_gap:before_gap + after_gap])}_count'
+    return f'{"".join(nucleotides[:before_gap])}{k * gap}{"".join(nucleotides[before_gap:before_gap + after_gap])}_frequency'
 
 
-def mono_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___1
+def mono_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, features_list: List[tuple] = None) -> pd.DataFrame:  # 1___1
     ### g-gap
-    """
-    AA      0-gap (2-mer)
+    '''
     A_A     1-gap
     A__A    2-gap
     A___A   3-gap
     A____A  4-gap
-    """
+    '''
+
+    def count_matches(V, _gGap):
+        _count = 0
+        for v in V:
+            if v[0] == _gGap[0] and v[-1] == _gGap[1]:
+                _count += 1
+        return _count
 
     d = {}
-    m = m2
-    for i in range(1, g + 1, 1):
-        V = kmers(seq, i + 2)
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        m = features_list
+    else:
+        m = m2
+    V = _kmers[g-1]  # sequences of 2 + g nucleotides - 1nt, g gap, 1nt
 
-        for gGap in m:
-            C = 0
-            for v in V:
-                if v[0] == gGap[0] and v[-1] == gGap[1]:
-                    C += 1
-            key = get_k_gap_description(gGap, 1, 1, i)
-            d[key] = C
+    for gGap in tqdm(m):
+        key = get_k_gap_description(gGap, 1, 1, g)
+        d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
 
-    return d
+    return pd.DataFrame(d)
 
 
-def mono_di_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___2
-
-    d = {}
-    m = m3
-    for i in range(1, g + 1, 1):
-        V = kmers(seq, i + 3)
-        for gGap in m:
-
-            C = 0
-            for v in V:
-                if v[0] == gGap[0] and v[-2] == gGap[1] and v[-1] == gGap[2]:
-                    C += 1
-
-            key = get_k_gap_description(gGap, 1, 2, i)
-            d[key] = C
-
-    return d
-
-
-def di_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 2___1
+def mono_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, features_list: List[tuple] = None) -> pd.DataFrame:  # 1___2
+    def count_matches(V, _gGap):
+        _count = 0
+        for v in V:
+            if v[0] == _gGap[0] and v[-2] == _gGap[1] and v[-1] == _gGap[2]:
+                _count += 1
+        return _count
 
     d = {}
-    m = m3
-    for i in range(1, g + 1, 1):
-        V = kmers(seq, i + 3)
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        m = features_list
+    else:
+        m = m3
+    V = _kmers[g]  # sequences of 3 + g nucleotides - 1nt, g gap, 2nt
+    for gGap in tqdm(m):
+        key = get_k_gap_description(gGap, 1, 2, g)
+        d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
 
-        for gGap in m:
-            C = 0
-            for v in V:
-                if v[0] == gGap[0] and v[1] == gGap[1] and v[-1] == gGap[2]:
-                    C += 1
-            key = get_k_gap_description(gGap, 2, 1, i)
-            d.update({key: C})
-
-    return d
+    return pd.DataFrame(d)
 
 
-def mono_tri_k_gap(seq: str, g: int) -> Dict[str, int]:  # 1___3
+def di_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, features_list: List[tuple] = None) -> pd.DataFrame:  # 2___1
+    def count_matches(V, _gGap):
+        _count = 0
+        for v in V:
+            if v[0] == _gGap[0] and v[1] == _gGap[1] and v[-1] == _gGap[2]:
+                _count += 1
+        return _count
 
+    d = {}
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        m = features_list
+    else:
+        m = m3
+    V = _kmers[g]  # sequences of 3 + g nucleotides - 2nt, g gap, 1nt
+
+    for gGap in tqdm(m):
+        key = get_k_gap_description(gGap, 2, 1, g)
+        d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+
+    return pd.DataFrame(d)
+
+
+def mono_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int, features_list: List[tuple] = None) -> pd.DataFrame:  # 1___3
     # A_AAA       1-gap
     # A__AAA      2-gap
     # A___AAA     3-gap
     # A____AAA    4-gap
     # A_____AAA   5-gap upto g
+    def count_matches(V, _gGap):
+        _count = 0
+        for v in V:
+            if v[0] == _gGap[0] and v[-3] == _gGap[1] and v[-2] == _gGap[2] and v[-1] == _gGap[3]:
+                _count += 1
+        return _count
 
     d = {}
-    m = m4
-    for i in range(1, g + 1, 1):
-        V = kmers(seq, i + 4)
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        m = features_list
+    else:
+        m = m4
+    V = _kmers[g + 1]  # sequences of 4 + g nucleotides - 1nt, g gap, 3nt
 
-        for gGap in m:
-            C = 0
-            for v in V:
-                if v[0] == gGap[0] and v[-3] == gGap[1] and v[-2] == gGap[2] and v[-1] == gGap[3]:
-                    C += 1
-            key = get_k_gap_description(gGap, 1, 3, i)
-            d[key] = C
+    for gGap in tqdm(m):
+        key = get_k_gap_description(gGap, 1, 3, g)
+        d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
 
-    return d
+    return pd.DataFrame(d)
 
 
-def tri_mono_k_gap(seq: str, g: int) -> Dict[str, int]:  # 3___1
-
+def tri_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, features_list: List[tuple] = None) -> pd.DataFrame:  # 3___1
     # AAA_A       1-gap
     # AAA__A      2-gap
     # AAA___A     3-gap
     # AAA____A    4-gap
     # AAA_____A   5-gap upto g
+    def count_matches(V, _gGap):
+        _count = 0
+        for v in V:
+            if v[0] == _gGap[0] and v[1] == _gGap[1] and v[2] == _gGap[2] and v[-1] == _gGap[3]:
+                _count += 1
+        return _count
 
     d = {}
-    m = m4
-    for i in range(1, g + 1, 1):
-        V = kmers(seq, i + 4)
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        m = features_list
+    else:
+        m = m4
+    V = _kmers[g + 1]  # sequences of 4 + g nucleotides - 3nt, g gap, 1nt
 
-        for gGap in m:
-            C = 0
-            for v in V:
-                if v[0] == gGap[0] and v[1] == gGap[1] and v[2] == gGap[2] and v[-1] == gGap[3]:
-                    C += 1
+    for gGap in tqdm(m):
+        key = get_k_gap_description(gGap, 3, 1, g)
+        d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
 
-            key = get_k_gap_description(gGap, 3, 1, i)
-            d[key] = C
-
-    return d
+    return pd.DataFrame(d)
 
 
-def di_di_k_gap(seq: str, g: int) -> Dict[str, int]:
+def di_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, features_list: List[tuple] = None) -> pd.DataFrame:  # 2___2
     ### gapping ### total = [(64xg)] = 2,304 [g=9]
     # AA_AA       1-gap
     # AA__AA      2-gap
     # AA___AA     3-gap
     # AA____AA    4-gap
     # AA_____AA   5-gap upto g
+    def count_matches(V, _gGap):
+        _count = 0
+        for v in V:
+            if v[0] == _gGap[0] and v[1] == _gGap[1] and v[-2] == _gGap[2] and v[-1] == _gGap[3]:
+                _count += 1
+        return _count
 
     d = {}
-    m = m4
-    for i in range(1, g + 1, 1):
-        V = kmers(seq, i + 4)
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        m = features_list
+    else:
+        m = m4
+    V = _kmers[g + 1]  # sequences of 4 + g nucleotides - 2nt, g gap, 2nt
 
-        for gGap in m:
-            C = 0
-            for v in V:
-                if v[0] == gGap[0] and v[1] == gGap[1] and v[-2] == gGap[2] and v[-1] == gGap[3]:
-                    C += 1
-            key = get_k_gap_description(gGap, 2, 2, i)
-            d[key] = C
+    for gGap in tqdm(m):
+        key = get_k_gap_description(gGap, 2, 2, g)
+        d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
 
-    return d
+    return pd.DataFrame(d)
 
 
-def di_tri_k_gap(seq: str, g: int) -> Dict[str, int]:  # 2___3
-
+def di_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int, features_list: List[tuple] = None) -> pd.DataFrame:  # 2___3
     ### gapping ### total = [(64xg)] = 2,304 [g=9]
     # AA_AAA       1-gap
     # AA__AAA      2-gap
     # AA___AAA     3-gap
     # AA____AAA    4-gap
     # AA_____AAA   5-gap upto g
+    def count_matches(V, _gGap):
+        _count = 0
+        for v in V:
+            if v[0] == _gGap[0] and v[1] == _gGap[1] and v[-3] == _gGap[2] and \
+                v[-2] == _gGap[3] and v[-1] == _gGap[4]:
+                _count += 1
+        return _count
 
     d = {}
-    m = m5
-    for i in range(1, g + 1, 1):
-        V = kmers(seq, i + 5)
-        for gGap in m:
-            C = 0
-            for v in V:
-                if v[0] == gGap[0] and v[1] == gGap[1] and v[-3] == gGap[2] and \
-                        v[-2] == gGap[3] and v[-1] == gGap[4]:
-                    C += 1
-            key = get_k_gap_description(gGap, 2, 3, i)
-            d[key] = C
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        m = features_list
+    else:
+        m = m5
+    V = _kmers[g + 2]  # sequences of 5 + g nucleotides - 2nt, g gap, 3nt
 
-    return d
+    for gGap in tqdm(m):
+        key = get_k_gap_description(gGap, 2, 3, g)
+        d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+
+    return pd.DataFrame(d)
 
 
-def tri_di_k_gap(seq: str, g):  # 3___2
-
+def tri_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, features_list: List[tuple] = None) -> pd.DataFrame:  # 3___2
     ### gapping ### total = [(64xg)] = 2,304 [g=9]
     # AAA_AA       1-gap
     # AAA__AA      2-gap
     # AAA___AA     3-gap
     # AAA____AA    4-gap
     # AAA_____AA   5-gap upto g
+    def count_matches(V, _gGap):
+        _count = 0
+        for v in V:
+            if v[0] == _gGap[0] and v[1] == _gGap[1] and v[2] == _gGap[2] and \
+                v[-2] == _gGap[3] and v[-1] == _gGap[4]:
+                _count += 1
+        return _count
 
     d = {}
-    m = m5
-    for i in range(1, g + 1, 1):
-        V = kmers(seq, i + 5)
-        for gGap in m:
-            C = 0
-            for v in V:
-                if v[0] == gGap[0] and v[1] == gGap[1] and v[2] == gGap[2] and \
-                        v[-2] == gGap[3] and v[-1] == gGap[4]:
-                    C += 1
-            key = get_k_gap_description(gGap, 3, 2, i)
-            d[key] = C
+    if features_list:  # in case that a feature selection was applied and a list of the desired features is given
+        m = features_list
+    else:
+        m = m5
+    V = _kmers[g + 2]  # sequences of 5 + g nucleotides - 3nt, g gap, 2nt
 
-    return d
+    for gGap in tqdm(m):
+        key = get_k_gap_description(gGap, 3, 2, g)
+        d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+
+    return pd.DataFrame(d)
 
 
-def extract(seq: str) -> Dict[str, Union[int, float]]:
-    d = {}
+# def extract(seq: str) -> Dict[str, Union[int, float]]:
+#     d = {}
+#     wanted_features = get_section_features(CONF_NUCLI_SEC_NAME)
+#
+#     if wanted_features.get('z_curve'):
+#         res = z_curve(seq)
+#         d.update(res)
+#
+#     if wanted_features.get('gc_content'):
+#         res = gc_content(seq)
+#         d.update(res)
+#
+#     if wanted_features.get('cumulative_skew'):
+#         res = cumulative_skew(seq)
+#         d.update(res)
+#
+#     if wanted_features.get('atgc_ratio'):
+#         res = atgc_ratio(seq)
+#         d.update(res)
+#
+#     if wanted_features.get('pseudo_knc'):
+#         res = pseudo_knc(seq, k_tuple)  # k=2|(16), k=3|(64), k=4|(256), k=5|(1024)
+#         d.update(res)
+#
+#     if wanted_features.get('mono_mono_k_gap'):
+#         res = mono_mono_k_gap(seq, k_gap)  # 4*(k)*4 = 240
+#         d.update(res)
+#
+#     if wanted_features.get('mono_di_k_gap'):
+#         res = mono_di_k_gap(seq, k_gap)  # 4*k*(4^2) = 960
+#         d.update(res)
+#
+#     if wanted_features.get('mono_tri_k_gap'):
+#         res = mono_tri_k_gap(seq, k_gap)  # 4*k*(4^3) = 3,840
+#         d.update(res)
+#
+#     if wanted_features.get('di_mono_k_gap'):
+#         res = di_mono_k_gap(seq, k_gap)  # (4^2)*k*(4)    = 960
+#         d.update(res)
+#
+#     if wanted_features.get('di_di_k_gap'):
+#         res = di_di_k_gap(seq, k_gap)  # (4^2)*k*(4^2)  = 3,840
+#         d.update(res)
+#
+#     if wanted_features.get('di_tri_k_gap'):
+#         res = di_tri_k_gap(seq, k_gap)  # (4^2)*k*(4^3)  = 15,360
+#         d.update(res)
+#
+#     if wanted_features.get('tri_mono_k_gap'):
+#         res = tri_mono_k_gap(seq, k_gap)  # (4^3)*k*(4)    = 3,840
+#         d.update(res)
+#
+#     if wanted_features.get('tri_di_k_gap'):
+#         res = tri_di_k_gap(seq, k_gap)  # (4^3)*k*(4^2)  = 15,360
+#         d.update(res)
+#
+#     return d
 
-    res = z_curve(seq)
-    d.update(res)
 
-    res = gc_content(seq)
-    d.update(res)
+def extract_features(sequences: 'pd.Series[str]', feature_select: bool = False) -> pd.DataFrame:
+    d = []
+    max_k = 7  # the maximum length of kmers calculated (actually would be one less ("6"))
+    KMERS = [sequences.apply(lambda sequence: kmers(sequence, i)) for i in range(3, max_k)]  # produce Kmers for the sequences from k=3 to k=10
 
-    res = cumulative_skew(seq)
-    d.update(res)
+    if feature_select:
+        features_titles = get_features_titles_from_section(CONF_NUCLI_RELATIONS_SEC_NAME)  # receive the titles of all
+        # the features in this section as a dictionary
 
-    res = atgc_ratio(seq)
-    d.update(res)
+        if 'z_curve' in features_titles:
+            z_curve_features = features_titles['z_curve']
 
-    res = pseudo_knc(seq, k_tuple)  # k=2|(16), k=3|(64), k=4|(256), k=5|(1024)
-    d.update(res)
+            print(f'start z_curve, time: {datetime.now()}')
+            res = z_curve(sequences, z_curve_features)
+            d.append(res)
 
-    res = mono_mono_k_gap(seq, k_gap)  # 4*(k)*4 = 240
-    d.update(res)
+        if 'gc_content' in features_titles:
+            print(f'start gc_content, time: {datetime.now()}')
+            res = gc_content(sequences)
+            d.append(res)
 
-    res = mono_di_k_gap(seq, k_gap)  # 4*k*(4^2) = 960
-    d.update(res)
+        if 'cumulative_skew' in features_titles:
+            cumulative_skew_features = features_titles['cumulative_skew']
+            print(f'start cumulative_skew, time: {datetime.now()}')
+            res = cumulative_skew(sequences, cumulative_skew_features)
+            d.append(res)
 
-    res = mono_tri_k_gap(seq, k_gap)  # 4*k*(4^3) = 3,840
-    d.update(res)
+        if 'at/gc_ratio' in features_titles:
+            print(f'start atgc_ratio, time: {datetime.now()}')
+            res = atgc_ratio(sequences)
+            d.append(res)
 
-    res = di_mono_k_gap(seq, k_gap)  # (4^2)*k*(4)    = 960
-    d.update(res)
+        if 'pseudo_knc' in features_titles:
+            pseudo_knc_features = features_titles['pseudo_knc']
+            print(f'start pseudo_knc, time: {datetime.now()}')
+            res = pseudo_knc(sequences, 1, pseudo_knc_features)  # in case the feature list is provided there is no need for the k value
+            # k=2|(16), k=3|(64), k=4|(256), k=5|(1024)
+            d.append(res)
 
-    res = di_di_k_gap(seq, k_gap)  # (4^2)*k*(4^2)  = 3,840
-    d.update(res)
+        if 'mono_mono_k_gap' in features_titles:
+            print(f'start mono_mono_k_gap, time: {datetime.now()}')
+            mono_mono_k_gap_features = features_titles['mono_mono_k_gap']
+            for feature in mono_mono_k_gap_features:  # the list contains elements in the format of nt(g*'_')nt
+                _kmers = feature.replace('_', '')  # Remove underscores
+                gap = feature.count('_')  # Count underscores
+            res = mono_mono_k_gap(_kmers, gap)  # 4*(k)*4 = 32
+            d.append(res)
 
-    res = di_tri_k_gap(seq, k_gap)  # (4^2)*k*(4^3)  = 15,360
-    d.update(res)
+        if 'mono_di_k_gap' in features_titles:
+            print(f'start mono_di_k_gap, time: {datetime.now()}')
+            mono_di_k_gap_features = features_titles['mono_di_k_gap']
+            for feature in mono_di_k_gap_features:
+                _kmers = feature.replace('_', '')  # Remove underscores
+                gap = feature.count('_')  # Count underscores
+            res = mono_di_k_gap(_kmers, gap)  # 4*k*(4^2) = 128
+            d.append(res)
 
-    res = tri_mono_k_gap(seq, k_gap)  # (4^3)*k*(4)    = 3,840
-    d.update(res)
+        if 'mono_tri_k_gap' in features_titles:
+            print(f'start mono_tri_k_gap, time: {datetime.now()}')
+            mono_tri_k_gap_features = features_titles['mono_tri_k_gap']
+            for feature in mono_tri_k_gap_features:
+                _kmers = feature.replace('_', '')  # Remove underscores
+                gap = feature.count('_')  # Count underscores
+            res = mono_tri_k_gap(_kmers, gap)  # 4*k*(4^3) = 512
+            d.append(res)
 
-    res = tri_di_k_gap(seq, k_gap)  # (4^3)*k*(4^2)  = 15,360
-    d.update(res)
+        if 'di_mono_k_gap' in features_titles:
+            print(f'start di_mono_k_gap, time: {datetime.now()}')
+            di_mono_k_gap_features = features_titles['di_mono_k_gap']
+            for feature in di_mono_k_gap_features:
+                _kmers = feature.replace('_', '')  # Remove underscores
+                gap = feature.count('_')  # Count underscores
+            res = di_mono_k_gap(_kmers, gap)  # (4^2)*k*(4)    = 128
+            d.append(res)
 
-    return d
+        if 'di_di_k_gap' in features_titles:
+            print(f'start di_di_k_gap, time: {datetime.now()}')
+            di_di_k_gap_features = features_titles['di_di_k_gap']
+            for feature in di_di_k_gap_features:
+                _kmers = feature.replace('_', '')  # Remove underscores
+                gap = feature.count('_')  # Count underscores
+            res = di_di_k_gap(_kmers, gap)  # (4^2)*k*(4^2)  = 512
+            d.append(res)
 
+        if 'di_tri_k_gap' in features_titles:
+            print(f'start di_tri_k_gap, time: {datetime.now()}')
+            di_tri_k_gap_features = features_titles['di_tri_k_gap']
+            for feature in di_tri_k_gap_features:
+                _kmers = feature.replace('_', '')  # Remove underscores
+                gap = feature.count('_')  # Count underscores
+            res = di_tri_k_gap(_kmers, gap)  # (4^2)*k*(4^3)  = 2048
+            d.append(res)
 
-def generate_df_from_seq(seq: 'pd.Series[str]') -> pd.DataFrame:
-    return pd.DataFrame(seq.apply(extract).tolist())
+        if 'tri_mono_k_gap' in features_titles:
+            print(f'start tri_mono_k_gap, time: {datetime.now()}')
+            tri_mono_k_gap_features = features_titles['mono_mono_k_gap']
+            for feature in tri_mono_k_gap_features:  # the list contains elements in the format of nt(g*'_')nt
+                _kmers = feature.replace('_', '')  # Remove underscores
+                gap = feature.count('_')  # Count underscores
+            res = tri_mono_k_gap(_kmers, gap)   # (4^3)*k*(4)    = 512
+            d.append(res)
+
+        if 'tri_di_k_gap' in features_titles:
+            print(f'start tri_di_k_gap, time: {datetime.now()}')
+            tri_di_k_gap_features = features_titles['di_di_k_gap']
+            for feature in tri_di_k_gap_features:
+                _kmers = feature.replace('_', '')  # Remove underscores
+                gap = feature.count('_')  # Count underscores
+            res = tri_di_k_gap(_kmers, gap)  # (4^3)*k*(4^2)  = 2048
+            d.append(res)
+
+    else:  # in case no feature selection is applied all the features are calculated
+        print(f'start z_curve, time: {datetime.now()}')
+        res = z_curve(sequences)
+        d.append(res)
+
+        print(f'start gc_content, time: {datetime.now()}')
+        res = gc_content(sequences)
+        d.append(res)
+
+        print(f'start cumulative_skew, time: {datetime.now()}')
+        res = cumulative_skew(sequences)
+        d.append(res)
+
+        print(f'start atgc_ratio, time: {datetime.now()}')
+        res = atgc_ratio(sequences)
+        d.append(res)
+
+        print(f'start pseudo_knc, time: {datetime.now()}')
+        for k in range(1, max_k):
+            res = pseudo_knc(sequences, k)  # k=2|(16), k=3|(64), k=4|(256), k=5|(1024)
+            d.append(res)
+
+        print(f'start mono_mono_k_gap, time: {datetime.now()}')
+        for k in range(1, max_k):
+            res = mono_mono_k_gap(KMERS, k)  # 4*(k)*4 = 32
+            d.append(res)
+
+        print(f'start mono_di_k_gap, time: {datetime.now()}')
+        for k in range(1, max_k):
+            res = mono_di_k_gap(KMERS, k)  # 4*k*(4^2) = 128
+            d.append(res)
+
+        print(f'start mono_tri_k_gap, time: {datetime.now()}')
+        for k in range(1, max_k):
+            res = mono_tri_k_gap(KMERS, k)  # 4*k*(4^3) = 512
+            d.append(res)
+
+        print(f'start di_mono_k_gap, time: {datetime.now()}')
+        for k in range(1, max_k):
+            res = di_mono_k_gap(KMERS, k)  # (4^2)*k*(4)    = 128
+            d.append(res)
+
+        print(f'start di_di_k_gap, time: {datetime.now()}')
+        for k in range(1, max_k):
+            res = di_di_k_gap(KMERS, k)  # (4^2)*k*(4^2)  = 512
+            d.append(res)
+
+        print(f'start di_tri_k_gap, time: {datetime.now()}')
+        for k in range(1, max_k):
+            res = di_tri_k_gap(KMERS, k)  # (4^2)*k*(4^3)  = 2048
+            d.append(res)
+
+        print(f'start tri_mono_k_gap, time: {datetime.now()}')
+        for k in range(1, max_k):
+            res = tri_mono_k_gap(KMERS, k)  # (4^3)*k*(4)    = 512
+            d.append(res)
+
+        print(f'start tri_di_k_gap, time: {datetime.now()}')
+        for k in range(1, max_k):
+            res = tri_di_k_gap(KMERS, k)  # (4^3)*k*(4^2)  = 2048
+            d.append(res)
+
+    return pd.concat(d, axis=1)  # in total with k=2 -> 5943
+
+# def generate_df_from_seq(seq: 'pd.Series[str]') -> pd.DataFrame:
+#     return pd.DataFrame(seq.apply(extract).tolist())
 
 
 def get_prob_dict_for_idx(idx_bases):
@@ -569,3 +836,12 @@ def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
         'basepair_n_x', 'basepair_n_y', 'basepair_n_z',
         'smooth_n_x', 'smooth_n_y', 'smooth_n_z']] = df[seq_col].apply(curved_dna_diff, base_seq=wildtype_seq,
                                                                        result_type='expand')
+
+if __name__ == '__main__':
+    seq = pd.Series(["TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT",
+                     "TTGAAATCCTTTTTTTCTGCGCGTAATCTTTTGCTT",
+                     "TAGCGATCCTTTTTTTCTGCCGGTAATCTGCTGCTT",
+                     "GTTAGATCCTTTTTTTCTGCGCGTTATACACTGCTT",
+                     "TTAGAATCGCCTTTTTCTGCGCGTAATCTGCTAAAT"])
+    # generate_one_hot_encoding(seq)
+    generate_df_from_seq(seq)

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from pymemesuite.common import MotifFile, Sequence
 from pymemesuite.fimo import FIMO
+from src.config.config import get_section_features
 
 
 INTERACT_MEME = '../../data/motifs/dpinteract.meme'
@@ -12,20 +13,31 @@ SWISS_MEME = '../../data/motifs/SwissRegulon_e_coli.meme'
 def generate_motif_dict():
     motifs = {}
     motifs_num = 0
+
+    wanted_motifs = get_section_features(section_name="Motifs")
+
     with MotifFile(INTERACT_MEME) as motif_file:
         motif = motif_file.read()
         while motif:
-            motifs_num += 1
             motif_name = motif.accession.decode()
-            motifs[motif_name] = motif
+
+            # check if in config
+            if motif_name in wanted_motifs and wanted_motifs[motif_name] is True:
+                motifs_num += 1
+                motifs[motif_name] = motif
+
             motif = motif_file.read()
 
     with MotifFile(SWISS_MEME) as motif_file:
         motif = motif_file.read()
         while motif:
-            motifs_num += 1
             motif_name = motif.accession.decode()
-            motifs[motif_name] = motif
+
+            # check if in config
+            if motif_name in wanted_motifs and wanted_motifs[motif_name] is True:
+                motifs_num += 1
+                motifs[motif_name] = motif
+
             motif = motif_file.read()
 
     assert motifs_num == len(motifs)
@@ -43,3 +55,7 @@ def calc_motifs_pv(seqs: 'pd.Series[str]') -> pd.DataFrame:
           for m in pattern.matched_elements:
               motifs_df.loc[i, selected_motif.accession.decode()] = m.pvalue
     return motifs_df
+
+
+if __name__ == '__main__':
+    motifs, motif_file = generate_motif_dict()
