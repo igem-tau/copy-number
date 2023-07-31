@@ -3,6 +3,7 @@ from dnacurve import CurvedDNA
 import itertools
 import math
 import pandas as pd
+from src.config.config import get_section_features
 from src.consts import *
 import subprocess
 from typing import List, Dict, Tuple, Union
@@ -21,8 +22,10 @@ def generate_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
         encoded.columns = columns
         return encoded
 
+    wanted_indices = get_section_features(CONF_ONE_HOT_ENC_SEC_NAME)
+
     full_encoding = []
-    for current_nucleotide_index in range(PROMOTER_LENGTH):
+    for current_nucleotide_index in wanted_indices:
         current_nucleotide_encoding = encode(seq.str[current_nucleotide_index], current_nucleotide_index + START_INDEX)
         full_encoding.append(current_nucleotide_encoding)
 
@@ -301,44 +304,59 @@ def tri_di_k_gap(seq: str, g):  # 3___2
 def extract(seq: str) -> Dict[str, Union[int, float]]:
     d = {}
 
-    res = z_curve(seq)
-    d.update(res)
+    wanted_features = get_section_features(CONF_NUCLI_SEC_NAME)
 
-    res = gc_content(seq)
-    d.update(res)
+    if wanted_features.get('z_curve'):
+        res = z_curve(seq)
+        d.update(res)
 
-    res = cumulative_skew(seq)
-    d.update(res)
+    if wanted_features.get('gc_content'):
+        res = gc_content(seq)
+        d.update(res)
 
-    res = atgc_ratio(seq)
-    d.update(res)
+    if wanted_features.get('cumulative_skew'):
+        res = cumulative_skew(seq)
+        d.update(res)
 
-    res = pseudo_knc(seq, k_tuple)  # k=2|(16), k=3|(64), k=4|(256), k=5|(1024)
-    d.update(res)
+    if wanted_features.get('atgc_ratio'):
+        res = atgc_ratio(seq)
+        d.update(res)
 
-    res = mono_mono_k_gap(seq, k_gap)  # 4*(k)*4 = 240
-    d.update(res)
+    if wanted_features.get('pseudo_knc'):
+        res = pseudo_knc(seq, k_tuple)  # k=2|(16), k=3|(64), k=4|(256), k=5|(1024)
+        d.update(res)
 
-    res = mono_di_k_gap(seq, k_gap)  # 4*k*(4^2) = 960
-    d.update(res)
+    if wanted_features.get('mono_mono_k_gap'):
+        res = mono_mono_k_gap(seq, k_gap)  # 4*(k)*4 = 240
+        d.update(res)
 
-    res = mono_tri_k_gap(seq, k_gap)  # 4*k*(4^3) = 3,840
-    d.update(res)
+    if wanted_features.get('mono_di_k_gap'):
+        res = mono_di_k_gap(seq, k_gap)  # 4*k*(4^2) = 960
+        d.update(res)
 
-    res = di_mono_k_gap(seq, k_gap)  # (4^2)*k*(4)    = 960
-    d.update(res)
+    if wanted_features.get('mono_tri_k_gap'):
+        res = mono_tri_k_gap(seq, k_gap)  # 4*k*(4^3) = 3,840
+        d.update(res)
 
-    res = di_di_k_gap(seq, k_gap)  # (4^2)*k*(4^2)  = 3,840
-    d.update(res)
+    if wanted_features.get('di_mono_k_gap'):
+        res = di_mono_k_gap(seq, k_gap)  # (4^2)*k*(4)    = 960
+        d.update(res)
 
-    res = di_tri_k_gap(seq, k_gap)  # (4^2)*k*(4^3)  = 15,360
-    d.update(res)
+    if wanted_features.get('di_di_k_gap'):
+        res = di_di_k_gap(seq, k_gap)  # (4^2)*k*(4^2)  = 3,840
+        d.update(res)
 
-    res = tri_mono_k_gap(seq, k_gap)  # (4^3)*k*(4)    = 3,840
-    d.update(res)
+    if wanted_features.get('di_tri_k_gap'):
+        res = di_tri_k_gap(seq, k_gap)  # (4^2)*k*(4^3)  = 15,360
+        d.update(res)
 
-    res = tri_di_k_gap(seq, k_gap)  # (4^3)*k*(4^2)  = 15,360
-    d.update(res)
+    if wanted_features.get('tri_mono_k_gap'):
+        res = tri_mono_k_gap(seq, k_gap)  # (4^3)*k*(4)    = 3,840
+        d.update(res)
+
+    if wanted_features.get('tri_di_k_gap'):
+        res = tri_di_k_gap(seq, k_gap)  # (4^3)*k*(4^2)  = 15,360
+        d.update(res)
 
     return d
 
@@ -569,3 +587,12 @@ def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
         'basepair_n_x', 'basepair_n_y', 'basepair_n_z',
         'smooth_n_x', 'smooth_n_y', 'smooth_n_z']] = df[seq_col].apply(curved_dna_diff, base_seq=wildtype_seq,
                                                                        result_type='expand')
+
+if __name__ == '__main__':
+    seq = pd.Series(["TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT",
+                     "TTGAAATCCTTTTTTTCTGCGCGTAATCTTTTGCTT",
+                     "TAGCGATCCTTTTTTTCTGCCGGTAATCTGCTGCTT",
+                     "GTTAGATCCTTTTTTTCTGCGCGTTATACACTGCTT",
+                     "TTAGAATCGCCTTTTTCTGCGCGTAATCTGCTAAAT"])
+    # generate_one_hot_encoding(seq)
+    generate_df_from_seq(seq)
