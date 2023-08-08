@@ -261,7 +261,7 @@ def get_features_df(p=True, i=True, shared=False, specify_date=False):
     if Path(DATA_PATH, 'DataFrames_with_features.joblib').exists():
         data = load(Path(DATA_PATH, 'DataFrames_with_features.joblib'))
     else:
-        # from src.features.motifs import calc_motifs_pv
+        from src.features.motifs import calc_motifs_pv
         data = save_features_df(p=p, i=i, shared=shared, specify_date=specify_date)
 
     return data
