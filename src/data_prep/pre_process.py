@@ -140,10 +140,11 @@ def split_for_testing(X: pd.DataFrame, y: Union[pd.DataFrame, pd.Series],
     return RNA_data_train_val, RNA_data_test
 
 
-def equal_bins_data(RNA_df: pd.DataFrame, num_bins: int, zero_flag: bool = False) -> Tuple[pd.DataFrame, pd.Series]:
+def equal_bins_data(RNA_df: pd.DataFrame, zero_flag: bool = False) -> Tuple[pd.DataFrame, pd.Series]:
     if zero_flag:
         RNA_df['Copy Number'][RNA_df['Copy Number'] < 0] = 0
     RNA_df = RNA_df.sort_values(by='Copy Number')
+    num_bins = RNA_df.shape[0] // 15
     bins_series = pd.qcut(RNA_df['Copy Number'], num_bins, labels=False).rename('stratify')
     return RNA_df, bins_series
 
@@ -177,8 +178,7 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
     if p:
         print('start generating RNAp features')
         RNAp_data = get_RNAp_data()
-        num_bins_RNAp = RNAp_data.shape[0] // 15
-        RNAp_data, RNAp_stratify_col = equal_bins_data(RNAp_data, num_bins_RNAp)
+        RNAp_data, RNAp_stratify_col = equal_bins_data(RNAp_data)
         RNAp_X = RNAp_data.drop(TARGET_COLUMN, axis=1)
         RNAp_y = RNAp_data[TARGET_COLUMN]
 
@@ -200,8 +200,7 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
     if i:
         print('start generating RNAi features')
         RNAi_data = get_RNAi_data()
-        num_bins_RNAi = RNAi_data.shape[0] // 15
-        RNAi_data, RNAi_stratify_col = equal_bins_data(RNAi_data, num_bins_RNAi)
+        RNAi_data, RNAi_stratify_col = equal_bins_data(RNAi_data)
         RNAi_X = RNAi_data.drop(TARGET_COLUMN, axis=1)
         RNAi_y = RNAi_data[TARGET_COLUMN]
 
