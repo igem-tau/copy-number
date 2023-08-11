@@ -5,18 +5,19 @@ import pandas as pd
 from sklearn.feature_selection import mutual_info_regression, mutual_info_classif, SelectFromModel
 from xgboost import XGBRegressor
 
+
+
 '''
 https://github.com/Ekeany/Boruta-Shap
 https://towardsdatascience.com/boruta-explained-the-way-i-wish-someone-explained-it-to-me-4489d70e154a
 https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html
 '''
 
-
 def feature_selection(RNA_X, RNA_y):
     """
     Feature Selection for RNAp or RNAi.
 
-    Accept: DataFrame of raining data and dataframe for test.
+    Accept: DataFrame of training data and dataframe for test.
     Return: (Subset of data_train model with accepted features only, Array of accepted features, Array of Denied Features).
 
     Using Data vendding based on corrolation between features and droping uncorralated ones that are under the minimum.
