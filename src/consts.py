@@ -1,4 +1,4 @@
-NUCLEOTIDES = 'ACGT' # the order is important in some part of the code (promoter strength)
+NUCLEOTIDES = 'ACGT'  # the order is important in some part of the code (promoter strength)
 PROMOTER_LENGTH = 36
 START_INDEX = -35
 RNAp_EDITED_ZONES = [(-33, -30), (-11, -8)]

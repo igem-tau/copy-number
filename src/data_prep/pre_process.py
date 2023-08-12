@@ -79,8 +79,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     else:
         RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
     RNA_features.append(RNA_pssm_score)
-
-    # RNA_features.append(calc_motifs_pv(RNA_seq))
+    RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(generate_df_from_seq(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
@@ -152,7 +151,8 @@ def train_validation_split(X, y, stratify_by: pd.Series,
                            random_state: int = 0) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.15, random_state=random_state,
                                                       stratify=stratify_by)
-    return X_train, X_val, y_train, y_val
+    return (X_train.reset_index(drop=True), X_val.reset_index(drop=True),
+            y_train.reset_index(drop=True), y_val.reset_index(drop=True))
 
 
 # def train_validation_test_split(X: pd.DataFrame, y: pd.Series, random_state: int = 0):
@@ -182,17 +182,15 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
         RNAp_X = RNAp_data.drop(TARGET_COLUMN, axis=1)
         RNAp_y = RNAp_data[TARGET_COLUMN]
 
-        ## Split into train_val and test
+        # Split into train_val and test
         RNAp_data_train_val, RNAp_data_test = split_for_testing(RNAp_X, RNAp_y, stratify_by=RNAp_stratify_col)
         RNAp_stratify_train_val, RNAp_stratify_test = split_for_testing(RNAp_stratify_col, RNAp_y,
                                                                             stratify_by=RNAp_stratify_col)
         RNAp_stratify_train_val = RNAp_stratify_train_val['stratify']
-
-        ## Split train_val into train and val
         RNAp_X_train_val = RNAp_data_train_val.drop(TARGET_COLUMN, axis=1)
         RNAp_y_train_val = RNAp_data_train_val[TARGET_COLUMN]
 
-
+        # Split train_val into train and val
         RNAp_X_data_train, RNAp_X_data_val, RNAp_y_train, RNAp_y_val  = train_validation_split(RNAp_X_train_val, RNAp_y_train_val,
                                                                                                stratify_by=RNAp_stratify_train_val)
 
@@ -207,7 +205,7 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
         RNAp_X_test, RNAp_y_test = generate_features(RNAp_data_test, reference_RNA_data=RNAp_data_train_val, rna_type='p')
 
         final_RNAp_X_train = remove_zero_variance_features(RNAp_X_train)
-        final_RNAp_X_val = remove_zero_variance_features(RNAp_X_val)
+        final_RNAp_X_val = RNAp_X_val[final_RNAp_X_train.columns]
         final_RNAp_X_test = RNAp_X_test[final_RNAp_X_train.columns]
 
         data['RNAp_X_train_sequences'] = RNAp_X_data_train
@@ -224,7 +222,6 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
 
         data['RNAp_stratify_train_val'] = RNAp_stratify_train_val
         data['RNAp_stratify_test'] = RNAp_stratify_test
-
 
         data['RNAp_X_sequences'] = RNAp_X
         data['RNAp_X'] = pd.concat((final_RNAp_X_train, final_RNAp_X_val, final_RNAp_X_test), ignore_index=True)
@@ -294,7 +291,6 @@ def get_features_df(p=True, i=True, shared=False, specify_date=False):
     if Path(DATA_PATH, 'DataFrames_with_features.joblib').exists():
         data = load(Path(DATA_PATH, 'DataFrames_with_features.joblib'))
     else:
-        from src.features.motifs import calc_motifs_pv
         data = save_features_df(p=p, i=i, shared=shared, specify_date=specify_date)
 
     return data
