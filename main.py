@@ -19,11 +19,7 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 if __name__ == '__main__':
     # Load the data features
 
-
     data = get_features_df(p=True, i=False)
-    RNAp_X_train_val_features = data['RNAp_X_train_val']
-    RNAp_y_train_val = data['RNAp_y_train_val']
-
 
     RNAp_X_train_val_data = data['RNAp_X_train_val_sequences']
     RNAp_X_train_val_features = data['RNAp_X_train_val']
@@ -45,9 +41,6 @@ if __name__ == '__main__':
     RNAp_y_test = data['RNAp_y_test']
     RNAp_stratify_test = data['RNAp_stratify_test']
 
-
-    # RNAi
-
     # Feature selection
     RNAp_FS_train, RNAp_selected_features, RNAp_removed_features = feature_selection(RNAp_X_train_features, RNAp_y_train)
 
@@ -59,19 +52,14 @@ if __name__ == '__main__':
     # Hyperparameters tuning and model training
     Best_param_p_xgb = get_best_params_set_xgb(RNAp_FS_train_val, RNAp_y_train_val, 'xgb_RNAp', RNAp_stratify_train_val)
 
-    # Train model
+    # Run model
 
-    model(RNAp_FS_train_val, RNAp_y_train_val, 'xgboost', 'pRNA', Best_param_p_xgb, save_plots=True)
-
-    # Validation
-
-    # Test
+    model(RNAp_FS_train_val, RNAp_FS_test, RNAp_y_train_val, RNAp_y_test, 'xgboost', 'pRNA', Best_param_p_xgb, save_plots=True)
 
 
 
     # Generate sequences and calculate features
     generated_RNAp_seq = sequence_generator([(-33, -30), (-11, -8), (0, 0)], rna_type='p')
-    generated_RNAi_seq = sequence_generator([(-33, -30), (-11, -8), (0, 0)], rna_type='i')
 
     # Predict
 
