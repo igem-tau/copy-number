@@ -80,7 +80,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
         RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
     RNA_features.append(RNA_pssm_score)
 
-    RNA_features.append(calc_motifs_pv(RNA_seq))
+    # RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(generate_df_from_seq(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
@@ -127,6 +127,13 @@ def is_high_copy_number(copy_number: 'pd.Series[int]') -> 'pd.Series[int]':
     high_cp = copy_number.nlargest(n)
     return (copy_number >= high_cp.min()).astype(int)
 
+def equal_bins_data(RNA_df: pd.DataFrame, zero_flag: bool = False) -> Tuple[pd.DataFrame, pd.Series]:
+    if zero_flag:
+        RNA_df['Copy Number'][RNA_df['Copy Number'] < 0] = 0
+    RNA_df = RNA_df.sort_values(by='Copy Number')
+    num_bins = RNA_df.shape[0] // 15
+    bins_series = pd.qcut(RNA_df['Copy Number'], num_bins, labels=False).rename('stratify')
+    return RNA_df, bins_series
 
 def split_for_testing(X: pd.DataFrame, y: Union[pd.DataFrame, pd.Series],
                       stratify_by=None) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -135,18 +142,10 @@ def split_for_testing(X: pd.DataFrame, y: Union[pd.DataFrame, pd.Series],
                                                     stratify=stratify_by)
     RNA_data_train_val = pd.concat([RNA_X, pd.DataFrame(y, columns=[TARGET_COLUMN])], axis=1).\
         reset_index(drop=True)
+
     RNA_data_test = pd.concat([RNA_X_test, pd.DataFrame(y_test, columns=[TARGET_COLUMN])], axis=1).\
         reset_index(drop=True)
     return RNA_data_train_val, RNA_data_test
-
-
-def equal_bins_data(RNA_df: pd.DataFrame, zero_flag: bool = False) -> Tuple[pd.DataFrame, pd.Series]:
-    if zero_flag:
-        RNA_df['Copy Number'][RNA_df['Copy Number'] < 0] = 0
-    RNA_df = RNA_df.sort_values(by='Copy Number')
-    num_bins = RNA_df.shape[0] // 15
-    bins_series = pd.qcut(RNA_df['Copy Number'], num_bins, labels=False).rename('stratify')
-    return RNA_df, bins_series
 
 
 def train_validation_split(X, y, stratify_by: pd.Series,
@@ -178,25 +177,70 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
     if p:
         print('start generating RNAp features')
         RNAp_data = get_RNAp_data()
+        # RNAp_data = RNAp_data.iloc[0:50,:]
         RNAp_data, RNAp_stratify_col = equal_bins_data(RNAp_data)
         RNAp_X = RNAp_data.drop(TARGET_COLUMN, axis=1)
         RNAp_y = RNAp_data[TARGET_COLUMN]
 
-        RNAp_data_train_val, RNAp_data_test = split_for_testing(RNAp_X, RNAp_y, stratify_by=RNAp_stratify_col)
+        ## Split into train_val and test
+        RNAp_data_train_val, RNAp_data_test = split_for_testing(RNAp_X, RNAp_y, stratify_by = RNAp_stratify_col)
         RNAp_stratify_train_val, RNAp_stratify_test = split_for_testing(RNAp_stratify_col, RNAp_y,
-                                                                            stratify_by=RNAp_stratify_col)
+                                                                            stratify_by = RNAp_stratify_col)
+
+        ## Split train_val into train and val
+        RNAp_data_train_val_split, RNAp_train_val_stratify_col = equal_bins_data(RNAp_data_train_val)
+        RNAp_X_train_val = RNAp_data_train_val_split.drop(TARGET_COLUMN, axis=1)
+        RNAp_y_train_val = RNAp_data_train_val_split[TARGET_COLUMN]
+
+        RNAp_X_data_train, RNAp_X_data_val, RNAp_y_train, RNAp_y_val  = train_validation_split(RNAp_X_train_val, RNAp_y_train_val,
+                                                                                               stratify_by=RNAp_train_val_stratify_col)
+        RNAp_stratify_train, _, RNAp_stratify_val, _ = train_validation_split(RNAp_train_val_stratify_col, RNAp_y_train_val,
+                                                                                               stratify_by=RNAp_train_val_stratify_col)
+        # RNAp_data_train = RNAp_X_data_train.join(RNAp_y_train)
+        # create_fasta_file(RNAp_data_train)
+
         RNAp_stratify_train_val = RNAp_stratify_train_val['stratify']
+
         RNAp_X_train_val, RNAp_y_train_val = generate_features(RNAp_data_train_val, rna_type='p')
+
+        RNAp_X_train, RNAp_X_val, RNAp_y_train, RNAp_y_val = train_validation_split(RNAp_X_train_val, RNAp_y_train_val, stratify_by=RNAp_train_val_stratify_col)
+
         RNAp_X_test, RNAp_y_test = generate_features(RNAp_data_test, reference_RNA_data=RNAp_data_train_val, rna_type='p')
+
         final_RNAp_X_train_val = remove_zero_variance_features(RNAp_X_train_val)
-        final_RNAp_X_test = RNAp_X_test[final_RNAp_X_train_val.columns]
+        final_RNAp_X_train = remove_zero_variance_features(RNAp_X_train)
+        final_RNAp_X_val = remove_zero_variance_features(RNAp_X_val)
+        final_RNAp_X_test = RNAp_X_test[final_RNAp_X_train.columns]
+
+
+
+        data['RNAp_X_train_val_sequences'] = RNAp_data_train_val
         data['RNAp_X_train_val'] = final_RNAp_X_train_val
         data['RNAp_y_train_val'] = RNAp_y_train_val
+
+        data['RNAp_X_train_sequences'] = RNAp_X_data_train
+        data['RNAp_X_train'] = final_RNAp_X_train
+        data['RNAp_y_train'] = RNAp_y_train
+
+        data['RNAp_X_val_sequences'] = RNAp_X_data_val
+        data['RNAp_X_val'] = final_RNAp_X_val
+        data['RNAp_y_val'] = RNAp_y_val
+
+        data['RNAp_X_test_sequences'] = RNAp_data_test
         data['RNAp_X_test'] = final_RNAp_X_test
         data['RNAp_y_test'] = RNAp_y_test
-        data['RNAp_stratify_by'] = RNAp_stratify_train_val
+
+        data['RNAp_stratify_train_val'] = RNAp_stratify_train_val
+        data['RNAp_stratify_train'] = RNAp_stratify_train
+        data['RNAp_stratify_val'] = RNAp_stratify_val
+        data['RNAp_stratify_test'] = RNAp_stratify_test
+
+
+
+        data['RNAp_X_sequences'] = RNAp_X
         data['RNAp_X'] = pd.concat((final_RNAp_X_train_val, final_RNAp_X_test), ignore_index=True)
         data['RNAp_y'] = pd.concat((RNAp_y_train_val, RNAp_y_test), ignore_index=True)
+
     if i:
         print('start generating RNAi features')
         RNAi_data = get_RNAi_data()
@@ -208,7 +252,7 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
         RNAi_stratify_train_val, RNAi_stratify_test = split_for_testing(RNAi_stratify_col, RNAi_y,
                                                                         stratify_by=RNAi_stratify_col)
         RNAi_stratify_train_val = RNAi_stratify_train_val['stratify']
-        RNAi_X_train_val, RNAi_y_train_val = generate_features(RNAi_data_train_val, rna_type='p')
+        RNAi_X_train_val, RNAi_y_train_val = generate_features(RNAi_data_train_val, rna_type='i')
         RNAi_X_test, RNAi_y_test = generate_features(RNAi_data_test, reference_RNA_data=RNAi_data_train_val, rna_type='p')
         final_RNAi_X_train_val = remove_zero_variance_features(RNAi_X_train_val)
         final_RNAi_X_test = RNAi_X_test[final_RNAi_X_train_val.columns]

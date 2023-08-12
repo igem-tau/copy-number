@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler
 from src.data_prep.pre_process import split_for_testing
 from src.models.lasso import run_lasso
 from src.models.xgboost_model import run_xgboost
+from src.data_prep.pre_process import train_validation_split
 
 
 def remove_outliers(X: pd.DataFrame, y: pd.DataFrame):
@@ -25,11 +26,11 @@ def scale(X1, X2):
 
 
 # TODO - fix it - needs to be split into train and validation (not test) -> train_validation_split
-def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, outliers=False):
+def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, stratify_by, outliers=False):
     if outliers:
         X, y = remove_outliers(X, y)
 
-    X_train, X_test, y_train, y_test = split_for_testing(X, y)
+    X_train, X_test, y_train, y_test = train_validation_split(X, y, stratify_by=stratify_by)
 
     X_train, X_test = scale(X_train, X_test)
 

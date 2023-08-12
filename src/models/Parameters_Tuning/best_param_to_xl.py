@@ -7,6 +7,7 @@ from sklearn.linear_model import LassoCV
 from sklearn.metrics import r2_score
 from sklearn.model_selection import RandomizedSearchCV
 from src.models.models_functions import prepare_model_data
+from src.data_prep.pre_process import train_validation_split
 import warnings
 import xgboost as xgb
 
@@ -89,10 +90,10 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name, num_of_
     return(scores[-1],rand_obj.best_params_)
 
 
-def get_best_params_set_xgb(X, y, model_name):
+def get_best_params_set_xgb(X, y, model_name, stratify_by):
     xl_name = f'{model_name}_best_params.xlsx'
     if not os.path.exists(os.path.join(os.getcwd(), xl_name)):
-        X_train, X_test, y_train, y_test = prepare_model_data(X, y)
+        X_train, X_test, y_train, y_test = train_validation_split(X, y,stratify_by = stratify_by)
         for i in range(5):
             [ii, kk] = converge_randomsearch(X_train, X_test, y_train, y_test, model_name, num_of_steps=7, nun_iter=7)
 
