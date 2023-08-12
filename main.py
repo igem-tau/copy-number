@@ -4,7 +4,8 @@ from src.data_prep.pre_process import get_RNAp_data, split_for_testing, create_f
 from src.models.Feature_Selection import feature_selection
 from src.models.sequences_generator import sequence_generator
 from xgboost import XGBRegressor
-from src.data_prep.pre_process import get_features_df
+from src.consts import *
+from src.data_prep.pre_process import get_features_df, generate_features
 from src.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb, find_optimal_alpha_Lasso
 from src.models.models_functions import model
 
@@ -53,13 +54,13 @@ if __name__ == '__main__':
     Best_param_p_xgb = get_best_params_set_xgb(RNAp_FS_train_val, RNAp_y_train_val, 'xgb_RNAp', RNAp_stratify_train_val)
 
     # Run model
-
     model(RNAp_FS_train_val, RNAp_FS_test, RNAp_y_train_val, RNAp_y_test, 'xgboost', 'pRNA', Best_param_p_xgb, save_plots=True)
-
-
 
     # Generate sequences and calculate features
     generated_RNAp_seq = sequence_generator([(-33, -30), (-11, -8), (0, 0)], rna_type='p')
+
+    USE_SELECTED_FEATURES["selective"] = True
+    all_seqs_selected_features = generate_features(generated_RNAp_seq)
 
     # Predict
 

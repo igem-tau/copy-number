@@ -46,7 +46,7 @@ def generate_filtered_motif_dict():
 
 # generate motifs dictionary
 def generate_motif_dict():
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         return generate_filtered_motif_dict()
 
     motifs = {}

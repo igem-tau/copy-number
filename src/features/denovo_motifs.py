@@ -38,7 +38,7 @@ def get_filtered_denovo_motifs_pssms(homer_output_file_loc):
 
 
 def get_denovo_motifs_pssms(homer_output_file_loc):
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         return get_filtered_denovo_motifs_pssms(homer_output_file_loc)
 
     with open(homer_output_file_loc, 'r') as f:

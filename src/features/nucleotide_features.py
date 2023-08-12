@@ -47,7 +47,7 @@ def generate_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
         encoded.columns = columns
         return encoded
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         return filtered_one_hot_encoding(seq)
 
     full_encoding = []
@@ -65,7 +65,7 @@ m5 = list(product(NUCLEOTIDES, repeat=5))
 k_gap = 2
 k_tuple = 2
 
-selected_features = get_selected_features() if USE_SELECTED_FEATURES else None
+selected_features = get_selected_features() if USE_SELECTED_FEATURES["selective"] else None
 
 
 def kmers(seq: str, k: int) -> List[int]:
@@ -82,7 +82,7 @@ def pseudo_knc(sequences: 'pd.Series[str]', k: int) -> pd.DataFrame:
     d = {}
     bio_sequences = sequences.apply(Seq)
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         for i in tqdm(range(1, k + 1)):
             v = list(product(NUCLEOTIDES, repeat=i))
             for j in v:
@@ -109,7 +109,7 @@ def pseudo_knc(sequences: 'pd.Series[str]', k: int) -> pd.DataFrame:
 def z_curve(sequences: 'pd.Series[str]') -> pd.DataFrame:
     ### Z-Curve ### total = 3
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         if 'z_curve_x' in selected_features or 'z_curve_y' in selected_features or 'z_curve_z' in selected_features:
             T = sequences.str.count('T')
             A = sequences.str.count('A')
@@ -146,7 +146,7 @@ def z_curve(sequences: 'pd.Series[str]') -> pd.DataFrame:
 
 
 def gc_content(sequences: 'pd.Series[str]') -> 'pd.Series[float]':
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         if 'GC content' not in selected_features:
             return pd.DataFrame()
 
@@ -168,7 +168,7 @@ def gc_content(sequences: 'pd.Series[str]') -> 'pd.Series[float]':
 
 
 def cumulative_skew(sequences: 'pd.Series[str]') -> pd.DataFrame:
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         if 'gc_skew' in selected_features or 'at_skew' in selected_features:
             T = sequences.str.count('T')
             A = sequences.str.count('A')
@@ -198,7 +198,7 @@ def cumulative_skew(sequences: 'pd.Series[str]') -> pd.DataFrame:
 
 
 def atgc_ratio(sequences: 'pd.Series[str]') -> 'pd.Series[float]':
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         if 'at/gc_ratio' in selected_features:
             T = sequences.str.count('T')
             A = sequences.str.count('A')
@@ -238,7 +238,7 @@ def mono_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 
                 _count += 1
         return _count
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         d = {}
         m = m2
         for i in tqdm(range(1, g + 1)):
@@ -271,7 +271,7 @@ def mono_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 1_
                 _count += 1
         return _count
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         d = {}
         m = m3
         for i in tqdm(range(1, g + 1)):
@@ -303,7 +303,7 @@ def di_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 2_
                 _count += 1
         return _count
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         d = {}
         m = m3
         for i in tqdm(range(1, g + 1)):
@@ -341,7 +341,7 @@ def mono_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 1
                 _count += 1
         return _count
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         d = {}
         m = m4
         for i in tqdm(range(1, g + 1)):
@@ -379,7 +379,7 @@ def tri_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 3
                 _count += 1
         return _count
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         d = {}
         m = m4
         for i in tqdm(range(1, g + 1)):
@@ -418,7 +418,7 @@ def di_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 2___
                 _count += 1
         return _count
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         d = {}
         m = m4
         for i in tqdm(range(1, g + 1)):
@@ -458,7 +458,7 @@ def di_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 2__
                 _count += 1
         return _count
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         d = {}
         m = m5
         for i in tqdm(range(1, g + 1)):
@@ -498,7 +498,7 @@ def tri_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 3__
                 _count += 1
         return _count
 
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         d = {}
         m = m5
         for i in tqdm(range(1, g + 1)):

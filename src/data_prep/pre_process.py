@@ -103,7 +103,7 @@ def generate_selected_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
 
 def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
                       reference_RNA_data: Optional[pd.DataFrame] = None, cp: bool = True) -> pd.DataFrame:
-    if USE_SELECTED_FEATURES:
+    if USE_SELECTED_FEATURES["selective"]:
         return generate_selected_features(RNA_data, rna_type, reference_RNA_data, cp)
 
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
