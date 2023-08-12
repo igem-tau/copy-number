@@ -177,7 +177,7 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
     if p:
         print('start generating RNAp features')
         RNAp_data = get_RNAp_data()
-        RNAp_data = RNAp_data.iloc[0:100,:]
+
         RNAp_data, RNAp_stratify_col = equal_bins_data(RNAp_data)
         RNAp_X = RNAp_data.drop(TARGET_COLUMN, axis=1)
         RNAp_y = RNAp_data[TARGET_COLUMN]

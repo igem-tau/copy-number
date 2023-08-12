@@ -51,12 +51,12 @@ def model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_
         best_param = {}
 
     if model_name == 'lasso':
-        r2, mse_score, spearman = run_lasso(X_train, X_test, y_train, y_test, data_title=data_name,
+        model, r2, mse_score, spearman = run_lasso(X_train, X_test, y_train, y_test, data_title=data_name,
                                             Best_param=best_param, save_plots=save_plots)
     elif model_name == 'xgboost':
-        r2, mse_score, spearman = run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name,
+        model, r2, mse_score, spearman = run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name,
                                               Best_param=best_param, save_plots=save_plots)
     else:
         raise Exception(f'No such model: {model_name}')
-    return r2, mse_score, spearman
+    return model, r2, mse_score, spearman
 

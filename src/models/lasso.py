@@ -17,7 +17,7 @@ def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_par
     else:
         lasso_model = Lasso(alpha=0.3, max_iter=5000)
     # training the model
-    _ = lasso_model.fit(X_train, y_train)
+    model = lasso_model.fit(X_train, y_train)
     # Predict
     y_pred = lasso_model.predict(X_test)
 
@@ -61,7 +61,7 @@ def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_par
     if save_plots:
         plt.savefig(Path(FIGURES_PATH, f'Lasso evaluation {data_title}.jpg'))
 
-    return r2, mse_score, spearman
+    return model, r2, mse_score, spearman
 
 
 

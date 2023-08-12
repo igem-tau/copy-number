@@ -93,9 +93,9 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name, num_of_
 def get_best_params_set_xgb(X, y, model_name, stratify_by):
     xl_name = f'{model_name}_best_params.xlsx'
     if not os.path.exists(os.path.join(os.getcwd(), xl_name)):
-        X_train, X_test, y_train, y_test = train_validation_split(X, y,stratify_by = stratify_by)
+        X_train, X_test, y_train, y_test = train_validation_split(X, y, stratify_by = stratify_by)
         for i in range(5):
-            [ii, kk] = converge_randomsearch(X_train, X_test, y_train, y_test, model_name, num_of_steps=7, nun_iter=7)
+            [ii, kk] = converge_randomsearch(X_train, X_test, y_train, y_test, model_name, num_of_steps=1, nun_iter=1)
 
     df = pd.read_excel(xl_name)
     score = df['scores'].max()
