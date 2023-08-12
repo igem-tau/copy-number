@@ -33,8 +33,6 @@ def scale(X1, X2):
 
 # TODO - fix it - needs to be split into train and validation (not test) -> train_validation_split
 def prepare_model_data(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_test: pd.DataFrame, outliers=False):
-    if outliers:
-        X_train, y_train = remove_outliers(X_train, y_train)
 
     # X_train, X_test, y_train, y_test = train_validation_split(X, y)
 
@@ -47,17 +45,17 @@ def model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_
     print(f'Running {model_name} for {data_name}')
 
     X_train, X_test, y_train, y_test = prepare_model_data(X_train, X_test, y_train, y_test)
-
+    X_train, X_test = scale(X_train, X_test)
     if best_param is None:
         best_param = {}
 
     if model_name == 'lasso':
-        r2, mse_score, spearman = run_lasso(X_train, X_test, y_train, y_test, data_title=data_name,
+        model, r2, mse_score, spearman = run_lasso(X_train, X_test, y_train, y_test, data_title=data_name,
                                             Best_param=best_param, save_plots=save_plots)
     elif model_name == 'xgboost':
-        r2, mse_score, spearman = run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name,
+        model, r2, mse_score, spearman = run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name,
                                               Best_param=best_param, save_plots=save_plots)
     else:
         raise Exception(f'No such model: {model_name}')
-    return r2, mse_score, spearman
+    return model, r2, mse_score, spearman
 
