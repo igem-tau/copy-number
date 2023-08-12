@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from src.config.config import get_section_features
 from src.consts import *
 from src.utils import get_current_file_parent_path, get_selected_features
 from tqdm import tqdm

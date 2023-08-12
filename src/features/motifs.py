@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from pymemesuite.common import MotifFile, Sequence
 from pymemesuite.fimo import FIMO
-from src.config.config import get_section_features
 from src.consts import *
 from src.utils import get_selected_features
 from tqdm import tqdm

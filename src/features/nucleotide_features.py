@@ -5,7 +5,6 @@ from dnacurve import CurvedDNA
 from itertools import product
 import math
 import pandas as pd
-from src.config.config import get_section_features
 from src.consts import *
 from src.utils import get_selected_features
 import subprocess
@@ -581,69 +580,6 @@ def extract_nucli_features(sequences: 'pd.Series[str]') -> pd.DataFrame:
     d.append(res)
 
     return pd.concat(d, axis=1)  # in total with k=2 -> 5943
-
-def extract(seq: str) -> Dict[str, Union[int, float]]:
-    d = {}
-
-    wanted_features = get_section_features(CONF_NUCLI_SEC_NAME)
-
-    if wanted_features.get('z_curve'):
-        res = z_curve(seq)
-        d.update(res)
-
-    if wanted_features.get('gc_content'):
-        res = gc_content(seq)
-        d.update(res)
-
-    if wanted_features.get('cumulative_skew'):
-        res = cumulative_skew(seq)
-        d.update(res)
-
-    if wanted_features.get('atgc_ratio'):
-        res = atgc_ratio(seq)
-        d.update(res)
-
-    if wanted_features.get('pseudo_knc'):
-        res = pseudo_knc(seq, k_tuple)  # k=2|(16), k=3|(64), k=4|(256), k=5|(1024)
-        d.update(res)
-
-    if wanted_features.get('mono_mono_k_gap'):
-        res = mono_mono_k_gap(seq, k_gap)  # 4*(k)*4 = 240
-        d.update(res)
-
-    if wanted_features.get('mono_di_k_gap'):
-        res = mono_di_k_gap(seq, k_gap)  # 4*k*(4^2) = 960
-        d.update(res)
-
-    if wanted_features.get('mono_tri_k_gap'):
-        res = mono_tri_k_gap(seq, k_gap)  # 4*k*(4^3) = 3,840
-        d.update(res)
-
-    if wanted_features.get('di_mono_k_gap'):
-        res = di_mono_k_gap(seq, k_gap)  # (4^2)*k*(4)    = 960
-        d.update(res)
-
-    if wanted_features.get('di_di_k_gap'):
-        res = di_di_k_gap(seq, k_gap)  # (4^2)*k*(4^2)  = 3,840
-        d.update(res)
-
-    if wanted_features.get('di_tri_k_gap'):
-        res = di_tri_k_gap(seq, k_gap)  # (4^2)*k*(4^3)  = 15,360
-        d.update(res)
-
-    if wanted_features.get('tri_mono_k_gap'):
-        res = tri_mono_k_gap(seq, k_gap)  # (4^3)*k*(4)    = 3,840
-        d.update(res)
-
-    if wanted_features.get('tri_di_k_gap'):
-        res = tri_di_k_gap(seq, k_gap)  # (4^3)*k*(4^2)  = 15,360
-        d.update(res)
-
-    return d
-
-
-def generate_df_from_seq(seq: 'pd.Series[str]') -> pd.DataFrame:
-    return pd.DataFrame(seq.apply(extract).tolist())
 
 
 def get_prob_dict_for_idx(idx_bases):
