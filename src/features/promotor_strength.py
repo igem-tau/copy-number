@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 import seaborn as sns
 from src.consts import *
-from src.utils import get_current_file_parent_path
+from src.utils import get_current_file_parent_path, get_selected_features
 from typing import List, Tuple, Union
 
 
@@ -54,11 +54,20 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
         return strength
 
     zones_strength = {}
+    selected_features = get_selected_features()
     for zone in zones:
-        strength = seq.apply(
-            partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
-        )
-        zones_strength[f'{zone} predicted strength'] = strength
+        zone_name = f'{zone} predicted strength'
+        if USE_SELECTED_FEATURES:
+            if zone_name in selected_features:
+                strength = seq.apply(
+                    partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
+                )
+                zones_strength[zone_name] = strength
+        else:
+            strength = seq.apply(
+                partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
+            )
+            zones_strength[zone_name] = strength
 
     return pd.DataFrame(zones_strength)
 
@@ -66,3 +75,13 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
 def calc_predicted_promoter_strength(seq: Union[str, 'pd.Series[str]']) -> Union[float, 'pd.Series[float]']:
     predicted_promoter_strength = calc_promoter_zones_strength(seq, [(-35, -1)])['(-35, -1) predicted strength']
     return predicted_promoter_strength.rename('Predicted Promoter Strength (KbT)')
+
+
+if __name__ == '__main__':
+    seq = pd.Series(["TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT",
+                     "TTGAAATCCTTTTTTTCTGCGCGTAATCTTTTGCTT",
+                     "TAGCGATCCTTTTTTTCTGCCGGTAATCTGCTGCTT",
+                     "GTTAGATCCTTTTTTTCTGCGCGTTATACACTGCTT",
+                     "TTAGAATCGCCTTTTTCTGCGCGTAATCTGCTAAAT"])
+    zones = [(-33, -30), (-11, -8)]
+    calc_promoter_zones_strength(seq, zones)

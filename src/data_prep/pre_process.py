@@ -7,11 +7,11 @@ from sklearn.model_selection import train_test_split
 from src.consts import *
 from src.features.denovo_motifs import score_denovo_motifs
 from src.features.motifs import calc_motifs_pv
-from src.features.nucleotide_features import generate_one_hot_encoding, generate_df_from_seq, entropy
+from src.features.nucleotide_features import generate_one_hot_encoding, entropy, extract_nucli_features
 from src.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from src.features.pssm_feature import calc_series_pssm_score
 from src.features.delta_G.TX_prediction import calculate_dG_and_Tx
-from src.utils import get_current_file_parent_path
+from src.utils import get_current_file_parent_path, get_selected_features
 import sys
 from typing import Optional, Tuple, Union
 
@@ -67,8 +67,45 @@ def get_RNAp_merged_data():
     return merged
 
 
+def generate_selected_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
+                      reference_RNA_data: Optional[pd.DataFrame] = None, cp: bool = True) -> pd.DataFrame:
+    RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
+    RNA_features = []
+
+    selected_features = get_selected_features()
+    if 'Predicted Promoter Strength (KbT)' in selected_features:
+        RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
+
+    if "pssm_score" in selected_features:
+        if reference_RNA_data is not None:
+            RNA_pssm_score = calc_series_pssm_score(RNA_data, reference_RNA_data)
+        else:
+            RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
+        RNA_features.append(RNA_pssm_score)
+
+    RNA_features.append(calc_motifs_pv(RNA_seq))
+    RNA_features.append(generate_one_hot_encoding(RNA_seq))
+    RNA_features.append(extract_nucli_features(RNA_seq))
+    RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
+    RNA_features.append(score_denovo_motifs(RNA_seq))
+
+    if "entropy" in selected_features:
+        RNA_features.append(entropy(RNA_seq))
+
+    if "dG_and_Tx" in selected_features:
+        RNA_features.append(calculate_dG_and_Tx(RNA_seq))  # 3 features based on biophysical properties (deltaG)
+
+    RNA_X = pd.concat(RNA_features, axis=1)
+    RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)
+    RNA_y = RNA_data[TARGET_COLUMN] if cp else None
+    return RNA_X, RNA_y
+
+
 def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
                       reference_RNA_data: Optional[pd.DataFrame] = None, cp: bool = True) -> pd.DataFrame:
+    if USE_SELECTED_FEATURES:
+        return generate_selected_features(RNA_data, rna_type, reference_RNA_data, cp)
+
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
     RNA_features = []
 
@@ -82,7 +119,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
 
     # RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
-    RNA_features.append(generate_df_from_seq(RNA_seq))
+    RNA_features.append(extract_nucli_features(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
     RNA_features.append(entropy(RNA_seq))
     RNA_features.append(calculate_dG_and_Tx(RNA_seq)) # 3 features based on biophysical properties (deltaG)
@@ -324,6 +361,16 @@ def create_fasta_file(RNA_df):
         for idx, sequence in low_cp.items():
             file.write(f'>{idx}\n{sequence}\n')
 
+def check_selective_mode():
+    RNAp_data = get_RNAp_data()
+    data_sample = RNAp_data.head()
+    # X, y = generate_selected_features(data_sample)
+    # X, y = generate_selected_features(RNAp_data)
+    X, y = generate_features(data_sample)
+    print("done")
+
 
 if __name__ == '__main__':
     save_features_df()
+    # check_selective_mode()
+
