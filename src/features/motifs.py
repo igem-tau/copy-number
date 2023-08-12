@@ -3,18 +3,19 @@ import pandas as pd
 from pymemesuite.common import MotifFile, Sequence
 from pymemesuite.fimo import FIMO
 from src.config.config import get_section_features
+from src.consts import *
+from src.utils import get_selected_features
+from tqdm import tqdm
 
 
 INTERACT_MEME = '../../data/motifs/dpinteract.meme'
 SWISS_MEME = '../../data/motifs/SwissRegulon_e_coli.meme'
 
 
-# generate motifs dictionary
-def generate_motif_dict():
+def generate_filtered_motif_dict():
+    selected_features = get_selected_features()
     motifs = {}
     motifs_num = 0
-
-    wanted_motifs = get_section_features(section_name="Motifs")
 
     with MotifFile(INTERACT_MEME) as motif_file:
         motif = motif_file.read()
@@ -22,7 +23,7 @@ def generate_motif_dict():
             motif_name = motif.accession.decode()
 
             # check if in config
-            if motif_name in wanted_motifs and wanted_motifs[motif_name] is True:
+            if motif_name in selected_features:
                 motifs_num += 1
                 motifs[motif_name] = motif
 
@@ -34,10 +35,38 @@ def generate_motif_dict():
             motif_name = motif.accession.decode()
 
             # check if in config
-            if motif_name in wanted_motifs and wanted_motifs[motif_name] is True:
+            if motif_name in selected_features:
                 motifs_num += 1
                 motifs[motif_name] = motif
 
+            motif = motif_file.read()
+
+    assert motifs_num == len(motifs)
+    return motifs, motif_file
+
+
+# generate motifs dictionary
+def generate_motif_dict():
+    if USE_SELECTED_FEATURES:
+        return generate_filtered_motif_dict()
+
+    motifs = {}
+    motifs_num = 0
+
+    with MotifFile(INTERACT_MEME) as motif_file:
+        motif = motif_file.read()
+        while motif:
+            motif_name = motif.accession.decode()
+            motifs_num += 1
+            motifs[motif_name] = motif
+            motif = motif_file.read()
+
+    with MotifFile(SWISS_MEME) as motif_file:
+        motif = motif_file.read()
+        while motif:
+            motif_name = motif.accession.decode()
+            motifs_num += 1
+            motifs[motif_name] = motif
             motif = motif_file.read()
 
     assert motifs_num == len(motifs)
@@ -59,3 +88,4 @@ def calc_motifs_pv(seqs: 'pd.Series[str]') -> pd.DataFrame:
 
 if __name__ == '__main__':
     motifs, motif_file = generate_motif_dict()
+    print("done")

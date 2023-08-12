@@ -5,7 +5,7 @@ from pathlib import Path
 import seaborn as sns
 from src.config.config import get_section_features
 from src.consts import *
-from src.utils import get_current_file_parent_path
+from src.utils import get_current_file_parent_path, get_selected_features
 from typing import List, Tuple, Union
 
 
@@ -54,15 +54,21 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
             strength += energy_matrix_.loc[i, seq[i - START_INDEX]]
         return strength
 
-    conf_zones = get_section_features(CONF_ZONES_SEC_NAME)
-    wanted_zones = [zones[i] for i, v in enumerate(conf_zones) if conf_zones[v]]
-
     zones_strength = {}
-    for zone in wanted_zones:
-        strength = seq.apply(
-            partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
-        )
-        zones_strength[f'{zone} predicted strength'] = strength
+    selected_features = get_selected_features()
+    for zone in zones:
+        zone_name = f'{zone} predicted strength'
+        if USE_SELECTED_FEATURES:
+            if zone_name in selected_features:
+                strength = seq.apply(
+                    partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
+                )
+                zones_strength[zone_name] = strength
+        else:
+            strength = seq.apply(
+                partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
+            )
+            zones_strength[zone_name] = strength
 
     return pd.DataFrame(zones_strength)
 

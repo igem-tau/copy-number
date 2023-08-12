@@ -3,7 +3,8 @@ import pandas as pd
 from pathlib import Path
 from src.config.config import get_section_features
 from src.consts import *
-from src.utils import get_current_file_parent_path
+from src.utils import get_current_file_parent_path, get_selected_features
+from tqdm import tqdm
 
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
@@ -14,19 +15,19 @@ HOMER_HIGH_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'high.motifs')
 HOMER_LOW_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'low.motifs')
 
 
-def get_denovo_motifs_pssms(homer_output_file_loc):
+def get_filtered_denovo_motifs_pssms(homer_output_file_loc):
     with open(homer_output_file_loc, 'r') as f:
         motifs = f.read()
     motifs = motifs.split('>')
 
-    wanted_denovo_motifs = get_section_features(CONF_DENOVO_SEC_NAME)
+    selected_features = get_selected_features()
 
     motifs_dict = {}
     for motif in motifs:
         if motif and not ('NNNNNNNN' in motif):
             table_motif = motif.strip().split('\n', 1)[1]
             motif_name = motif.split('\t')[0]
-            if motif_name in wanted_denovo_motifs and wanted_denovo_motifs[motif_name]:
+            if motif_name in selected_features:
                 motif_df = pd.DataFrame(
                     [x.split('\t') for x in table_motif.split('\n')],
                     columns=['A', 'C', 'G', 'T'],
@@ -34,6 +35,29 @@ def get_denovo_motifs_pssms(homer_output_file_loc):
                 motif_df = motif_df.fillna(0)
                 motif_df = motif_df.replace('', 0)
                 motifs_dict[motif_name] = motif_df
+    return motifs_dict
+
+
+def get_denovo_motifs_pssms(homer_output_file_loc):
+    if USE_SELECTED_FEATURES:
+        return get_filtered_denovo_motifs_pssms(homer_output_file_loc)
+
+    with open(homer_output_file_loc, 'r') as f:
+        motifs = f.read()
+    motifs = motifs.split('>')
+
+    motifs_dict = {}
+    for motif in motifs:
+        if motif and not ('NNNNNNNN' in motif):
+            table_motif = motif.strip().split('\n', 1)[1]
+            motif_name = motif.split('\t')[0]
+            motif_df = pd.DataFrame(
+                [x.split('\t') for x in table_motif.split('\n')],
+                columns=['A', 'C', 'G', 'T'],
+            )
+            motif_df = motif_df.fillna(0)
+            motif_df = motif_df.replace('', 0)
+            motifs_dict[motif_name] = motif_df
     return motifs_dict
 
 
@@ -66,7 +90,8 @@ def score_denovo_motifs(sequences: 'pd.Series[str]'):
             denovo_motifs_features[motif_name + '_denovo_LOW'] = score
         return pd.Series(denovo_motifs_features)
 
-    return pd.DataFrame(sequences.apply(seq_score_denovo_motifs))
+    tqdm.pandas()
+    return pd.DataFrame(sequences.progress_apply(seq_score_denovo_motifs))
 
 
 if __name__ == '__main__':
