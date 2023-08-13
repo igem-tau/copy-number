@@ -524,6 +524,9 @@ def tri_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 3__
 
 
 def extract_nucli_features(sequences: 'pd.Series[str]') -> pd.DataFrame:
+    global selected_features
+    selected_features = get_selected_features() if USE_SELECTED_FEATURES["selective"] else None
+
     d = []
     KMERS = [sequences.apply(lambda sequence: kmers(sequence, i)) for i in range(5 + k_gap + 1)]
 
