@@ -12,8 +12,6 @@ CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
 
-# Create the FASTA file
-
 
 if __name__ == '__main__':
     # Load the data features if exists, write if it doesn't
@@ -59,15 +57,9 @@ if __name__ == '__main__':
     # Generate sequences and calculate features
     generated_RNAp_df = sequence_df_generator(rna_type='p')
 
-    generated_RNAp_df = generated_RNAp_df.head(100)
-
     # Generate selected features
     USE_SELECTED_FEATURES["selective"] = True
-    all_seqs_selected_features, RNA_y = generate_features(generated_RNAp_df, cp=False)  # cp is False because RNA_y should be None because we need to predict the copy number
-
-    # print(all_seqs_selected_features.columns)
-    # print(f"num columns: {len(all_seqs_selected_features.columns)}")
-    # print(f"columns == selected features: {set(RNAp_selected_features) == set(all_seqs_selected_features.columns)}")
+    all_seqs_selected_features, _ = generate_features(generated_RNAp_df, cp=False)  # cp is False because RNA_y should be None because we need to predict the copy number
 
     # Predict
     all_seqs_selected_features = all_seqs_selected_features[RNAp_selected_features]
