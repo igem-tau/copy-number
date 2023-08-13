@@ -91,7 +91,7 @@ def pseudo_knc(sequences: 'pd.Series[str]', k: int) -> pd.DataFrame:
                 search_seq = ''.join(j)
                 key = f'{search_seq}_count'
                 if key in selected_features:
-                    res = bio_sequences.apply(lambda sequence: sequence.count_overlap(search_seq) / (len(sequence) - len(j) + 1))
+                    res = bio_sequences.apply(lambda sequence: sequence.count_overlap(search_seq))
                     d[key] = res
 
         return pd.DataFrame(d)
@@ -101,8 +101,7 @@ def pseudo_knc(sequences: 'pd.Series[str]', k: int) -> pd.DataFrame:
         for j in v:
             search_seq = ''.join(j)
             key = f'{search_seq}_count'
-            res = bio_sequences.apply(
-                lambda sequence: sequence.count_overlap(search_seq) / (len(sequence) - len(j) + 1))
+            res = bio_sequences.apply(lambda sequence: sequence.count_overlap(search_seq))
             d[key] = res
 
     return pd.DataFrame(d)
