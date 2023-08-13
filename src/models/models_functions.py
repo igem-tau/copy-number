@@ -17,16 +17,10 @@ def remove_outliers(X: pd.DataFrame, y: pd.DataFrame):
 
 
 def scale(X1, X2):
-    numeric_features = X1.select_dtypes(include='float64', exclude='int64')
     scaler = StandardScaler()
-    scaler.fit(X1.loc[:, numeric_features.columns])
-    X1.loc[:, numeric_features.columns] = scaler.transform(X1.loc[:, numeric_features.columns])
-    X2.loc[:, numeric_features.columns] = scaler.transform(X2.loc[:, numeric_features.columns])
-
-    # scaler = StandardScaler()
-    # scaler.fit(X1)
-    # X1 = scaler.transform(X1)
-    # X2 = scaler.transform(X2)
+    scaler.fit(X1)
+    X1 = pd.DataFrame(scaler.transform(X1), columns=X1.columns)
+    X2 = pd.DataFrame(scaler.transform(X2), columns=X2.columns)
     return X1, X2
 
 

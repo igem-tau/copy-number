@@ -114,7 +114,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     else:
         RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
     RNA_features.append(RNA_pssm_score)
-    # RNA_features.append(calc_motifs_pv(RNA_seq))
+    RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(extract_nucli_features(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
