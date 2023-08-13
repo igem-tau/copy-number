@@ -24,7 +24,7 @@ def get_selected_features() -> set:
 
 if __name__ == '__main__':
     # print(f'the current file parent path is: {get_current_file_parent_path(__file__)}')
-    test_features = ["TTT__TC_frequency", "A_frequency", "gc_skew", "z_curve_y",
+    test_features = ["TTT__TC_count", "A_count", "gc_skew", "z_curve_y",
                      "ada", "fhlA", "Fis_26-48", "UxuR_14-2", "pssm_score",
                      "Predicted Promoter Strength (KbT)",
                      "TCMCTCCTTT", "CGCGTTWG", "WNGCNCTYYT",

@@ -87,7 +87,7 @@ def pseudo_knc(sequences: 'pd.Series[str]', k: int) -> pd.DataFrame:
             v = list(product(NUCLEOTIDES, repeat=i))
             for j in v:
                 search_seq = ''.join(j)
-                key = f'{search_seq}_frequency'
+                key = f'{search_seq}_count'
                 if key in selected_features:
                     res = bio_sequences.apply(lambda sequence: sequence.count_overlap(search_seq) / (len(sequence) - len(j) + 1))
                     d[key] = res
@@ -98,7 +98,7 @@ def pseudo_knc(sequences: 'pd.Series[str]', k: int) -> pd.DataFrame:
         v = list(product(NUCLEOTIDES, repeat=i))
         for j in v:
             search_seq = ''.join(j)
-            key = f'{search_seq}_frequency'
+            key = f'{search_seq}_count'
             res = bio_sequences.apply(
                 lambda sequence: sequence.count_overlap(search_seq) / (len(sequence) - len(j) + 1))
             d[key] = res
@@ -219,7 +219,7 @@ def atgc_ratio(sequences: 'pd.Series[str]') -> 'pd.Series[float]':
 
 
 def get_k_gap_description(nucleotides: Tuple[str], before_gap: int, after_gap: int, k: int, gap: str='_') -> str:
-    return f'{"".join(nucleotides[:before_gap])}{k*gap}{"".join(nucleotides[before_gap:before_gap+after_gap])}_frequency'
+    return f'{"".join(nucleotides[:before_gap])}{k*gap}{"".join(nucleotides[before_gap:before_gap+after_gap])}_count'
 
 
 def mono_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 1___1
