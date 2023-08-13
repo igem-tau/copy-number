@@ -198,7 +198,7 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
         RNAp_data_val = pd.concat([RNAp_X_data_val, RNAp_y_val], axis=1)
 
         # Generate train split fasta file for high and low copy number motifs
-        create_fasta_file(RNAp_data_train)
+        # create_fasta_file(RNAp_data_train)
 
         RNAp_X_train, RNAp_y_train = generate_features(RNAp_data_train, rna_type='p')
         RNAp_X_val, RNAp_y_val = generate_features(RNAp_data_val, reference_RNA_data=RNAp_data_train, rna_type='p')
