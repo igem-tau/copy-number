@@ -4,6 +4,8 @@ import itertools
 from typing import Dict, List, Tuple, Union
 from functools import partial
 from pathlib import Path
+
+from src.consts import RNA_DATA_COLUMNS, NUCLEOTIDES, RNAp_SEQ_ORIGINAL, RNAi_SEQ_ORIGINAL, START_INDEX
 from src.utils import get_current_file_parent_path
 from joblib import dump, load
 
@@ -13,14 +15,13 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
 
 def sequence_generator(mutation_locations: List[Tuple[int, int]], rna_type: str) -> 'pd.Series[str]':
-    if rna_type =='p':
-        template = 'TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT'
+    if rna_type == 'p':
+        template = RNAp_SEQ_ORIGINAL
     elif rna_type == 'i':
-        template = 'TTGAAGTGGTGGCCTAACTACGGCTACACTAGAAGA'
+        template = RNAi_SEQ_ORIGINAL
     else:
         raise 'Choose a valid rna_type (i or p)'
 
-    NUCLEOTIDES = 'ACGT'
     def combine_sequence(template: str, mutations: str, mutation_locations: List[Tuple[int, int]]) -> str:
 
         START_INDEX = -35
@@ -41,17 +42,6 @@ def sequence_generator(mutation_locations: List[Tuple[int, int]], rna_type: str)
         [combine_sequence(template, mutations, mutation_locations) for mutations in all_mutations],
         name='Promoter Sequence (-35 to +1)')
 
-
-
-
-NUCLEOTIDES = 'ACGT' # the order is important in some part of the code (promoter strength)
-PROMOTER_LENGTH = 36
-START_INDEX = -35
-RNAp_EDITED_ZONES = [(-33, -30), (-11, -8)]
-RNAi_EDITED_ZONES = [(-33, -30), (-10, -7)]
-RNAp_SEQ_ORIGINAL = 'TTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTT'
-RNAi_SEQ_ORIGINAL = 'TTGAAGTGGTGGCCTAACTACGGCTACACTAGAAGA'
-RNA_DATA_COLUMNS = ['Promoter Sequence (-35 to +1)', 'Initial Counts', 'Final Counts', 'Growth Rate', 'Copy Number', 'Predicted Promoter Strength (KbT)']
 
 # import all supplementary data
 # priming RNA

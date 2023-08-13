@@ -53,7 +53,8 @@ if __name__ == '__main__':
 
     # Run model
     # TODO - Recalculate train_val with selected_features only while using the entire dataset
-    trained_model, _, _, _ = model(pd.concat([RNAp_FS_train, RNAp_FS_val]), RNAp_FS_test, pd.concat([RNAp_y_train, RNAp_y_val]), RNAp_y_test, 'xgboost', 'pRNA', Best_param_p_xgb, save_plots=True)
+    trained_model, _, _, _ = model(pd.concat([RNAp_FS_train, RNAp_FS_val]), RNAp_FS_test, pd.concat([RNAp_y_train, RNAp_y_val]), RNAp_y_test,
+                                   'xgboost', 'pRNA', Best_param_p_xgb, save_plots=True)
 
     # Generate sequences and calculate features
     generated_RNAp_df = sequence_df_generator(rna_type='p')
@@ -63,8 +64,7 @@ if __name__ == '__main__':
     all_seqs_selected_features = generate_features(generated_RNAp_df)
 
     # Predict
-
-    # y_pred = trained_model.predict(RNAp_generated_FS)
+    y_pred = trained_model.predict(all_seqs_selected_features)
 
 
 
