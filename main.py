@@ -61,8 +61,11 @@ if __name__ == '__main__':
 
     # Generate selected features
     USE_SELECTED_FEATURES["selective"] = True
-    all_seqs_selected_features, RNA_y = generate_features(generated_RNAp_df, cp=False)
-    # RNA_y should be False, we need to predict the copy number
+    all_seqs_selected_features, RNA_y = generate_features(generated_RNAp_df, cp=False)  # cp is False because RNA_y should be None because we need to predict the copy number
+
+    # print(all_seqs_selected_features.columns)
+    # print(f"num columns: {len(all_seqs_selected_features.columns)}")
+    # print(f"columns == selected features: {set(RNAp_selected_features) == set(all_seqs_selected_features.columns)}")
 
     # Predict
     y_pred = trained_model.predict(all_seqs_selected_features)

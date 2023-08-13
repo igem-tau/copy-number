@@ -47,11 +47,13 @@ def generate_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
         encoded.columns = columns
         return encoded
 
+    print("Running: generate_one_hot_encoding")
+
     if USE_SELECTED_FEATURES["selective"]:
         return filtered_one_hot_encoding(seq)
 
     full_encoding = []
-    for current_nucleotide_index in range(PROMOTER_LENGTH):
+    for current_nucleotide_index in tqdm(range(PROMOTER_LENGTH)):
         current_nucleotide_encoding = encode(seq.str[current_nucleotide_index], current_nucleotide_index + START_INDEX)
         full_encoding.append(current_nucleotide_encoding)
 
@@ -528,7 +530,8 @@ def extract_nucli_features(sequences: 'pd.Series[str]') -> pd.DataFrame:
     selected_features = get_selected_features() if USE_SELECTED_FEATURES["selective"] else None
 
     d = []
-    KMERS = [sequences.apply(lambda sequence: kmers(sequence, i)) for i in range(5 + k_gap + 1)]
+    print("Generating KMERS")
+    KMERS = [sequences.apply(lambda sequence: kmers(sequence, i)) for i in tqdm(range(5 + k_gap + 1))]
 
     print(f'start z_curve, time: {datetime.now()}')
     res = z_curve(sequences)

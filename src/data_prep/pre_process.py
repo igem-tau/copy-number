@@ -88,12 +88,10 @@ def generate_selected_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     RNA_features.append(extract_nucli_features(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
     RNA_features.append(score_denovo_motifs(RNA_seq))
+    RNA_features.append(calculate_dG_and_Tx(RNA_seq))  # 3 features based on biophysical properties (deltaG)
 
     if "entropy" in selected_features:
         RNA_features.append(entropy(RNA_seq))
-
-    if "dG_and_Tx" in selected_features:
-        RNA_features.append(calculate_dG_and_Tx(RNA_seq))  # 3 features based on biophysical properties (deltaG)
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)
@@ -121,7 +119,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     RNA_features.append(extract_nucli_features(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
     RNA_features.append(entropy(RNA_seq))
-    RNA_features.append(calculate_dG_and_Tx(RNA_seq)) # 3 features based on biophysical properties (deltaG)
+    RNA_features.append(calculate_dG_and_Tx(RNA_seq)) # 3 features based ution biophysical properties (deltaG)
     RNA_features.append(score_denovo_motifs(RNA_seq))
 
     RNA_X = pd.concat(RNA_features, axis=1)

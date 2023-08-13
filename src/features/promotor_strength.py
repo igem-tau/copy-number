@@ -53,6 +53,7 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
             strength += energy_matrix_.loc[i, seq[i - START_INDEX]]
         return strength
 
+    print("Running: calc_promoter_zones_strength")
     zones_strength = {}
     selected_features = get_selected_features()
     for zone in zones:

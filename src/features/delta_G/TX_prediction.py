@@ -9,7 +9,10 @@ interactions between RNA polymerase, sigma factor, and promoter DNA sequences in
 import numpy as np
 import os
 import pandas as pd
+from src.consts import *
 from src.features.delta_G import delta_G_utils
+from src.utils import get_selected_features
+from tqdm import tqdm
 
 # Get the directory path of the script
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -116,8 +119,23 @@ def calculate_dG_and_Tx(sequence):
 
         Tx_rate = K * math.exp(- BETA * dG_total)
         return dG_total, dG_apparent, Tx_rate
-    return pd.DataFrame(sequence.apply(seq_calculate_dG_and_Tx).tolist(), columns=['dG_total', 'dG_apparent', 'Tx_rate'])
 
+    print(f"Running: calculate_dG_and_Tx")
+    if USE_SELECTED_FEATURES["selective"]:
+        selected_features = get_selected_features()
+        if 'dG_total' in selected_features or 'dG_apparent' in selected_features or 'Tx_rate' in selected_features:
+            tqdm.pandas()
+            res_df = pd.DataFrame(sequence.progress_apply(seq_calculate_dG_and_Tx).tolist(), columns=['dG_total', 'dG_apparent', 'Tx_rate'])
+            if 'dG_total' not in selected_features:
+                res_df.drop(columns=['dG_total'], inplace=True)
+            if 'dG_apparent' not in selected_features:
+                res_df.drop(columns=['dG_apparent'], inplace=True)
+            if 'Tx_rate' not in selected_features:
+                res_df.drop(columns=['Tx_rate'], inplace=True)
+            return res_df
+
+    tqdm.pandas()
+    return pd.DataFrame(sequence.progress_apply(seq_calculate_dG_and_Tx).tolist(), columns=['dG_total', 'dG_apparent', 'Tx_rate'])
 
 # check the code
 # sequence = 'TTGCAATCCTTTTTTTCTGCGCGTATGCTGCTGCTT'

@@ -89,6 +89,7 @@ def score_denovo_motifs(sequences: 'pd.Series[str]'):
             denovo_motifs_features[motif_name + '_denovo_LOW'] = score
         return pd.Series(denovo_motifs_features)
 
+    print("Running: score_denovo_motifs")
     tqdm.pandas()
     return pd.DataFrame(sequences.progress_apply(seq_score_denovo_motifs))
 
