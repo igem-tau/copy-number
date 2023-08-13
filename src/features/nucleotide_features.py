@@ -249,7 +249,7 @@ def mono_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 
             for gGap in m:
                 key = get_k_gap_description(gGap, 1, 1, i)
                 if key in selected_features:
-                    d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+                    d[key] = V.apply(lambda v: count_matches(v, gGap))
 
         return pd.DataFrame(d)
 
@@ -260,7 +260,7 @@ def mono_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 
 
         for gGap in m:
             key = get_k_gap_description(gGap, 1, 1, i)
-            d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+            d[key] = V.apply(lambda v: count_matches(v, gGap))
 
     return pd.DataFrame(d)
 
@@ -282,7 +282,7 @@ def mono_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 1_
             for gGap in m:
                 key = get_k_gap_description(gGap, 1, 2, i)
                 if key in selected_features:
-                    d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+                    d[key] = V.apply(lambda v: count_matches(v, gGap))
         return pd.DataFrame(d)
 
     d = {}
@@ -292,7 +292,7 @@ def mono_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 1_
 
         for gGap in m:
             key = get_k_gap_description(gGap, 1, 2, i)
-            d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+            d[key] = V.apply(lambda v: count_matches(v, gGap))
 
     return pd.DataFrame(d)
 
@@ -314,7 +314,7 @@ def di_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 2_
             for gGap in m:
                 key = get_k_gap_description(gGap, 2, 1, i)
                 if key in selected_features:
-                    d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+                    d[key] = V.apply(lambda v: count_matches(v, gGap))
 
         return pd.DataFrame(d)
 
@@ -325,7 +325,7 @@ def di_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 2_
 
         for gGap in m:
             key = get_k_gap_description(gGap, 2, 1, i)
-            d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+            d[key] = V.apply(lambda v: count_matches(v, gGap))
 
     return pd.DataFrame(d)
 
@@ -352,7 +352,7 @@ def mono_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 1
             for gGap in m:
                 key = get_k_gap_description(gGap, 1, 3, i)
                 if key in selected_features:
-                    d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+                    d[key] = V.apply(lambda v: count_matches(v, gGap))
 
         return pd.DataFrame(d)
 
@@ -363,7 +363,7 @@ def mono_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 1
 
         for gGap in m:
             key = get_k_gap_description(gGap, 1, 3, i)
-            d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+            d[key] = V.apply(lambda v: count_matches(v, gGap))
 
     return pd.DataFrame(d)
 
@@ -390,7 +390,7 @@ def tri_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 3
             for gGap in m:
                 key = get_k_gap_description(gGap, 3, 1, i)
                 if key in selected_features:
-                    d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+                    d[key] = V.apply(lambda v: count_matches(v, gGap))
 
         return pd.DataFrame(d)
 
@@ -401,7 +401,7 @@ def tri_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 3
 
         for gGap in m:
             key = get_k_gap_description(gGap, 3, 1, i)
-            d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+            d[key] = V.apply(lambda v: count_matches(v, gGap))
 
     return pd.DataFrame(d)
 
@@ -429,7 +429,7 @@ def di_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 2___
             for gGap in m:
                 key = get_k_gap_description(gGap, 2, 2, i)
                 if key in selected_features:
-                    d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+                    d[key] = V.apply(lambda v: count_matches(v, gGap))
 
         return pd.DataFrame(d)
 
@@ -440,7 +440,7 @@ def di_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 2___
 
         for gGap in m:
             key = get_k_gap_description(gGap, 2, 2, i)
-            d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+            d[key] = V.apply(lambda v: count_matches(v, gGap))
 
     return pd.DataFrame(d)
 
@@ -469,7 +469,7 @@ def di_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 2__
             for gGap in m:
                 key = get_k_gap_description(gGap, 2, 3, i)
                 if key in selected_features:
-                    d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+                    d[key] = V.apply(lambda v: count_matches(v, gGap))
 
         return pd.DataFrame(d)
 
@@ -480,7 +480,7 @@ def di_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 2__
 
         for gGap in m:
             key = get_k_gap_description(gGap, 2, 3, i)
-            d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+            d[key] = V.apply(lambda v: count_matches(v, gGap))
 
     return pd.DataFrame(d)
 
@@ -509,7 +509,7 @@ def tri_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 3__
             for gGap in m:
                 key = get_k_gap_description(gGap, 3, 2, i)
                 if key in selected_features:
-                    d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+                    d[key] = V.apply(lambda v: count_matches(v, gGap))
 
         return pd.DataFrame(d)
 
@@ -520,7 +520,7 @@ def tri_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 3__
 
         for gGap in m:
             key = get_k_gap_description(gGap, 3, 2, i)
-            d[key] = V.apply(lambda v: count_matches(v, gGap) / len(v))
+            d[key] = V.apply(lambda v: count_matches(v, gGap))
 
     return pd.DataFrame(d)
 
