@@ -59,6 +59,8 @@ if __name__ == '__main__':
     # Generate sequences and calculate features
     generated_RNAp_df = sequence_df_generator(rna_type='p')
 
+    generated_RNAp_df = generated_RNAp_df.head(100)
+
     # Generate selected features
     USE_SELECTED_FEATURES["selective"] = True
     all_seqs_selected_features, RNA_y = generate_features(generated_RNAp_df, cp=False)  # cp is False because RNA_y should be None because we need to predict the copy number
@@ -68,7 +70,13 @@ if __name__ == '__main__':
     # print(f"columns == selected features: {set(RNAp_selected_features) == set(all_seqs_selected_features.columns)}")
 
     # Predict
+    all_seqs_selected_features = all_seqs_selected_features[RNAp_selected_features]
     y_pred = trained_model.predict(all_seqs_selected_features)
+    print(f"Range of copy nums predicted: {y_pred.min()} - {y_pred.max()}")
+
+    final_predicted_df = generated_RNAp_df[['Promoter Sequence (-35 to +1)']].join(pd.DataFrame({"copy number": y_pred}))
+    final_predicted_df.to_csv("copy_num_predictions.csv")
+
 
 
 
