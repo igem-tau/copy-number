@@ -47,4 +47,4 @@ def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_p
     if save_plots:
         plt.savefig(Path(FIGURES_PATH, f'XGBoost evaluation {data_title}.jpg'))
 
-    return r2, mse_score, spearman
+    return xgb_model, r2, mse_score, spearman
