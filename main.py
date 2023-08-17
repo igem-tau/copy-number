@@ -1,10 +1,11 @@
+import os
 import pandas as pd
 from pathlib import Path
 from src.consts import *
 from src.data_prep.pre_process import get_features_df, generate_features
 from src.models.Feature_Selection import feature_selection
 from src.models.models_functions import model, scale
-from src.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb
+from src.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb, get_best_param_xgb_optuna
 from src.models.sequences_generator import sequence_df_generator
 from src.utils import get_current_file_parent_path, write_selected_features
 
@@ -46,7 +47,8 @@ if __name__ == '__main__':
     RNAp_FS_test = RNAp_X_test_features[RNAp_selected_features]
 
     # Hyperparameters tuning
-    Best_param_p_xgb = get_best_params_set_xgb(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val, 'xgb_RNAp', RNAp_stratify_train_val)
+    # Best_param_p_xgb = get_best_params_set_xgb(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val, 'xgb_RNAp', RNAp_stratify_train_val)
+    Best_param_p_xgb = get_best_param_xgb_optuna(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val)
 
     # Run model
     # TODO - Recalculate train_val with selected_features only while using the entire dataset
@@ -76,6 +78,10 @@ if __name__ == '__main__':
 
     final_predicted_df = generated_RNAp_df[['Promoter Sequence (-35 to +1)']].join(pd.DataFrame({"copy number": y_pred}))
     final_predicted_df.to_csv("copy_num_predictions.csv", index=False)
+
+    save = True
+    if save:
+        trained_model.save_model(os.path.join(DATA_PATH, 'RNAp_model.json'))
 
 
 
