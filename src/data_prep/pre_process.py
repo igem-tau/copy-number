@@ -6,7 +6,7 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from src.consts import *
 from src.features.denovo_motifs import score_denovo_motifs
-from src.features.motifs import calc_motifs_pv
+# from src.features.motifs import calc_motifs_pv
 from src.features.nucleotide_features import generate_one_hot_encoding, entropy, extract_nucli_features
 from src.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from src.features.pssm_feature import calc_series_pssm_score
@@ -83,7 +83,7 @@ def generate_selected_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
             RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
         RNA_features.append(RNA_pssm_score)
 
-    RNA_features.append(calc_motifs_pv(RNA_seq))
+    # RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(extract_nucli_features(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
@@ -114,7 +114,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     else:
         RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
     RNA_features.append(RNA_pssm_score)
-    RNA_features.append(calc_motifs_pv(RNA_seq))
+    # RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(extract_nucli_features(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
