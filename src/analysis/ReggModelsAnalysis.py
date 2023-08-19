@@ -136,3 +136,40 @@ plt.tight_layout()
 plt.show()
 
 
+## This is the winning regression which is random forest regression :
+#TODO: Check for best Parameters for random dorest
+estimator = RandomForestRegressor(n_estimators=30,max_depth = 5)
+RNAp_selected_features_data = FeatureSelectionByModel.feature_selection(RNAp_X_train_features, RNAp_y_train, models['Random Forest Regression'])
+RNAp_selected_features = RNAp_selected_features_data['selected_features']
+
+# Data by selected features
+RNAp_FS_train = RNAp_X_train_features[RNAp_selected_features]
+RNAp_FS_val = RNAp_X_val_features[RNAp_selected_features]
+RNAp_FS_test = RNAp_X_test_features[RNAp_selected_features]
+
+# Run Model
+RNAp_FS_train_val_X = pd.concat([RNAp_FS_train, RNAp_FS_val])
+RNAp_train_val_y = pd.concat([RNAp_y_train, RNAp_y_val])
+
+models['Random Forest Regression'].fit(RNAp_FS_train_val_X, RNAp_train_val_y)
+y_pred = models['Random Forest Regression'].predict(RNAp_FS_test)
+
+# Calculate metrics
+mse = mean_squared_error(RNAp_y_test, y_pred)
+r2 = r2_score(RNAp_y_test, y_pred)
+
+# Create a scatter plot with regression line
+plt.figure(figsize=(8, 6))
+plt.scatter(RNAp_y_test, y_pred, color='blue', label='Actual Data')
+plt.plot(RNAp_X_test_sequences['Promoter Sequence (-35 to +1)'], y_pred, color='red', label='Predicted Regression Line')
+plt.xlabel('X')
+plt.ylabel('y')
+plt.title('Random Forest Regression')
+plt.legend()
+plt.tight_layout()
+
+plt.show()
+
+print(f"MSE: {mse:.3f}")
+print(f"R2 Score: {r2:.3f}")
+
