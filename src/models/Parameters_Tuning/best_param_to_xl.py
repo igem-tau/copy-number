@@ -161,7 +161,7 @@ def pruning_callback(study, trial):
 
 def get_best_param_xgb_optuna(X_train, X_val, y_train, y_val, save_plots=True):
     study = optuna.create_study(direction='minimize')
-    study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val), n_trials=200)
+    study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val), n_trials=1000)
     best_params = study.best_params
 
     print('Number of finished trials: ', len(study.trials))
@@ -184,7 +184,7 @@ def save_optuna_plots(study):
     fig3 = plot_parallel_coordinate(study)
     # fig4 = plot_intermediate_values(study)
 
-    with open(os.path.join(DATA_PATH, 'pRNA_optuna_graphs.html'), 'a') as f:
+    with open(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_pRNA_optuna_graphs.html'), 'w') as f:
         f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig3.to_html(full_html=False, include_plotlyjs='cdn'))

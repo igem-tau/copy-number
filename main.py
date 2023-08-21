@@ -10,7 +10,7 @@ from src.models.sequences_generator import sequence_df_generator
 from src.utils import get_current_file_parent_path, write_selected_features
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
-DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
+DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 
 
 if __name__ == '__main__':
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     save = True
     if save:
-        trained_model.save_model(os.path.join(DATA_PATH, 'RNAp_model.json'))
+        trained_model.save_model(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_RNAp_model.json'))
 
 
 
