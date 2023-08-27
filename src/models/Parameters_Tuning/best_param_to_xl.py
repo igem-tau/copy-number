@@ -150,8 +150,8 @@ def objective(trial, X_train, X_val, y_train, y_val):
 
     # pruning_callback = optuna.integration.XGBoostPruningCallback(trial, "validation-auc")
     model = xgb.XGBRegressor(**param) #, dtrain, evals=[(dvalid, "validation")], callbacks=[pruning_callback])
-
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train, eval_set=[(X_val, y_val)], early_stopping_rounds=10, verbose=False)
+    # model.fit(X_train, y_train)
     y_pred = model.predict(X_val)
     return mean_squared_error(y_val, y_pred)
 
@@ -161,7 +161,7 @@ def pruning_callback(study, trial):
 
 def get_best_param_xgb_optuna(X_train, X_val, y_train, y_val, save_plots=True):
     study = optuna.create_study(direction='minimize')
-    study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val), n_trials=1000)
+    study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val), n_trials=400)
     best_params = study.best_params
 
     print('Number of finished trials: ', len(study.trials))
@@ -179,16 +179,25 @@ def get_best_param_xgb_optuna(X_train, X_val, y_train, y_val, save_plots=True):
     return best_params
 
 def save_optuna_plots(study):
+    importances = optuna.importance.get_param_importances(study)
+    params_sorted = list(importances.keys())
+
     fig1 = plot_slice(study)
     fig2 = plot_param_importances(study)
     fig3 = plot_parallel_coordinate(study)
+    fig4 = plot_timeline(study)
+    fig5 = plot_rank(study, params=params_sorted[:4])
+    fig6 = plot_optimization_history(study)
     # fig4 = plot_intermediate_values(study)
 
     with open(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_pRNA_optuna_graphs.html'), 'w') as f:
         f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig3.to_html(full_html=False, include_plotlyjs='cdn'))
-        # f.write(fig4.to_html(full_html=False, include_plotlyjs='cdn'))
+        f.write(fig4.to_html(full_html=False, include_plotlyjs='cdn'))
+        f.write(fig5.to_html(full_html=False, include_plotlyjs='cdn'))
+        f.write(fig6.to_html(full_html=False, include_plotlyjs='cdn'))
+
 
 
 ## example##
