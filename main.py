@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from pathlib import Path
+from src.analysis.EDA import EDA
 from src.consts import *
 from src.data_prep.pre_process import get_features_df, generate_features
 from src.models.Feature_Selection import feature_selection
@@ -46,6 +47,9 @@ if __name__ == '__main__':
     RNAp_FS_val = RNAp_X_val_features[RNAp_selected_features]
     RNAp_FS_test = RNAp_X_test_features[RNAp_selected_features]
 
+    # Exploratory Data Analysis (EDA)
+    EDA(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val)
+
     # Hyperparameters tuning
     # Best_param_p_xgb = get_best_params_set_xgb(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val, 'xgb_RNAp', RNAp_stratify_train_val)
     Best_param_p_xgb = get_best_param_xgb_optuna(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val)
@@ -82,15 +86,3 @@ if __name__ == '__main__':
     save = True
     if save:
         trained_model.save_model(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_RNAp_model.json'))
-
-
-
-
-
-
-
-
-
-
-
-
