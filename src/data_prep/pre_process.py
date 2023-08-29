@@ -48,6 +48,11 @@ def get_RNAi_data():
     return RNAi_df
 
 
+def get_RNAi_prom_RNAp():
+    df = pd.read_csv(Path(DATA_PATH, 'rna_p_data.csv'), names=RNAi_PROM_RNAp_COLUMNS)
+    return df
+
+
 def get_RNAp_merged_data():
     """
     get RNA_p df merged with the timepoints and additional columns
@@ -207,7 +212,7 @@ def train_validation_split(X, y, stratify_by: pd.Series,
 #     return X_train, X_valid, X_test, y_train, y_valid, y_test
 
 
-def save_features_df(p=True, i=True, shared=True, specify_date = False):
+def save_features_df(p=True, i=True, shared=True, specify_date=False, rna=False):
     data = {}
     if p:
         print('start generating RNAp features')
