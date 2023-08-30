@@ -25,7 +25,7 @@ def filtered_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
             return encoded
         return pd.DataFrame()
 
-    selected_features = get_selected_features()
+    selected_features = get_selected_features(rna_type_const['RNA'])
     full_encoding = []
     for current_nucleotide_index in tqdm(range(PROMOTER_LENGTH)):
         current_nucleotide_encoding = encode(seq.str[current_nucleotide_index], current_nucleotide_index + START_INDEX)
@@ -67,7 +67,7 @@ m5 = list(product(NUCLEOTIDES, repeat=5))
 k_gap = 2
 k_tuple = 2
 
-selected_features = get_selected_features() if USE_SELECTED_FEATURES["selective"] else None
+selected_features = get_selected_features(rna_type_const['RNA']) if USE_SELECTED_FEATURES["selective"] else None
 
 
 def kmers(seq: str, k: int) -> List[int]:
@@ -527,7 +527,7 @@ def tri_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int) -> pd.DataFrame:  # 3__
 
 def extract_nucli_features(sequences: 'pd.Series[str]') -> pd.DataFrame:
     global selected_features
-    selected_features = get_selected_features() if USE_SELECTED_FEATURES["selective"] else None
+    selected_features = get_selected_features(rna_type_const['RNA']) if USE_SELECTED_FEATURES["selective"] else None
 
     d = []
     print("Generating KMERS")

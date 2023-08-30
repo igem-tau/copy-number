@@ -19,7 +19,7 @@ def get_filtered_denovo_motifs_pssms(homer_output_file_loc):
         motifs = f.read()
     motifs = motifs.split('>')
 
-    selected_features = get_selected_features()
+    selected_features = get_selected_features(rna_type_const['RNA'])
 
     motifs_dict = {}
     for motif in motifs:

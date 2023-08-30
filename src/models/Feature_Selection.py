@@ -20,7 +20,7 @@ https://towardsdatascience.com/boruta-explained-the-way-i-wish-someone-explained
 https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html
 '''
 
-def feature_selection(RNA_X, RNA_y):
+def feature_selection(RNA_X, RNA_y, rna_type):
     """
     Feature Selection for RNAp or RNAi.
 
@@ -30,8 +30,12 @@ def feature_selection(RNA_X, RNA_y):
     Using Data vendding based on corrolation between features and droping uncorralated ones that are under the minimum.
     Using BorutaShap as model for feature selection (Wrapper Method).
     """
-    if Path(DATA_PATH, 'Selected_Features.joblib').exists():
-        data = load(Path(DATA_PATH, 'Selected_Features.joblib'))
+    if rna_type=='p':
+        filename = 'RNAp_Selected_Features.joblib'
+    elif rna_type=='i':
+        filename = 'RNAi_Selected_Features.joblib'
+    if Path(DATA_PATH, filename).exists():
+        data = load(Path(DATA_PATH, filename))
     else:
         # feature vetting: select features based on correlations only
         # correlation between features and copy number (maximal) with MI
@@ -92,7 +96,7 @@ def feature_selection(RNA_X, RNA_y):
 
         data={'RNAp_train_FS': subset_of_data, 'selected_features': features_to_accept, 'removed_features': features_to_remove}
 
-        dump(data, Path(DATA_PATH, 'Selected_Features.joblib'))
+        dump(data, Path(DATA_PATH, filename))
 
 
     return data

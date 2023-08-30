@@ -8,3 +8,5 @@ RNAi_SEQ_ORIGINAL = 'TTGAAGTGGTGGCCTAACTACGGCTACACTAGAAGA'
 RNA_DATA_COLUMNS = ['Promoter Sequence (-35 to +1)', 'Initial Counts', 'Final Counts', 'Growth Rate', 'Copy Number', 'Predicted Promoter Strength (KbT)']
 
 USE_SELECTED_FEATURES = {"selective": False}
+rna_type_const = {"RNA": 'p'}
+

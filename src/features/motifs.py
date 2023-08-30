@@ -13,8 +13,8 @@ INTERACT_MEME = Path(DATA_PATH, 'motifs', 'dpinteract.meme')
 SWISS_MEME = Path(DATA_PATH, 'motifs', 'SwissRegulon_e_coli.meme')
 
 
-def generate_filtered_motif_dict():
-    selected_features = get_selected_features()
+def generate_filtered_motif_dict(rna_type):
+    selected_features = get_selected_features(rna_type_const['RNA'])
     motifs = {}
     motifs_num = 0
 
@@ -47,9 +47,9 @@ def generate_filtered_motif_dict():
 
 
 # generate motifs dictionary
-def generate_motif_dict():
+def generate_motif_dict(rna_type):
     if USE_SELECTED_FEATURES["selective"]:
-        return generate_filtered_motif_dict()
+        return generate_filtered_motif_dict(rna_type)
 
     motifs = {}
     motifs_num = 0
@@ -74,8 +74,8 @@ def generate_motif_dict():
     return motifs, motif_file
 
 
-def calc_motifs_pv(seqs: 'pd.Series[str]') -> pd.DataFrame:
-    motifs, motif_file = generate_motif_dict()
+def calc_motifs_pv(seqs: 'pd.Series[str]', rna_type) -> pd.DataFrame:
+    motifs, motif_file = generate_motif_dict(rna_type)
     fimo = FIMO(both_strands=True, threshold=1e-3)
 
     motifs_df = pd.DataFrame(data=np.ones((len(seqs), len(motifs.keys()))), columns=motifs.keys())
