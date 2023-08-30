@@ -7,7 +7,7 @@
 %%Pages: 1
 %%EndComments
 
-% Program options: 
+% Program options:
 
 % This file contains the square roots of probabilities in the form
 % i  j  sqrt(p(i,j)) ubox
@@ -110,7 +110,7 @@ DPdict begin
       % check whether we've actually got some data
       DataSource exch get dup currentdict exch known {
         % data source s_j is present, so find length of array
-        currentdict exch get length 
+        currentdict exch get length
       } { pop 0 } ifelse
     } if
   } for
@@ -235,25 +235,25 @@ DPdict begin
 } bind def
 /drawDataTitleBottom {
   /Helvetica findfont 0.95 scalefont setfont
-  0 -1.4 3 -1 roll sub moveto 
-  dup stringwidth pop neg 0 rmoveto   
+  0 -1.4 3 -1 roll sub moveto
+  dup stringwidth pop neg 0 rmoveto
   show
 } bind def
 /drawDataTitleTop {
   /Helvetica findfont 0.95 scalefont setfont
-  0 len 1.6 add 3 -1 roll add moveto 
-  dup stringwidth pop neg 0 rmoveto   
+  0 len 1.6 add 3 -1 roll add moveto
+  dup stringwidth pop neg 0 rmoveto
   show
 } bind def
 /drawDataTitleLeft {
   /Helvetica findfont 0.95 scalefont setfont
-  neg 1.4 sub len 1 add moveto 
+  neg 1.4 sub len 1 add moveto
   dup stringwidth pop 0 exch rmoveto -90 rotate
   show 90 rotate
 } bind def
 /drawDataTitleRight {
   /Helvetica findfont 0.95 scalefont setfont
-  1.6 add len add len 1 add moveto 
+  1.6 add len add len 1 add moveto
   dup stringwidth pop 0 exch rmoveto -90 rotate
   show 90 rotate
 } bind def
@@ -293,7 +293,7 @@ DPdict begin
           } ifelse
           % now on stack: ... j i a a[i]
           % 2. process actual data a[k] for 1 <= k < n
-          dup length 1 sub 1 exch getinterval { 
+          dup length 1 sub 1 exch getinterval {
             % on stack: j i a a[i][k]
             gsave
             dup length 2 eq { % print black box if two-valued
@@ -311,10 +311,10 @@ DPdict begin
             } ifelse
             grestore
           } forall
-          exch pop 
+          exch pop
           % left on stack: j a
         } for
-        
+
       } if
     } if
   } for
