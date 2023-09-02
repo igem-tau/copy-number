@@ -1,3 +1,5 @@
+import os.path
+
 import numpy as np
 import pandas as pd
 import itertools
@@ -45,16 +47,11 @@ def sequence_generator(mutation_locations: List[Tuple[int, int]], rna_type: str)
 
 # import all supplementary data
 # priming RNA
-RNAp_df = pd.read_excel(
-    'https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-022-31422-0/MediaObjects/41467_2022_31422_MOESM5_ESM.xlsx',
-    names=RNA_DATA_COLUMNS
-)
-timepoints_df = pd.read_excel('https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-022-31422-0/MediaObjects/41467_2022_31422_MOESM6_ESM.xlsx') # priming RNA time points
+RNAp_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_1_p_rna.xlsx'), names=RNA_DATA_COLUMNS)
+timepoints_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_3_seq_cnt_p_rna.xlsx'))
 # inhibitory RNA
-RNAi_df = pd.read_excel(
-    'https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-022-31422-0/MediaObjects/41467_2022_31422_MOESM7_ESM.xlsx',
-    names=RNA_DATA_COLUMNS
-)
+RNAi_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_2_i_rna.xlsx'), names=RNA_DATA_COLUMNS)
+
 
 
 # promoter energy matrix
