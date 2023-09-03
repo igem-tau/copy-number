@@ -55,10 +55,10 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
 
     print("Running: calc_promoter_zones_strength")
     zones_strength = {}
-    selected_features = get_selected_features()
     for zone in zones:
         zone_name = f'{zone} predicted strength'
         if USE_SELECTED_FEATURES["selective"]:
+            selected_features = get_selected_features()
             if zone_name in selected_features:
                 strength = seq.apply(
                     partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
