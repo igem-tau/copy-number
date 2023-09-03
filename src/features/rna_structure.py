@@ -1,10 +1,13 @@
 from Bio.SeqUtils import MeltingTemp
 from dnacurve import CurvedDNA
+import os
 import pandas as pd
 from src.consts import *
 import subprocess
-from tqdm import tqdm
 import re  # for the base-pairing energy function
+from tqdm import tqdm
+from typing import List
+
 
 CONSENSUS_RNAp_SEQ = 'CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUC\
 UAUGGUUUAUGACAAGAAGAUCACAUCGGCAUCAAUCCGGUGGUGAAGUUCUUGAGACAUCGUGGCGGAUGUAUGGAGCGAGACGAUUAGGACAAUGGUCACCGACGACGGUCACCGCU\
@@ -12,6 +15,7 @@ AUUCAGCACAGAAUGGCCCAACCUGAGUUCUGCUAUCAAUGGCCUAUUCCGCGUCGCCAGCCCGACUUGCCCCCCAAGCA
 ACUCUAUGGAUGUCGCACUCGAUACUCUUUCGCGGUGCGAAGGGCUUCCCUCUUUCCGCCUGUCCAUAGGCCAUUCGCCGUCCCAGCCUUGUCCUCUCGCGUGCUCCCUCGAAGGUCCC\
 CCUUUGCGGACCAUAGAAAUAUCAGGACAGCCCAAAGCGGUGGAGACUGAACUCGCAGCUAAAAACACUACGAGCAGUCCCCCCGCCUCGGAUACCUUUUUGCGGUCGUUGCGCCGGAA'
 
+STEM_LOOPS = ["III", "IV", "VI"]
 
 # convert DNA sequence to the RNA sequence that will be transcripted
 def dna_to_rna_complement(dna_sequence):
@@ -69,10 +73,10 @@ def get_dist_from_orig_alpha_beta(rna_seq: str):
     sec_struct = get_rna_secondry_structure(rna_seq)
     base_pairs_dict = extract_base_pairs(sec_struct)
     cnt = 0
-    for i, j in CONSENSUS_POSITIONS.items():
+    for i, j in CONSENSUS_POSITIONS_ALPHA_BETA_FOLD.items():
         if base_pairs_dict.get(i, '-') == j:
             cnt += 1
-    return cnt / len(CONSENSUS_POSITIONS)
+    return cnt / len(CONSENSUS_POSITIONS_ALPHA_BETA_FOLD)
 
 
 def get_alpha_area_match_ratio(rna_seq: str, alpha_range: range = EXTENDED_ALPHA_RANGE):
@@ -87,44 +91,130 @@ def get_alpha_area_match_ratio(rna_seq: str, alpha_range: range = EXTENDED_ALPHA
     return hits / len(alpha_range)
 
 
+def get_match_ratio(rna_seq: str, consensus: dict) -> float:
+    sec_struct = get_rna_secondry_structure(rna_seq)
+    bp_dict = extract_base_pairs(sec_struct)
+    hits = 0
+    for k, v in consensus.items():
+        hits += 1 if bp_dict.get(k, -1) == v else 0
+    return hits / len(consensus)
+
+
+def get_match_rate_to_3_stem_loops(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
+    d = {}
+    for end_idx in tqdm(seq_end_idx):
+        partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
+        col_desc = f"sl_match_seq_end_{end_idx}"
+        d[col_desc] = partial_seqs.apply(lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_3_STEM_LOOPS))
+    return pd.DataFrame(d)
+
+
+def get_match_rate_to_alpha_beta(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
+    d = {}
+    for end_idx in tqdm(seq_end_idx):
+        partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
+        col_desc = f"alpha_beta_match_seq_end_{end_idx}"
+        d[col_desc] = partial_seqs.apply(lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_ALPHA_BETA_FOLD))
+    return pd.DataFrame(d)
+
+
+def get_match_rate_to_extended_alpha_beta(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
+    d = {}
+    for end_idx in tqdm(seq_end_idx):
+        partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
+        col_desc = f"alpha_beta_extended_match_seq_end_{end_idx}"
+        d[col_desc] = partial_seqs.apply(lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_EXTENDED_ALPHA_BETA_FOLD))
+    return pd.DataFrame(d)
+
+
 # function to extract base-pairing probabilities of the RNA sequence
 # reads the "dot.ps" file that is created when running: run_RNAfold_as_webtool(rna_seq)
 # TODO: change the output to fit to the DataFrame, for now the output is a dictionary
-def base_pair_probabilities():
-    dot_file = r".\dot.ps"
+def base_pair_probabilities(file_path: str, end_idx=None) -> dict:
+    # dot_file = r".\dot.ps"
     start_marker = "%start of base pair probability data"
     end_marker = "lbox"  # after all the probabilities, next to appear are the most probable base-pairs
     # which all are assigned to value of 0.95 and the line ends with "lbox" instead of "ubox"
+    finish_marker = "showpage" # sometimes there is no lbox and after the lines we have "showpage" line
 
     probabilities_dict = {}
     inside_target_section = False
 
-    with open(dot_file, 'r') as file:
+    with open(file_path, 'r') as file:
         for line in file:
             line = line.strip()
 
             if inside_target_section:
-                if end_marker in line:
+                if end_marker in line or finish_marker in line:
                     inside_target_section = False
                     break
+
                 parts = line.split()  # each line that we read is in this format: "1st_index 2nd_index probability ubox"
                 # (for example: 2 14 0.022664034 ubox)
-                key = f"{parts[0]} {parts[1]}"  # name the feature "1st_index 2nd_index"
-                value = parts[2]  # and assign to it the value 'probability'
-                probabilities_dict[key] = value
+                try:
+                    if end_idx:
+                        key = f"seq_end_{end_idx}_{parts[0]}_{parts[1]}"  # name the feature "1st_index 2nd_index"
+                    else:
+                        key = f"{parts[0]}_{parts[1]}"
+                    value = parts[2]  # and assign to it the value 'probability'
+                    probabilities_dict[key] = value
+                except Exception as ex:
+                    print(ex)
 
             if line == start_marker:
                 inside_target_section = True
 
         return probabilities_dict
 
+
+def get_prob_for_seq(rna_seq: str, end_idx=None) -> dict:
+    run_RNAfold(rna_seq)
+
+    # check we got file
+    assert os.path.exists("dot.ps"), "dot file with probabilities generation failed"
+    res = base_pair_probabilities("dot.ps", end_idx)
+
+    # remove files
+    os.remove("dot.ps")
+    os.remove("rna.ps")
+
+    return res
+
+
+def get_mfe_for_seq(seq: str, stem_loop_type: str):
+    output = run_RNAfold_as_webtool(seq)
+    secondry_structure = output.split()[1]
+    energy_data = run_RNAeval(seq, secondry_structure)
+    res = sum_base_pair_energy(energy_data, stem_loop_type)
+    return res
+
+
+def get_stem_loops_mfe(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
+    d = {}
+    for end_idx in tqdm(seq_end_idx):
+        partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
+        for sl in STEM_LOOPS:
+            col_desc = f"mfe_seq_end_{end_idx}_sl_{sl}"
+            d[col_desc] = partial_seqs.apply(lambda seq: get_mfe_for_seq(seq, sl))
+    return pd.DataFrame(d)
+
+
+def get_prob_df(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
+    df_ls = []
+    for end_idx in tqdm(seq_end_idx):
+        partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
+        seq_and_prob_df = partial_seqs.apply(lambda seq: get_prob_for_seq(seq, end_idx))
+        df = pd.DataFrame(seq_and_prob_df.tolist())
+        df.fillna(0, inplace=True)
+        df_ls.append(df)
+    res_df = pd.concat(df_ls, axis=1)
+    return res_df
+
+
 # assuming that RNAeval also creates a file that seems like the output in the website
 # need to choose the Motif to compare, i.e "loop III", "loop IV", "loop VI"
 # TODO: change the output to match the DataFrame of the features, now it only returns the energy for the desired loop
-def sum_base_pair_energy(loop: str):
-    # Define the file path
-    file_path = ".\dot.ps"  # Replace with the actual file name
-
+def sum_base_pair_energy(enery_data: List[str], loop: str) -> int:
     ranges = {'III': (74, 108), 'IV': (73, 195), 'VI': (216, 328)}
     # Define the range of numbers to look for
     relevant_range = ranges[loop]
@@ -132,19 +222,31 @@ def sum_base_pair_energy(loop: str):
     # Initialize the sum
     total_sum = 0
 
-    # Read the file line by line
-    with open(file_path, 'r') as file:
-        for line in file:
-            # Extract all numbers using regular expression
-            numbers = [int(num) for num in re.findall(r'-?\d+', line)]
+    for line in enery_data:
+        # Extract all numbers using regular expression
+        numbers = [int(num) for num in re.findall(r'-?\d+', line)]
+        # checks if the line of correct expected format
+        # for example: 'Interior loop (  3, 20) GC; (  4, 19) UG:  -250'
+        if len(numbers) != 5:
+            continue
 
-            # Check if there are at least two numbers within the specified range
-            if relevant_range[0] <= numbers[0] and numbers[1] <= relevant_range[1]:
-                print(line)
-                # Add the last number to the total sum
-                total_sum += numbers[-1]
+        # Check if there are at least two numbers within the specified range
+        if relevant_range[0] <= numbers[0] and numbers[1] <= relevant_range[1]:
+            # print(line)
+            # Add the last number to the total sum
+            total_sum += numbers[-1]
 
     return total_sum
+
+
+def run_RNAeval(rna_seq: str, secondry_structure: str):
+    # Todo: You need to download RNAfold before from:
+    #  https://www.tbi.univie.ac.at/RNA/#download
+    #  Include it as part of the project later
+    cmd = ['RNAeval', '-v']
+    result = subprocess.run(cmd, input=f"{rna_seq}\n{secondry_structure}", capture_output=True, text=True)
+    output = result.stdout.strip().split('\n')
+    return output
 
 
 def run_RNAfold(rna_seq: str):
@@ -393,16 +495,33 @@ def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
 
 
 def make_rna_features(rna: pd.DataFrame) -> pd.DataFrame:
-    # df["entropy"] = entropy(df[SEQ_COLUMN_NAME])
-    pass
+    sl_match = get_match_rate_to_3_stem_loops(rna, list(range(118, 250, 10)))
+    alpha_beta_match = get_match_rate_to_alpha_beta(rna, list(range(195, 554, 20))[:-1] + [554])
+    alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, list(range(195, 554, 20))[:-1] + [554])
+    bases_probabilities = get_prob_df(rna, list(range(118, 554, 100))[:-1] + [554])
+    stem_loops_mfe = get_stem_loops_mfe(rna, list(range(118, 554, 100))[:-1] + [554])
+
+    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, bases_probabilities, stem_loops_mfe]
+    result_df = pd.concat(features_dfs, axis=1)
+    return result_df
 
 
 def checks():
     # res = extract_base_pairs("((((((((....(((((((((...)))))))))))))))))((((..(((((((...)))))))..))))...(((.(((((.((.(((...))).)).))))).)))...")
     # tr = run_RNAfold_as_webtool("AGGTGTGTGAACCCGCGCGCGCGCG")
     # tr = run_RNAfold("AGGTGTGTGAACCCGCGCGCGCGCG")
-    prob_dict = base_pair_probabilities()
-    bp_ener = sum_base_pair_energy('VI')
+    # run_RNAfold("AGGTGTGTGAACCCGCGCGCGCGCG")
+    # res = get_prob_for_seq("AGGTGTGTGAACCCGCGCGCGCGCG")
+    # prob_dict = base_pair_probabilities("dot.ps")
+    # bp_ener = sum_base_pair_energy('VI')
+    # res = run_RNAeval("CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUCUAUGGUUUAUGACAAGAAGAU", "(((((((.....(((((((((...))))))))).)))))))((((..(((((((...)))))))..))))...(((.(((((.((.(((...))).)).))))).)))..........")
+    # r = sum_base_pair_energy(res, "III")
+
+    df = pd.read_csv(r"C:\Users\User1\IGEM\code\copy-number\data\rna_p_data.csv")
+    rna_seqs = df["RNAp_seq"]
+    rna_seqs.head(5)
+    make_rna_features(rna_seqs)
+    # get_prob_df(seq, seq_end_idx=[10, 20])
 
 
 if __name__ == '__main__':
@@ -411,7 +530,7 @@ if __name__ == '__main__':
 
 # features to extract from RNAfold files and RNAeval output
 
-# 1) take rna_p[:111] and make dictionary of the indices:
+# 1) take rna_p[:111] and make dictionary of the indices:                   V
 # Interior loop ( 74,108) CG; ( 75,107) AU:  -210
 # Interior loop ( 75,107) AU; ( 76,106) UA:  -110
 # Interior loop ( 76,106) UA; ( 78,104) GU:   190
@@ -428,13 +547,13 @@ if __name__ == '__main__':
 
 # for each sequence take:
 # seq[:118], seq[:118+10], etc until seq[:250] beta finish + 53
-# for each partial seq check number of matches to the consensus
+# for each partial seq check number of matches to the consensus             V
 
-# same for checking alpha_beta
+# same for checking alpha_beta                                              V
 
 # using RNAfold output file to get probabilities DONE:) base_pair_probabilities()
 
-# TODO: for each partial seq make a feature of length and pair probability, for example: "seq_120_3_56"
+# TODO: for each partial seq make a feature of length and pair probability, for example: "seq_120_3_56" V
 
 # run RNAfold on entire seq and take using RNAeval energy sum of extended alpha beta loop (SL 4)
 # stem-loop IV seq[72:194]
