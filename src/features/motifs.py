@@ -76,14 +76,21 @@ def generate_motif_dict():
 
 def calc_motifs_pv(seqs: 'pd.Series[str]') -> pd.DataFrame:
     motifs, motif_file = generate_motif_dict()
-    fimo = FIMO(both_strands=True, threshold=1e-3)
+    fimo = FIMO(both_strands=True) #, threshold=1e-3)
 
-    motifs_df = pd.DataFrame(data=np.ones((len(seqs), len(motifs.keys()))), columns=motifs.keys())
+    columns_names_pv = []
+    columns_names_score = []
+    for i in motifs.keys():
+        columns_names_pv.append(f'{i}_pv')
+        columns_names_score.append(f'{i}_score')
+
+    motifs_df = pd.DataFrame(data=np.hstack((np.ones(shape=(len(seqs), len(motifs.keys()))), np.zeros(shape=(len(seqs), len(motifs.keys()))))), columns=columns_names_pv + columns_names_score)
     for i, seq in enumerate(seqs):
       for selected_motif in motifs.values():
           pattern = fimo.score_motif(selected_motif, [Sequence(seq)], motif_file.background)
           for m in pattern.matched_elements:
-              motifs_df.loc[i, selected_motif.accession.decode()] = m.pvalue
+              motifs_df.loc[i, f'{selected_motif.accession.decode()}_pv'] = m.pvalue
+              motifs_df.loc[i, f'{selected_motif.accession.decode()}_score'] = m.score
     return motifs_df
 
 
