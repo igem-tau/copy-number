@@ -16,7 +16,7 @@ FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 def run_xgboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_param: Optional[dict] = None,
                 save_plots: bool = False):
     if Best_param is not None:
-        Best_param['max_depth'], Best_param['n_estimators'] = int(Best_param['max_depth']), int(Best_param['n_estimators'])
+        # Best_param['max_depth'], Best_param['n_estimators'] = int(Best_param['max_depth']), int(Best_param['n_estimators'])
         xgb_model = xgb.XGBRegressor(**Best_param)
     else:
         xgb_model = xgb.XGBRegressor()

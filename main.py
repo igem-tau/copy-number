@@ -1,18 +1,21 @@
+import os
 import pandas as pd
 from pathlib import Path
+from src.analysis.EDA import EDA
 from src.consts import *
 from src.data_prep.pre_process import get_features_df, generate_features
 from src.models.Feature_Selection import feature_selection
 from src.models.models_functions import model, scale
-from src.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb
+from src.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb, get_best_param_xgb_optuna
 from src.models.sequences_generator import sequence_df_generator
 from src.utils import get_current_file_parent_path, write_selected_features
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
-DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
+DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 
 def run_RNAp():
     # Load the data features if exists, write if it doesn't
+    rna_type_const['RNA'] = 'p'
     data = get_features_df(rna_type = 'p')
 
     # Extract X, Y, sequences - DataFrames
@@ -46,9 +49,12 @@ def run_RNAp():
     RNAp_FS_val = RNAp_X_val_features[RNAp_selected_features]
     RNAp_FS_test = RNAp_X_test_features[RNAp_selected_features]
 
+    # Exploratory Data Analysis (EDA)
+    EDA(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val)
+
     # Hyperparameters tuning
-    Best_param_p_xgb = get_best_params_set_xgb(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val, 'xgb_RNAp',
-                                               RNAp_stratify_train_val)
+    # Best_param_p_xgb = get_best_params_set_xgb(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val, 'xgb_RNAp', RNAp_stratify_train_val)
+    Best_param_p_xgb = get_best_param_xgb_optuna(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val)
 
     # Run model
     # TODO - Recalculate train_val with selected_features only while using the entire dataset
@@ -61,7 +67,6 @@ def run_RNAp():
     generated_RNAp_df = sequence_df_generator(rna_type='p')
 
     # Generate selected features
-    rna_type_const['RNA'] = 'p'
     USE_SELECTED_FEATURES["selective"] = True
     RNAp_train_val_data = pd.concat(
         (pd.concat((RNAp_X_train_features, RNAp_X_val_features)), pd.concat((RNAp_y_train, RNAp_y_val))),
@@ -81,8 +86,14 @@ def run_RNAp():
         pd.DataFrame({"copy number": y_pred}))
     final_predicted_df.to_csv("RNAp_copy_num_predictions.csv", index=False)
 
+    save = True
+    if save:
+        trained_model.save_model(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_RNAp_model.json'))
+
+
 def run_RNAi():
     # Load the data features if exists, write if it doesn't
+    rna_type_const['RNA'] = 'i'
     data = get_features_df(rna_type = 'i')
 
     # Extract X, Y, sequences - DataFrames
@@ -114,9 +125,14 @@ def run_RNAi():
     RNAi_FS_val = RNAi_X_val_features[RNAi_selected_features]
     RNAi_FS_test = RNAi_X_test_features[RNAi_selected_features]
 
+    # Exploratory Data Analysis (EDA)
+    EDA(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val)
+
     # Hyperparameters tuning
-    Best_param_p_xgb = get_best_params_set_xgb(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val, 'xgb_RNAi',
-                                               RNAi_stratify_train_val)
+    # Best_param_p_xgb = get_best_params_set_xgb(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val, 'xgb_RNAi',
+    #                                            RNAi_stratify_train_val)
+    Best_param_p_xgb = get_best_param_xgb_optuna(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val)
+
 
     # Run model
     # TODO - Recalculate train_val with selected_features only while using the entire dataset
@@ -129,7 +145,6 @@ def run_RNAi():
     generated_RNAi_df = sequence_df_generator(rna_type='i')
 
     # Generate selected features
-    rna_type_const['RNA'] = 'i'
     USE_SELECTED_FEATURES["selective"] = True
     RNAi_train_val_data = pd.concat(
         (pd.concat((RNAi_X_train_features, RNAi_X_val_features)), pd.concat((RNAi_y_train, RNAi_y_val))),
@@ -152,18 +167,5 @@ def run_RNAi():
 
 
 if __name__ == '__main__':
-
-    # run_RNAp()
-
-    run_RNAi()
-
-
-
-
-
-
-
-
-
-
-
+    run_RNAp()
+    # run_RNAi()

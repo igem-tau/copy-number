@@ -9,9 +9,14 @@ from tqdm import tqdm
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
-HOMER_HIGH_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'high.motifs')
+if rna_type_const['RNA'] == 'p':
+    HOMER_HIGH_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'high_pRNA.motifs')
+    HOMER_LOW_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'low_pRNA.motifs')
 
-HOMER_LOW_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'low.motifs')
+elif rna_type_const['RNA'] == 'i':
+    HOMER_HIGH_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'high_iRNA.motifs')
+    HOMER_LOW_MOTIF_PATH = Path(DATA_PATH, 'homer_motifs', 'low_iRNA.motifs')
+
 
 
 def get_filtered_denovo_motifs_pssms(homer_output_file_loc):

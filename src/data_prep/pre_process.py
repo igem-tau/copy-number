@@ -114,7 +114,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     else:
         RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
     RNA_features.append(RNA_pssm_score)
-    # RNA_features.append(calc_motifs_pv(RNA_seq))
+    RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(extract_nucli_features(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
@@ -233,7 +233,7 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
         RNAp_data_val = pd.concat([RNAp_X_data_val, RNAp_y_val], axis=1)
 
         # Generate train split fasta file for high and low copy number motifs
-        # create_fasta_file(RNAp_data_train)
+        create_fasta_file(RNAp_data_train, 'p')
 
         RNAp_X_train, RNAp_y_train = generate_features(RNAp_data_train, rna_type='p')
         RNAp_X_val, RNAp_y_val = generate_features(RNAp_data_val, reference_RNA_data=RNAp_data_train, rna_type='p')
@@ -268,7 +268,7 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
         print('start generating RNAi features')
         RNAi_data = get_RNAi_data()
 
-        RNAi_data=RNAi_data.loc[1:100,:]
+        # RNAi_data=RNAi_data.loc[1:100,:]
 
         RNAi_data, RNAi_stratify_col = equal_bins_data(RNAi_data)
         RNAi_X = RNAi_data.drop(TARGET_COLUMN, axis=1)
@@ -291,7 +291,7 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
         RNAi_data_val = pd.concat([RNAi_X_data_val, RNAi_y_val], axis=1)
 
         # Generate train split fasta file for high and low copy number motifs
-        create_fasta_file(RNAi_data_train)
+        create_fasta_file(RNAi_data_train, 'i')
 
         RNAi_X_train, RNAi_y_train = generate_features(RNAi_data_train, rna_type='i')
         RNAi_X_val, RNAi_y_val = generate_features(RNAi_data_val, reference_RNA_data=RNAi_data_train, rna_type='i')
@@ -343,13 +343,17 @@ def get_features_df(rna_type, shared=False, specify_date=False):
     return data
 
 
-def create_fasta_file(RNA_df):
+def create_fasta_file(RNA_df, rna_type):
     percentage = 0.15
     n = int(len(RNA_df) * percentage)
     high_cp = RNA_df.nlargest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
     low_cp = RNA_df.nsmallest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
-    output_file_high = Path(DATA_PATH, 'pRNA high copy number.fasta')
-    output_file_low = Path(DATA_PATH, 'pRNA low copy number.fasta')
+    if rna_type == 'p':
+        output_file_high = Path(DATA_PATH, 'pRNA high copy number.fasta')
+        output_file_low = Path(DATA_PATH, 'pRNA low copy number.fasta')
+    elif rna_type == 'i':
+        output_file_high = Path(DATA_PATH, 'iRNA high copy number.fasta')
+        output_file_low = Path(DATA_PATH, 'iRNA low copy number.fasta')
     with open(output_file_high, 'w') as file:
         for idx, sequence in high_cp.items():
             file.write(f'>{idx}\n{sequence}\n')
