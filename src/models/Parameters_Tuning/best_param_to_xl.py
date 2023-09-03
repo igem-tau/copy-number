@@ -13,6 +13,7 @@ from src.models.models_functions import prepare_model_data
 from src.data_prep.pre_process import train_validation_split
 import warnings
 import xgboost as xgb
+from xgboost.callback import EarlyStopping
 import optuna
 from optuna.visualization import *
 from src.utils import get_current_file_parent_path
@@ -136,33 +137,39 @@ def find_optimal_alpha_Lasso(X, y, model_name):
     return (dict(params))
 
 def objective(trial, X_train, X_val, y_train, y_val):
+    es = EarlyStopping(
+        rounds=30,
+        data_name='validation',
+        metric_name='mse',
+        maximize=True,
+        save_best=True,
+        min_delta=0
+    )
+
     param = {
-        'max_depth': trial.suggest_int('max_depth', 1, 10),
+        'max_depth': trial.suggest_int('max_depth', 1, 15),
         'learning_rate': trial.suggest_float('learning_rate', 0.01, 1.0),
-        'n_estimators': trial.suggest_int('n_estimators', 50, 1000),
+        'n_estimators': trial.suggest_categorial('n_estimators', [1000]),
         'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
         'gamma': trial.suggest_float('gamma', 0.01, 1.0),
         'subsample': trial.suggest_float('subsample', 0.01, 1.0),
         'colsample_bytree': trial.suggest_float('colsample_bytree', 0.01, 1.0),
         'reg_alpha': trial.suggest_float('reg_alpha', 0.01, 1.0),
-        'reg_lambda': trial.suggest_float('reg_lambda', 0.01, 1.0)
+        'reg_lambda': trial.suggest_float('reg_lambda', 0.01, 1.0),
+        'callbacks': trial.suggest_categorial('callbacks', [es])
     }
 
-    # pruning_callback = optuna.integration.XGBoostPruningCallback(trial, "validation-auc")
-    model = xgb.XGBRegressor(**param) #, dtrain, evals=[(dvalid, "validation")], callbacks=[pruning_callback])
-    model.fit(X_train, y_train, eval_set=[(X_val, y_val)], early_stopping_rounds=10, verbose=False)
-    # model.fit(X_train, y_train)
+    model = xgb.XGBRegressor(**param)
+    model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
+    trial.suggest_categorial('callbacks', [model.best_iteration])
     y_pred = model.predict(X_val)
     return mean_squared_error(y_val, y_pred)
-
-def pruning_callback(study, trial):
-    if study.should_prune(trial):
-        raise optuna.exceptions.TrialPruned()
 
 def get_best_param_xgb_optuna(X_train, X_val, y_train, y_val, save_plots=True):
     study = optuna.create_study(direction='minimize')
     study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val), n_trials=400)
     best_params = study.best_params
+    best_params['n_estimators'] = best_params['callbacks']
 
     print('Number of finished trials: ', len(study.trials))
     print('Best trial:')
@@ -188,7 +195,6 @@ def save_optuna_plots(study):
     fig4 = plot_timeline(study)
     fig5 = plot_rank(study, params=params_sorted[:4])
     fig6 = plot_optimization_history(study)
-    # fig4 = plot_intermediate_values(study)
 
     with open(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_pRNA_optuna_graphs.html'), 'w') as f:
         f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
