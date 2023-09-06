@@ -55,7 +55,8 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
 
     print("Running: calc_promoter_zones_strength")
     zones_strength = {}
-    selected_features = get_selected_features()
+    if USE_SELECTED_FEATURES["selective"]:
+        selected_features = get_selected_features(RNA_TYPE_CONST['RNA'])
     for zone in zones:
         zone_name = f'{zone} predicted strength'
         if USE_SELECTED_FEATURES["selective"]:

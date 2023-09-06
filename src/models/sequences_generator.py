@@ -87,13 +87,18 @@ def calc_predicted_promoter_strength(seq: Union[str, 'pd.Series[str]']) -> Union
     predicted_promoter_strength = calc_promoter_zones_strength(seq, [(-35,-1)], energy_mat=energy_matrix)['(-35, -1) predicted strength']
     return predicted_promoter_strength.rename('Predicted Promoter Strength (KbT)')
 
-def sequence_df_generator(rna_type = 'p'):
-    if Path(DATA_PATH, 'Generated_Sequences.joblib').exists():
-        data = load(Path(DATA_PATH, 'Generated_Sequences.joblib'))
+def sequence_df_generator(rna_type='p'):
+    if rna_type == 'p':
+        filename = 'RNAp_Generated_Sequences.joblib'
+        generated_RNA_seq = sequence_generator([(-33, -30), (-11, -8), (0, 0)], rna_type)
+    elif rna_type == 'i':
+        filename = 'RNAi_Generated_Sequences.joblib'
+        generated_RNA_seq = sequence_generator([(-33, -30), (-10, -7), (0, 0)], rna_type)
+
+    if Path(DATA_PATH, filename).exists():
+        data = load(Path(DATA_PATH, filename))
     else:
-        generated_RNAp_seq = sequence_generator([(-33, -30), (-11, -8), (0, 0)], rna_type)
-        generated_RNAp_promoter_strength = calc_predicted_promoter_strength(generated_RNAp_seq)
-        data = pd.concat([generated_RNAp_seq, generated_RNAp_promoter_strength],
-                                  axis=1)
-        dump(data, Path(DATA_PATH, 'Generated_Sequences.joblib'))
+        generated_RNA_promoter_strength = calc_predicted_promoter_strength(generated_RNA_seq)
+        data = pd.concat([generated_RNA_seq, generated_RNA_promoter_strength], axis=1)
+        dump(data, Path(DATA_PATH, filename))
     return data
