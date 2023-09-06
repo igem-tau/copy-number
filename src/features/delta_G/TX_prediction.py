@@ -122,7 +122,7 @@ def calculate_dG_and_Tx(sequence):
 
     print(f"Running: calculate_dG_and_Tx")
     if USE_SELECTED_FEATURES["selective"]:
-        selected_features = get_selected_features(rna_type_const['RNA'])
+        selected_features = get_selected_features(RNA_TYPE_CONST['RNA'])
         if 'dG_total' in selected_features or 'dG_apparent' in selected_features or 'Tx_rate' in selected_features:
             tqdm.pandas()
             res_df = pd.DataFrame(sequence.progress_apply(seq_calculate_dG_and_Tx).tolist(), columns=['dG_total', 'dG_apparent', 'Tx_rate'])

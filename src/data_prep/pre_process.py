@@ -6,7 +6,7 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from src.consts import *
 from src.features.denovo_motifs import score_denovo_motifs
-from src.features.motifs import calc_motifs_pv
+# from src.features.motifs import calc_motifs_pv
 from src.features.nucleotide_features import generate_one_hot_encoding, entropy, extract_nucli_features
 from src.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from src.features.pssm_feature import calc_series_pssm_score
@@ -22,6 +22,10 @@ timepoints_df = pd.read_excel(
 PSSM_THRESHOLD_PATH_p = Path(DATA_PATH, 'pssm_threshold_pRNA.pkl')
 PSSM_THRESHOLD_PATH_i = Path(DATA_PATH, 'pssm_threshold_iRNA.pkl')
 TARGET_COLUMN = 'Copy Number'
+RNAp_high_filename = 'pRNA high copy number.fasta'
+RNAp_low_filename = 'pRNA low copy number.fasta'
+RNAi_high_filename = 'iRNA high copy number.fasta'
+RNAi_low_filename = 'iRNA high copy number.fasta'
 
 
 def get_RNAp_data():
@@ -72,7 +76,7 @@ def generate_selected_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     RNA_seq = RNA_data['Promoter Sequence (-35 to +1)']
     RNA_features = []
 
-    selected_features = get_selected_features(rna_type_const['RNA'])
+    selected_features = get_selected_features(RNA_TYPE_CONST['RNA'])
     if 'Predicted Promoter Strength (KbT)' in selected_features:
         RNA_features.append(RNA_data['Predicted Promoter Strength (KbT)'])
 
@@ -83,7 +87,7 @@ def generate_selected_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
             RNA_pssm_score = calc_series_pssm_score(RNA_data, RNA_data)
         RNA_features.append(RNA_pssm_score)
 
-    RNA_features.append(calc_motifs_pv(RNA_seq))
+    # RNA_features.append(calc_motifs_pv(RNA_seq))
     RNA_features.append(generate_one_hot_encoding(RNA_seq))
     RNA_features.append(extract_nucli_features(RNA_seq))
     RNA_features.append(calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
@@ -207,7 +211,7 @@ def train_validation_split(X, y, stratify_by: pd.Series,
 #     return X_train, X_valid, X_test, y_train, y_valid, y_test
 
 
-def save_features_df(p=True, i=True, shared=True, specify_date = False):
+def save_features_df(p=True, i=True, specify_date = False):
     data = {}
     if p:
         print('start generating RNAp features')
@@ -329,17 +333,17 @@ def save_features_df(p=True, i=True, shared=True, specify_date = False):
     return data
 
 
-def get_features_df(rna_type, shared=False, specify_date=False):
-    if rna_type=='p':
+def get_features_df(rna_type, specify_date=False):
+    if rna_type == 'p':
         if Path(DATA_PATH, 'RNAp_DataFrame_with_features.joblib').exists():
             data = load(Path(DATA_PATH, 'RNAp_DataFrame_with_features.joblib'))
         else:
-            data = save_features_df(p=True, i=False, shared=shared, specify_date=specify_date)
-    elif rna_type=='i':
+            data = save_features_df(p=True, i=False, specify_date=specify_date)
+    elif rna_type == 'i':
         if Path(DATA_PATH, 'RNAi_DataFrame_with_features.joblib').exists():
             data = load(Path(DATA_PATH, 'RNAi_DataFrame_with_features.joblib'))
         else:
-            data = save_features_df(p=False, i=True, shared=shared, specify_date=specify_date)
+            data = save_features_df(p=False, i=True, specify_date=specify_date)
     return data
 
 
@@ -349,11 +353,11 @@ def create_fasta_file(RNA_df, rna_type):
     high_cp = RNA_df.nlargest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
     low_cp = RNA_df.nsmallest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
     if rna_type == 'p':
-        output_file_high = Path(DATA_PATH, 'pRNA high copy number.fasta')
-        output_file_low = Path(DATA_PATH, 'pRNA low copy number.fasta')
+        output_file_high = Path(DATA_PATH, RNAp_high_filename)
+        output_file_low = Path(DATA_PATH, RNAp_low_filename)
     elif rna_type == 'i':
-        output_file_high = Path(DATA_PATH, 'iRNA high copy number.fasta')
-        output_file_low = Path(DATA_PATH, 'iRNA low copy number.fasta')
+        output_file_high = Path(DATA_PATH, RNAi_high_filename)
+        output_file_low = Path(DATA_PATH, RNAi_low_filename)
     with open(output_file_high, 'w') as file:
         for idx, sequence in high_cp.items():
             file.write(f'>{idx}\n{sequence}\n')

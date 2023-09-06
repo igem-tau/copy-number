@@ -15,7 +15,7 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 
 def run_RNAp():
     # Load the data features if exists, write if it doesn't
-    rna_type_const['RNA'] = 'p'
+    RNA_TYPE_CONST['RNA'] = 'p'
     data = get_features_df(rna_type = 'p')
 
     # Extract X, Y, sequences - DataFrames
@@ -93,7 +93,7 @@ def run_RNAp():
 
 def run_RNAi():
     # Load the data features if exists, write if it doesn't
-    rna_type_const['RNA'] = 'i'
+    RNA_TYPE_CONST['RNA'] = 'i'
     data = get_features_df(rna_type = 'i')
 
     # Extract X, Y, sequences - DataFrames

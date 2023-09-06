@@ -2,30 +2,30 @@ import os
 from pathlib import Path, PosixPath
 import pickle
 
-DIR = os.path.dirname(os.path.abspath(__file__))
+DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-RNAp_SELECTED_FEATURES_FILE_NAME = os.path.join(DIR, "RNAp_selected_features.pkl")
-RNAi_SELECTED_FEATURES_FILE_NAME = os.path.join(DIR, "RNAi_selected_features.pkl")
+RNAp_SELECTED_FEATURES_FILE_NAME = os.path.join(DIR, 'data',  "RNAp_selected_features.pkl")
+RNAi_SELECTED_FEATURES_FILE_NAME = os.path.join(DIR, 'data',  "RNAi_selected_features.pkl")
 
 def get_current_file_parent_path(file) -> PosixPath:
     return Path(file).parent.resolve()
 
 
 def write_selected_features(features: list, rna_type: str):
-    if rna_type=='p':
+    if rna_type == 'p':
         with open(RNAp_SELECTED_FEATURES_FILE_NAME, 'wb') as f:
             pickle.dump(features, f)
-    elif rna_type=='i':
+    elif rna_type == 'i':
         with open(RNAi_SELECTED_FEATURES_FILE_NAME, 'wb') as f:
             pickle.dump(features, f)
 
 
 def get_selected_features(rna_type) -> set:
-    if rna_type=='p':
+    if rna_type == 'p':
         with open(RNAp_SELECTED_FEATURES_FILE_NAME, 'rb') as f:
             features = pickle.load(f)
 
-    elif rna_type=='i':
+    elif rna_type == 'i':
         with open(RNAi_SELECTED_FEATURES_FILE_NAME, 'rb') as f:
             features = pickle.load(f)
     return set(features)
