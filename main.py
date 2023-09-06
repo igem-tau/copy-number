@@ -13,12 +13,14 @@ from src.utils import get_current_file_parent_path, write_selected_features
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 
-
-if __name__ == '__main__':
+def run_RNAp():
     # Load the data features if exists, write if it doesn't
-    data = get_features_df(p=True, i=False)
+    RNA_TYPE_CONST['RNA'] = 'p'
+    data = get_features_df(rna_type = 'p')
 
     # Extract X, Y, sequences - DataFrames
+
+    # RNAp
 
     RNAp_stratify_train_val = data['RNAp_stratify_train_val']
 
@@ -96,4 +98,84 @@ if __name__ == '__main__':
 
     # TODO: combine the two models prediction
 
+
+
+def run_RNAi():
+    # Load the data features if exists, write if it doesn't
+    RNA_TYPE_CONST['RNA'] = 'i'
+    data = get_features_df(rna_type = 'i')
+
+    # Extract X, Y, sequences - DataFrames
+
+    RNAi_stratify_train_val = data['RNAi_stratify_train_val']
+
+    RNAi_X_train_sequences = data['RNAi_X_train_sequences']
+    RNAi_X_train_features = data['RNAi_X_train']
+    RNAi_y_train = data['RNAi_y_train']
+
+    RNAi_X_val_sequences = data['RNAi_X_val_sequences']
+    RNAi_X_val_features = data['RNAi_X_val']
+    RNAi_y_val = data['RNAi_y_val']
+
+    RNAi_X_test_sequences = data['RNAi_X_test_sequences']
+    RNAi_X_test_features = data['RNAi_X_test']
+    RNAi_y_test = data['RNAi_y_test']
+    RNAi_stratify_test = data['RNAi_stratify_test']
+
+    # Feature selection
+    RNAi_selected_features_data = feature_selection(RNAi_X_train_features, RNAi_y_train, 'i')
+    RNAi_selected_features = RNAi_selected_features_data['selected_features']
+
+    # write selected features to file
+    write_selected_features(RNAi_selected_features, 'i')
+
+    # Data by selected features
+    RNAi_FS_train = RNAi_X_train_features[RNAi_selected_features]
+    RNAi_FS_val = RNAi_X_val_features[RNAi_selected_features]
+    RNAi_FS_test = RNAi_X_test_features[RNAi_selected_features]
+
+    # Exploratory Data Analysis (EDA)
+    EDA(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val)
+
+    # Hyperparameters tuning
+    # Best_param_p_xgb = get_best_params_set_xgb(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val, 'xgb_RNAi',
+    #                                            RNAi_stratify_train_val)
+    Best_param_p_xgb = get_best_param_optuna(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val)
+
+
+    # Run model
+    # TODO - Recalculate train_val with selected_features only while using the entire dataset
+    RNAi_FS_train_val_X = pd.concat([RNAi_FS_train, RNAi_FS_val])
+    RNAi_train_val_y = pd.concat([RNAi_y_train, RNAi_y_val])
+    trained_model, _, _, _ = model(RNAi_FS_train_val_X, RNAi_FS_test, RNAi_train_val_y, RNAi_y_test,
+                                   'xgboost', 'iRNA', Best_param_p_xgb, save_plots=True)
+
+    # Generate sequences and calculate features
+    generated_RNAi_df = sequence_df_generator(rna_type='i')
+
+    # Generate selected features
+    USE_SELECTED_FEATURES["selective"] = True
+    RNAi_train_val_data = pd.concat(
+        (pd.concat((RNAi_X_train_features, RNAi_X_val_features)), pd.concat((RNAi_y_train, RNAi_y_val))),
+        axis=1
+    )
+    # cp is False because RNA_y should be None because we need to predict the copy number
+    all_seqs_selected_features, _ = generate_features(generated_RNAi_df, reference_RNA_data=RNAi_train_val_data,
+                                                      cp=False)
+
+    # Predict
+    all_seqs_selected_features = all_seqs_selected_features[RNAi_selected_features]
+    _, all_seqs_selected_features_scaled = scale(RNAi_FS_train_val_X, all_seqs_selected_features)
+    y_pred = trained_model.predict(all_seqs_selected_features_scaled)
+    print(f"Range of copy nums predicted: {y_pred.min()} - {y_pred.max()}")
+
+    final_predicted_df = generated_RNAi_df[['Promoter Sequence (-35 to +1)']].join(
+        pd.DataFrame({"copy number": y_pred}))
+    final_predicted_df.to_csv("RNAi_copy_num_predictions.csv", index=False)
+
+
+
+if __name__ == '__main__':
+    run_RNAp()
+    # run_RNAi()
 
