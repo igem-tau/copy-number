@@ -102,7 +102,7 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name, num_of_
     return(scores[-1],rand_obj.best_params_)
 
 
-def get_best_params_set_xgb(X_train, X_val, y_train, y_val, model_name, stratify_by):
+def get_best_params_set_xgb(X_train, X_val, y_train, y_val, model_name):
     xl_name = f'{model_name}_best_params.xlsx'
     if not os.path.exists(os.path.join(os.getcwd(), xl_name)):
         for i in range(5):
@@ -112,7 +112,10 @@ def get_best_params_set_xgb(X_train, X_val, y_train, y_val, model_name, stratify
     score = df['scores'].max()
     params = df.iloc[df['scores'].idxmax(),:].dropna().drop('scores')
     print(f'Best params for {model_name} model are:\n{params}\nAnd their predicted score is {score}')
-    return (dict(params))
+    best_params = (dict(params))
+    best_params['max_depth'] = int(best_params['max_depth'])
+    best_params['n_estimators'] = int(best_params['n_estimators'])
+    return best_params
 
 
 def find_optimal_alpha_Lasso(X, y, model_name):
@@ -159,22 +162,33 @@ def pruning_callback(study, trial):
     if study.should_prune(trial):
         raise optuna.exceptions.TrialPruned()
 
-def get_best_param_xgb_optuna(X_train, X_val, y_train, y_val, save_plots=True):
-    study = optuna.create_study(direction='minimize')
-    study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val), n_trials=400)
-    best_params = study.best_params
+def get_best_param_xgb_optuna(X_train, X_val, y_train, y_val, model_name, save_plots=True):
+    xl_name = f'{model_name}_best_params.xlsx'
+    if not os.path.exists(os.path.join(os.getcwd(), xl_name)):
+        study = optuna.create_study(direction='minimize')
+        study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val), n_trials=400)
+        best_params = study.best_params
 
-    print('Number of finished trials: ', len(study.trials))
-    print('Best trial:')
-    trial = study.best_trial
+        print('Number of finished trials: ', len(study.trials))
+        print('Best trial:')
+        trial = study.best_trial
 
-    print('  Value: {}'.format(trial.value))
-    print('  Params: ')
-    for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        print('  Value: {}'.format(trial.value))
+        print('  Params: ')
+        for key, value in trial.params.items():
+            print('    {}: {}'.format(key, value))
 
-    if save_plots:
-        save_optuna_plots(study)
+        if save_plots:
+            save_optuna_plots(study)
+        write_to_xl(best_params, model_name)
+
+    else:
+        target_file = os.path.join(os.getcwd(), xl_name)
+        df = pd.read_excel(target_file)
+        best_params = dict(zip(df.iloc[:,1], df.iloc[:, 0]))
+        best_params['max_depth'] = int(best_params['max_depth'])
+        best_params['n_estimators'] = int(best_params['n_estimators'])
+
 
     return best_params
 

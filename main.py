@@ -10,6 +10,7 @@ from src.models.models_functions import model, scale
 from src.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb, get_best_param_xgb_optuna
 from src.models.sequences_generator import sequence_df_generator
 from src.utils import get_current_file_parent_path, write_selected_features
+from joblib import dump, load
 
 
 
@@ -56,8 +57,8 @@ def run_RNAp():
     EDA(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val)
 
     # Hyperparameters tuning
-    # Best_param_p_xgb = get_best_params_set_xgb(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val, 'xgb_RNAp', RNAp_stratify_train_val)
-    Best_param_p_xgb = get_best_param_xgb_optuna(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val)
+    Best_param_p_xgb = get_best_params_set_xgb(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val, 'xgb_RNAp')
+    # Best_param_p_xgb = get_best_param_xgb_optuna(RNAp_FS_train, RNAp_FS_val, RNAp_y_train, RNAp_y_val)
 
     # Run model
     # TODO - Recalculate train_val with selected_features only while using the entire dataset
@@ -116,18 +117,6 @@ def run_RNAi():
     RNAi_y_test = data['RNAi_y_test']
     RNAi_stratify_test = data['RNAi_stratify_test']
 
-    ## TESTING EYAL DVIR TZLIL
-    RNAi_from_RNAp_feats = pd.read_csv(Path(DATA_PATH, 'rna_p_unique_features.csv'))
-    RNAi_from_RNAp_feats = remove_zero_variance_features(RNAi_from_RNAp_feats)
-    train_shape = RNAi_X_train_features.shape[0]
-    val_shape = RNAi_X_val_features.shape[0]
-
-    RNAi_X_train_features = pd.concat([RNAi_X_train_features, RNAi_from_RNAp_feats.iloc[0:train_shape,:]], axis=1)
-    RNAi_X_val_features = pd.concat([RNAi_X_val_features,
-                                         RNAi_from_RNAp_feats.iloc[train_shape:train_shape + val_shape,:].reset_index()],axis=1)
-    RNAi_X_test_features = pd.concat([RNAi_X_test_features,
-                                      RNAi_from_RNAp_feats.iloc[train_shape + val_shape:,:].reset_index()], axis=1)
-
 
     # Feature selection
     RNAi_selected_features_data = feature_selection(RNAi_X_train_features, RNAi_y_train, 'i')
@@ -145,17 +134,15 @@ def run_RNAi():
     # EDA(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val)
 
     # Hyperparameters tuning
-    # Best_param_p_xgb = get_best_params_set_xgb(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val, 'xgb_RNAi',
-    #                                            RNAi_stratify_train_val)
-    Best_param_p_xgb = get_best_param_xgb_optuna(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val, 'xgb_RNAi')
-
+    Best_param_xgb = get_best_params_set_xgb(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val, 'xgb_RNAi')
+    # Best_param_xgb = get_best_param_xgb_optuna(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val, 'xgb_RNAi')
 
     # Run model
     # TODO - Recalculate train_val with selected_features only while using the entire dataset
     RNAi_FS_train_val_X = pd.concat([RNAi_FS_train, RNAi_FS_val])
     RNAi_train_val_y = pd.concat([RNAi_y_train, RNAi_y_val])
     trained_model, _, _, _ = model(RNAi_FS_train_val_X, RNAi_FS_test, RNAi_train_val_y, RNAi_y_test,
-                                   'xgboost', 'iRNA', Best_param_p_xgb, save_plots=True)
+                                   'xgboost', 'iRNA', Best_param_xgb, save_plots=True)
 
     # Generate sequences and calculate features
     generated_RNAi_df = sequence_df_generator(rna_type='i')
