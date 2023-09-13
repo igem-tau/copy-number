@@ -9,11 +9,7 @@ from tqdm import tqdm
 from typing import List
 
 
-CONSENSUS_RNAp_SEQ = 'CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUC\
-UAUGGUUUAUGACAAGAAGAUCACAUCGGCAUCAAUCCGGUGGUGAAGUUCUUGAGACAUCGUGGCGGAUGUAUGGAGCGAGACGAUUAGGACAAUGGUCACCGACGACGGUCACCGCU\
-AUUCAGCACAGAAUGGCCCAACCUGAGUUCUGCUAUCAAUGGCCUAUUCCGCGUCGCCAGCCCGACUUGCCCCCCAAGCACGUGUGUCGGGUCGAACCUCGCUUGCUGGAUGUGGCUUG\
-ACUCUAUGGAUGUCGCACUCGAUACUCUUUCGCGGUGCGAAGGGCUUCCCUCUUUCCGCCUGUCCAUAGGCCAUUCGCCGUCCCAGCCUUGUCCUCUCGCGUGCUCCCUCGAAGGUCCC\
-CCUUUGCGGACCAUAGAAAUAUCAGGACAGCCCAAAGCGGUGGAGACUGAACUCGCAGCUAAAAACACUACGAGCAGUCCCCCCGCCUCGGAUACCUUUUUGCGGUCGUUGCGCCGGAA'
+CONSENSUS_RNAp_SEQ = 'CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUCUAUGGUUUAUGACAAGAAGAUCACAUCGGCAUCAAUCCGGUGGUGAAGUUCUUGAGACAUCGUGGCGGAUGUAUGGAGCGAGACGAUUAGGACAAUGGUCACCGACGACGGUCACCGCUAUUCAGCACAGAAUGGCCCAACCUGAGUUCUGCUAUCAAUGGCCUAUUCCGCGUCGCCAGCCCGACUUGCCCCCCAAGCACGUGUGUCGGGUCGAACCUCGCUUGCUGGAUGUGGCUUGACUCUAUGGAUGUCGCACUCGAUACUCUUUCGCGGUGCGAAGGGCUUCCCUCUUUCCGCCUGUCCAUAGGCCAUUCGCCGUCCCAGCCUUGUCCUCUCGCGUGCUCCCUCGAAGGUCCCCCUUUGCGGACCAUAGAAAUAUCAGGACAGCCCAAAGCGGUGGAGACUGAACUCGCAGCUAAAAACACUACGAGCAGUCCCCCCGCCUCGGAUACCUUU'
 
 STEM_LOOPS = ["III", "IV", "VI"]
 
@@ -57,8 +53,10 @@ def run_RNAfold_as_webtool(rna_seq: str, params: list = ['RNAfold', '-p', '-d2',
 def get_rna_secondry_structure(rna_seq: str):
     output = run_RNAfold_as_webtool(rna_seq)
     lines = output.split('\n')
-    # sequence_line = lines[1]
-    structure_line = lines[2]
+    structure_line = lines[1]
+    structure_line = structure_line.split(" ")[0]
+    # todo: consider taking other formats like line 2 or 3
+    # structure_line = lines[2]
     return structure_line
 
 
@@ -100,11 +98,11 @@ def get_match_ratio(rna_seq: str, consensus: dict) -> float:
     return hits / len(consensus)
 
 
-def get_match_rate_to_3_stem_loops(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
+def get_match_rate_to_stem_loop_3(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
     d = {}
     for end_idx in tqdm(seq_end_idx):
         partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
-        col_desc = f"sl_match_seq_end_{end_idx}"
+        col_desc = f"sl3_match_seq_end_{end_idx}"
         d[col_desc] = partial_seqs.apply(lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_3_STEM_LOOPS))
     return pd.DataFrame(d)
 
@@ -124,6 +122,15 @@ def get_match_rate_to_extended_alpha_beta(seqs: 'pd.Series[List[str]]', seq_end_
         partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
         col_desc = f"alpha_beta_extended_match_seq_end_{end_idx}"
         d[col_desc] = partial_seqs.apply(lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_EXTENDED_ALPHA_BETA_FOLD))
+    return pd.DataFrame(d)
+
+
+def get_match_rate_to_c_rich_area(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
+    d = {}
+    for end_idx in tqdm(seq_end_idx):
+        partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
+        col_desc = f"c_rich_area_match_seq_end_{end_idx}"
+        d[col_desc] = partial_seqs.apply(lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_C_RICH_AREA))
     return pd.DataFrame(d)
 
 
@@ -214,15 +221,15 @@ def get_prob_df(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame
 # assuming that RNAeval also creates a file that seems like the output in the website
 # need to choose the Motif to compare, i.e "loop III", "loop IV", "loop VI"
 # TODO: change the output to match the DataFrame of the features, now it only returns the energy for the desired loop
-def sum_base_pair_energy(enery_data: List[str], loop: str) -> int:
-    ranges = {'III': (74, 108), 'IV': (73, 195), 'VI': (216, 328)}
+def sum_base_pair_energy(energy_data: List[str], loop: str) -> int:
+    ranges = {'III': (74, 108), 'IV': (73, 195), 'VI': (218, 324)}
     # Define the range of numbers to look for
     relevant_range = ranges[loop]
 
     # Initialize the sum
     total_sum = 0
 
-    for line in enery_data:
+    for line in energy_data:
         # Extract all numbers using regular expression
         numbers = [int(num) for num in re.findall(r'-?\d+', line)]
         # checks if the line of correct expected format
@@ -253,7 +260,7 @@ def run_RNAfold(rna_seq: str):
     # Todo: You need to download RNAfold before from:
     #  https://www.tbi.univie.ac.at/RNA/#download
     #  Include it as part of the project later
-    cmd = ['RNAfold', '-p']
+    cmd = ['RNAfold', '-p', '-d2', '--noLP']
     result = subprocess.run(cmd, input=rna_seq, capture_output=True, text=True)
     output = result.stdout.strip().split('\n')
     return output
@@ -410,7 +417,6 @@ def add_rna_mfe_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
 """
 
 
-
 def dna_folding_energy_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
     # Todo: It's just a template
     #  need to check how to calc properly MATLAB oligoprop func used in the article
@@ -495,13 +501,14 @@ def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
 
 
 def make_rna_features(rna: pd.DataFrame) -> pd.DataFrame:
-    sl_match = get_match_rate_to_3_stem_loops(rna, list(range(118, 250, 10)))
+    sl_match = get_match_rate_to_stem_loop_3(rna, list(range(118, 250, 10)))
     alpha_beta_match = get_match_rate_to_alpha_beta(rna, list(range(195, 554, 20))[:-1] + [554])
     alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, list(range(195, 554, 20))[:-1] + [554])
-    bases_probabilities = get_prob_df(rna, list(range(118, 554, 100))[:-1] + [554])
-    stem_loops_mfe = get_stem_loops_mfe(rna, list(range(118, 554, 100))[:-1] + [554])
+    c_rich_area_match = get_match_rate_to_c_rich_area(rna, list(range(300, 554, 20))[:-1] + [554])
+    bases_probabilities = get_prob_df(rna, list(range(118, 554, 50))[:-1] + [554])
+    stem_loops_mfe = get_stem_loops_mfe(rna, list(range(118, 554, 20))[:-1] + [554])
 
-    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, bases_probabilities, stem_loops_mfe]
+    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, c_rich_area_match, bases_probabilities, stem_loops_mfe]
     result_df = pd.concat(features_dfs, axis=1)
     return result_df
 
@@ -519,8 +526,9 @@ def checks():
 
     df = pd.read_csv(r"C:\Users\User1\IGEM\code\copy-number\data\rna_p_data.csv")
     rna_seqs = df["RNAp_seq"]
-    rna_seqs.head(5)
+    rna_seqs = rna_seqs.head(5)
     make_rna_features(rna_seqs)
+    # get_match_ratio("CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUCUAUGGUUUAUGACAAGAAGAU", CONSENSUS_POSITIONS_3_STEM_LOOPS)
     # get_prob_df(seq, seq_end_idx=[10, 20])
 
 
