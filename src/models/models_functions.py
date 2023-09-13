@@ -38,7 +38,7 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, outliers=False):
 
 def model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_test: pd.DataFrame, model_name: str, data_name: str, best_param=None, save_plots=False):
     print(f'Running {model_name} for {data_name}')
-    X_train, X_test = scale(X_train, X_test)
+    # X_train, X_test = scale(X_train, X_test)
     if best_param is None:
         best_param = {}
 

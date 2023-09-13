@@ -1,3 +1,5 @@
+import os.path
+
 import numpy as np
 import pandas as pd
 import itertools
@@ -45,16 +47,11 @@ def sequence_generator(mutation_locations: List[Tuple[int, int]], rna_type: str)
 
 # import all supplementary data
 # priming RNA
-RNAp_df = pd.read_excel(
-    'https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-022-31422-0/MediaObjects/41467_2022_31422_MOESM5_ESM.xlsx',
-    names=RNA_DATA_COLUMNS
-)
-timepoints_df = pd.read_excel('https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-022-31422-0/MediaObjects/41467_2022_31422_MOESM6_ESM.xlsx') # priming RNA time points
+RNAp_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_1_p_rna.xlsx'), names=RNA_DATA_COLUMNS)
+timepoints_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_3_seq_cnt_p_rna.xlsx'))
 # inhibitory RNA
-RNAi_df = pd.read_excel(
-    'https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-022-31422-0/MediaObjects/41467_2022_31422_MOESM7_ESM.xlsx',
-    names=RNA_DATA_COLUMNS
-)
+RNAi_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_2_i_rna.xlsx'), names=RNA_DATA_COLUMNS)
+
 
 
 # promoter energy matrix
@@ -90,13 +87,18 @@ def calc_predicted_promoter_strength(seq: Union[str, 'pd.Series[str]']) -> Union
     predicted_promoter_strength = calc_promoter_zones_strength(seq, [(-35,-1)], energy_mat=energy_matrix)['(-35, -1) predicted strength']
     return predicted_promoter_strength.rename('Predicted Promoter Strength (KbT)')
 
-def sequence_df_generator(rna_type = 'p'):
-    if Path(DATA_PATH, 'Generated_Sequences.joblib').exists():
-        data = load(Path(DATA_PATH, 'Generated_Sequences.joblib'))
+def sequence_df_generator(rna_type='p'):
+    if rna_type == 'p':
+        filename = 'RNAp_Generated_Sequences.joblib'
+        generated_RNA_seq = sequence_generator([(-33, -30), (-11, -8), (0, 0)], rna_type)
+    elif rna_type == 'i':
+        filename = 'RNAi_Generated_Sequences.joblib'
+        generated_RNA_seq = sequence_generator([(-33, -30), (-10, -7), (0, 0)], rna_type)
+
+    if Path(DATA_PATH, filename).exists():
+        data = load(Path(DATA_PATH, filename))
     else:
-        generated_RNAp_seq = sequence_generator([(-33, -30), (-11, -8), (0, 0)], rna_type)
-        generated_RNAp_promoter_strength = calc_predicted_promoter_strength(generated_RNAp_seq)
-        data = pd.concat([generated_RNAp_seq, generated_RNAp_promoter_strength],
-                                  axis=1)
-        dump(data, Path(DATA_PATH, 'Generated_Sequences.joblib'))
+        generated_RNA_promoter_strength = calc_predicted_promoter_strength(generated_RNA_seq)
+        data = pd.concat([generated_RNA_seq, generated_RNA_promoter_strength], axis=1)
+        dump(data, Path(DATA_PATH, filename))
     return data

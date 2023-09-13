@@ -14,7 +14,7 @@ SWISS_MEME = Path(DATA_PATH, 'motifs', 'SwissRegulon_e_coli.meme')
 
 
 def generate_filtered_motif_dict():
-    selected_features = get_selected_features()
+    selected_features = get_selected_features(RNA_TYPE_CONST['RNA'])
     motifs = {}
     motifs_num = 0
 

@@ -83,3 +83,5 @@ CONSENSUS_POSITIONS_C_RICH_AREA = {218: 324,
                                   281: 301,
                                   284: 298,
                                   285: 297}
+
+RNA_TYPE_CONST = {"RNA": 'p'}
