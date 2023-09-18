@@ -252,7 +252,7 @@ def compare_mfe_to_centroid(rna_seq: str) -> dict:
     mfe_structure, centroid_structure = get_rna_secondry_structure(rna_seq)
     mfe_bp = extract_base_pairs(mfe_structure)
     centroid_bp = extract_base_pairs(centroid_structure)
-    identical_bp = {k: v for k, v in mfe_bp.items() if k in centroid_bp and centroid_bp[k] == v}
+    identical_bp = {"mfe == centroid %s_%s" %(k, v): 1 for k, v in mfe_bp.items() if k in centroid_bp and centroid_bp[k] == v}
     return identical_bp
 
 def get_mfe_centroid_comparison_df(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
@@ -546,18 +546,29 @@ def checks():
     # res = run_RNAeval("CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUCUAUGGUUUAUGACAAGAAGAU", "(((((((.....(((((((((...))))))))).)))))))((((..(((((((...)))))))..))))...(((.(((((.((.(((...))).)).))))).)))..........")
     # r = sum_base_pair_energy(res, "III")
 
-    df = pd.read_csv(r"C:\Users\User1\IGEM\code\copy-number\data\rna_p_data.csv")
+    import os  # to get the direction of the csv file
+    # Get the current directory of your script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Construct the relative path to the CSV file
+    csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
+
+    df = pd.read_csv(csv_file_path)
+    # df = pd.read_csv(r"..data")
     rna_seqs = df["RNAp_seq"]
     rna_seqs = rna_seqs.head(5)
-    make_rna_features(rna_seqs)
+    # make_rna_features(rna_seqs)
     # get_match_ratio("CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUCUAUGGUUUAUGACAAGAAGAU", CONSENSUS_POSITIONS_3_STEM_LOOPS)
     # get_prob_df(seq, seq_end_idx=[10, 20])
-
+    mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna_seqs, [120, 130, 140, 150, 200, 300, 350, 554])
+    return mfe_centroid_comparison
 
 if __name__ == '__main__':
-    # checks()
-    print('h')
+    m = checks()
+    # print('h')
 
+    # Now, you can work with the 'df' DataFrame as needed
+    # For example, you can access columns and perform data analysis:
+    # print(df.head())  # Print the first few rows of the DataFrame
 
 # features to extract from RNAfold files and RNAeval output
 
