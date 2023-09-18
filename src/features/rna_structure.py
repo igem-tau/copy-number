@@ -53,11 +53,12 @@ def run_RNAfold_as_webtool(rna_seq: str, params: list = ['RNAfold', '-p', '-d2',
 def get_rna_secondry_structure(rna_seq: str):
     output = run_RNAfold_as_webtool(rna_seq)
     lines = output.split('\n')
-    structure_line = lines[1]
-    structure_line = structure_line.split(" ")[0]
+    mfe_structure_line = lines[1]
+    mfe_structure_line = mfe_structure_line.split(" ")[0]
     # todo: consider taking other formats like line 2 or 3
-    # structure_line = lines[2]
-    return structure_line
+    centroid_structure_line = lines[3]
+    centroid_structure_line = centroid_structure_line.split(" ")[0]
+    return mfe_structure_line, centroid_structure_line
 
 
 # def get_alpha_beta_match(rna_seq: str):
@@ -68,7 +69,7 @@ def get_rna_secondry_structure(rna_seq: str):
 
 
 def get_dist_from_orig_alpha_beta(rna_seq: str):
-    sec_struct = get_rna_secondry_structure(rna_seq)
+    sec_struct, _ = get_rna_secondry_structure(rna_seq)
     base_pairs_dict = extract_base_pairs(sec_struct)
     cnt = 0
     for i, j in CONSENSUS_POSITIONS_ALPHA_BETA_FOLD.items():
@@ -78,7 +79,7 @@ def get_dist_from_orig_alpha_beta(rna_seq: str):
 
 
 def get_alpha_area_match_ratio(rna_seq: str, alpha_range: range = EXTENDED_ALPHA_RANGE):
-    sec_struct = get_rna_secondry_structure(rna_seq)
+    sec_struct, _ = get_rna_secondry_structure(rna_seq)
     base_pairs_dict = extract_base_pairs(sec_struct)
     hits = 0
 
@@ -90,7 +91,7 @@ def get_alpha_area_match_ratio(rna_seq: str, alpha_range: range = EXTENDED_ALPHA
 
 
 def get_match_ratio(rna_seq: str, consensus: dict) -> float:
-    sec_struct = get_rna_secondry_structure(rna_seq)
+    sec_struct, _ = get_rna_secondry_structure(rna_seq)
     bp_dict = extract_base_pairs(sec_struct)
     hits = 0
     for k, v in consensus.items():
@@ -244,6 +245,26 @@ def sum_base_pair_energy(energy_data: List[str], loop: str) -> int:
             total_sum += numbers[-1]
 
     return total_sum
+
+
+# gets MFE and Centroid structures, compares them and returns a dictionary of the matching base pairs
+def compare_mfe_to_centroid(rna_seq: str) -> dict:
+    mfe_structure, centroid_structure = get_rna_secondry_structure(rna_seq)
+    mfe_bp = extract_base_pairs(mfe_structure)
+    centroid_bp = extract_base_pairs(centroid_structure)
+    identical_bp = {k: v for k, v in mfe_bp.items() if k in centroid_bp and centroid_bp[k] == v}
+    return identical_bp
+
+def get_mfe_centroid_comparison_df(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
+    df_ls = []
+    for end_idx in tqdm(seq_end_idx):
+        partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
+        seq_mfe_centroid_comparison_df = partial_seqs.apply(lambda seq: compare_mfe_to_centroid(seq))
+        df = pd.DataFrame(seq_mfe_centroid_comparison_df.tolist())
+        df.fillna(0, inplace=True)
+        df_ls.append(df)
+    res_df = pd.concat(df_ls, axis=1)
+    return res_df
 
 
 def run_RNAeval(rna_seq: str, secondry_structure: str):
@@ -501,14 +522,15 @@ def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
 
 
 def make_rna_features(rna: pd.DataFrame) -> pd.DataFrame:
-    sl_match = get_match_rate_to_stem_loop_3(rna, list(range(118, 250, 10)))
-    alpha_beta_match = get_match_rate_to_alpha_beta(rna, list(range(195, 554, 20))[:-1] + [554])
-    alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, list(range(195, 554, 20))[:-1] + [554])
-    c_rich_area_match = get_match_rate_to_c_rich_area(rna, list(range(300, 554, 20))[:-1] + [554])
-    bases_probabilities = get_prob_df(rna, list(range(118, 554, 50))[:-1] + [554])
-    stem_loops_mfe = get_stem_loops_mfe(rna, list(range(118, 554, 20))[:-1] + [554])
+    sl_match = get_match_rate_to_stem_loop_3(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
+    alpha_beta_match = get_match_rate_to_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
+    alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
+    c_rich_area_match = get_match_rate_to_c_rich_area(rna, [])
+    bases_probabilities = get_prob_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])  # check only specific "interesting locations"
+    mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])
+    stem_loops_mfe = get_stem_loops_mfe(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
 
-    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, c_rich_area_match, bases_probabilities, stem_loops_mfe]
+    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, c_rich_area_match, bases_probabilities, mfe_centroid_comparison, stem_loops_mfe]
     result_df = pd.concat(features_dfs, axis=1)
     return result_df
 
@@ -533,7 +555,8 @@ def checks():
 
 
 if __name__ == '__main__':
-    checks()
+    # checks()
+    print('h')
 
 
 # features to extract from RNAfold files and RNAeval output
