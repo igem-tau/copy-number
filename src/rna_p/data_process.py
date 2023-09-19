@@ -38,7 +38,7 @@ def analyze_data():
     # x_df = x_df.loc[:, x_df.nunique() != 1]
 
     # split
-    x_train, x_test, y_train, y_test = train_test_split(x_df, y_df, test_size=0.15, random_state=0)
+    x_train, x_test, y_train, y_test = train_test_split(x_df, y_df, test_size=0.2, random_state=0)
 
     model_res, r2, mse_score, spearman = model(x_train, x_test, y_train, y_test, "xgboost", "rna p features", best_param=None, save_plots=True)
 
