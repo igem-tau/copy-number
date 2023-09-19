@@ -657,7 +657,7 @@ def make_rna_features(rna: pd.DataFrame) -> pd.DataFrame:
     sl_match = get_match_rate_to_stem_loop_3(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
     alpha_beta_match = get_match_rate_to_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
     alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
-    c_rich_area_match = get_match_rate_to_c_rich_area(rna, [])
+    # c_rich_area_match = get_match_rate_to_c_rich_area(rna, [])
     bases_probabilities = get_prob_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])  # check only specific "interesting locations"
     mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])
     stem_loops_mfe = get_stem_loops_mfe(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
@@ -716,6 +716,20 @@ def make_rna_features_parallel(rna: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 
+def generate_features_csv():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
+    df = pd.read_csv(csv_file_path)
+    rna_seqs = df["RNAp_seq"]
+
+    print("Running make rna features parallel")
+    st = time()
+    result_df = make_rna_features_parallel(rna_seqs)
+    et = time()
+    print(f"Took: {et - st} seconds")  # Took: 58.083433628082275 seconds
+    result_df.to_csv("rna_p_new_features.csv")
+
+
 def checks():
     # res = extract_base_pairs("((((((((....(((((((((...)))))))))))))))))((((..(((((((...)))))))..))))...(((.(((((.((.(((...))).)).))))).)))...")
     # tr = run_RNAfold_as_webtool("AGGTGTGTGAACCCGCGCGCGCGCG")
@@ -763,8 +777,10 @@ def checks():
     # mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna_seqs, [120, 130, 140, 150, 200, 300, 350, 554])
     # return mfe_centroid_comparison
 
+
 if __name__ == '__main__':
-    m = checks()
+    generate_features_csv()
+    # m = checks()
     # print('h')
 
     # Now, you can work with the 'df' DataFrame as needed
