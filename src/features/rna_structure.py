@@ -246,6 +246,101 @@ def sum_base_pair_energy(energy_data: List[str], loop: str) -> int:
     return total_sum
 
 
+
+# NEW FUNCTIONS
+
+#how many alpha/beta/gammma bases are paired with any other bases
+def get_alpha_paired_bases(rna_seq: str, alpha_range: range = ALPHA_RANGE):
+    sec_struct = get_rna_secondry_structure(rna_seq)
+    base_pairs_dict = extract_base_pairs(sec_struct)
+    hits = 0
+    for i in alpha_range:
+        if i in base_pairs_dict:
+            hits += 1
+    return hits / len(alpha_range)
+
+def get_beta_paired_bases(rna_seq: str, beta_range: range = BETA_RANGE):
+    sec_struct = get_rna_secondry_structure(rna_seq)
+    base_pairs_dict = extract_base_pairs(sec_struct)
+    hits = 0
+    for i in beta_range:
+        if i in base_pairs_dict:
+            hits += 1
+    return hits / len(beta_range)
+
+def get_gamma_paired_bases(rna_seq: str, gamma_range: range = GAMMA_RANGE):
+    sec_struct = get_rna_secondry_structure(rna_seq)
+    base_pairs_dict = extract_base_pairs(sec_struct)
+    hits = 0
+    for i in gamma_range:
+        if i in base_pairs_dict:
+            hits += 1
+    return hits / len(gamma_range)
+
+#how many alpha/beta/gammma bases are unpaired
+
+def extract_unpaired_bases_ab(rna_seq: str):
+    #get unpaired bases
+    sec_struct = get_rna_secondry_structure(rna_seq)
+    unpaired_bases_idx = []
+
+    for idx, char in enumerate(sec_struct):
+        if char == ".":
+            unpaired_bases_idx.append(idx)
+    # unpaired bases in alpha beta extended
+    unpaired_bases_idx_ab = [x for x in unpaired_bases_idx if 72 <= x <= 194]
+    num_unpaired_ab=len(unpaired_bases_idx_ab)
+
+    # get bows number
+    cnt_bow = 0
+    bows = []
+    mini_bow = []
+    for ind, base_idx in enumerate(unpaired_bases_idx_ab):
+        mini_bow.append(base_idx)
+        if ind == len(unpaired_bases_idx_ab) -1 or unpaired_bases_idx_ab[ind+1] > unpaired_bases_idx_ab[ind]+1  :
+            bows.append(mini_bow)
+            cnt_bow += 1
+            mini_bow = []
+
+    #get bubbles number, bubble is 1 or more unpaired bases from both sides of 1 or 2 paired bases
+    cnt_bub = 0
+    bubbles = []
+    base_pairs_dict = extract_base_pairs(sec_struct)
+    dict_ab = {key: value for key, value in base_pairs_dict.items() if 72 <= key <= 194}
+    dict_items = sorted(dict_ab.items())
+
+
+    # dict_items[ind2][0] key dict_items[ind2][1] value
+    for ind1, bow in enumerate(bows):
+        for ind2, (key, value) in enumerate(dict_items):
+            if bow[0] in [item for sublist in bubbles for item in sublist]:
+                continue
+
+            if ind2 == len(dict_items) - 1 and bow[0] == dict_items[ind2][0]+1 and bow[-1] == dict_items[ind2][1]-1:
+                cnt_bub += 1
+                bubbles.append(bow)
+
+            if not ind2 == len(dict_items) - 1 and bow[0] == dict_items[ind2][0]+1 and bow[-1] == dict_items[ind2][1]-1 :
+                cnt_bub += 1
+                bubbles.append(bow)
+
+            if not ind2 == len(dict_items) - 1 and bow[0] >dict_items[ind2][0] and bow[-1] < dict_items[ind2+1][0]:
+                if dict_items[ind2][1]-dict_items[ind2+1][1] > 1: #Values are ordered opposite to the keys
+                    size_sec_bow = dict_items[ind2][1]-dict_items[ind2+1][1]
+                    ind_sec_bow = list(range(dict_items[ind2+1][1]+1, dict_items[ind2+1][1]+size_sec_bow))
+
+                    if ind_sec_bow in bows:
+                        cnt_bub += 1
+                        bow_copy = bow[:]
+                        bow_copy.append(ind_sec_bow)
+                        flat_bow_copy = [item for sublist in bow_copy for item in (sublist if isinstance(sublist, list) else [sublist])]
+                        bubbles.append(flat_bow_copy)
+
+    return [num_unpaired_ab, unpaired_bases_idx_ab, cnt_bow, bows, cnt_bub, bubbles]
+
+
+# NEW FUNCTIONS
+
 def run_RNAeval(rna_seq: str, secondry_structure: str):
     # Todo: You need to download RNAfold before from:
     #  https://www.tbi.univie.ac.at/RNA/#download
@@ -533,6 +628,7 @@ def checks():
 
 
 if __name__ == '__main__':
+    #extract_unpaired_bases_ab(CONSENSUS_RNAp_SEQ)
     checks()
 
 

@@ -13,8 +13,21 @@ USE_SELECTED_FEATURES = {"selective": False}
 ALPHA = "CCAUUGACCGAAGUCGUCUCG"   # rna_p[72:72+21]
 ALPHA_RANGE = range(72, 72+21)
 EXTENDED_ALPHA_RANGE = range(72, 72+59)
+
 BETA = ""
 beta = ""
+
+#NEW
+
+#ALPHA ='CCAUUGACCGAAGUCGUCUCG' #72:92
+BETA = 'AGCGAGACGAUUAGGACAAUGG' #173:194
+BETA_RANGE = range(173,195)
+GAMMA ='UGGCCCAACCUGAGUUCUGCUA' #229:250
+GAMMA_RANGE = range(229,251)
+
+#NEW
+
+
 # for i, b in enumerate(rna_p[72:72+21]):
 #     match_idx = bpd.get(i+72, -1)
 #     beta += "-" if match_idx == -1 else rna_p[match_idx]
@@ -49,13 +62,13 @@ CONSENSUS_POSITIONS_ALPHA_BETA_FOLD = {
         92: 175,
         93: 174}
 
-
+#NEW  (99, 169)
 CONSENSUS_POSITIONS_EXTENDED_ALPHA_BETA_FOLD = dict({(72, 194), (73, 193), (74, 192), (75, 191),
                                                      (76, 190), (77, 189), (79, 187), (80, 186),
                                                      (83, 184), (84, 183), (85, 182), (86, 181),
                                                      (87, 180), (88, 179), (89, 178), (90, 177),
                                                      (91, 176), (92, 175), (93, 174), (95, 173),
-                                                     (96, 172), (97, 171), (98, 170), (109, 150),
+                                                     (96, 172), (97, 171), (98, 170), (99, 169), (109, 150),
                                                      (110, 149), (111, 148), (112, 147), (113, 146),
                                                      (114, 145), (117, 142), (118, 141), (119, 140),
                                                      (120, 139), (121, 137), (122, 136), (123, 135),
