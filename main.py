@@ -10,7 +10,6 @@ from src.models.models_functions import model, scale
 from src.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb, get_best_param_xgb_optuna
 from src.models.sequences_generator import sequence_df_generator
 from src.utils import get_current_file_parent_path, write_selected_features
-from joblib import dump, load
 
 
 
@@ -66,6 +65,7 @@ def run_RNAp():
     RNAp_train_val_y = pd.concat([RNAp_y_train, RNAp_y_val])
     trained_model, _, _, _ = model(RNAp_FS_train_val_X, RNAp_FS_test, RNAp_train_val_y, RNAp_y_test,
                                    'xgboost', 'pRNA', Best_param_p_xgb, save_plots=True)
+
 
     # Generate sequences and calculate features
     generated_RNAp_df = sequence_df_generator(rna_type='p')
@@ -131,7 +131,7 @@ def run_RNAi():
     RNAi_FS_test = RNAi_X_test_features[RNAi_selected_features]
 
     # Exploratory Data Analysis (EDA)
-    # EDA(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val)
+    EDA(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val)
 
     # Hyperparameters tuning
     Best_param_xgb = get_best_params_set_xgb(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val, 'xgb_RNAi')
@@ -143,6 +143,7 @@ def run_RNAi():
     RNAi_train_val_y = pd.concat([RNAi_y_train, RNAi_y_val])
     trained_model, _, _, _ = model(RNAi_FS_train_val_X, RNAi_FS_test, RNAi_train_val_y, RNAi_y_test,
                                    'xgboost', 'iRNA', Best_param_xgb, save_plots=True)
+
 
     # Generate sequences and calculate features
     generated_RNAi_df = sequence_df_generator(rna_type='i')
@@ -170,5 +171,5 @@ def run_RNAi():
 
 
 if __name__ == '__main__':
-    # run_RNAp()
-    run_RNAi()
+    run_RNAp()
+    # run_RNAi()
