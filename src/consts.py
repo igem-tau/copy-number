@@ -14,23 +14,13 @@ ALPHA = "CCAUUGACCGAAGUCGUCUCG"   # rna_p[72:72+21]
 ALPHA_RANGE = range(72, 72+21)
 EXTENDED_ALPHA_RANGE = range(72, 72+59)
 
-BETA = ""
-beta = ""
-
-#NEW
-
 #ALPHA ='CCAUUGACCGAAGUCGUCUCG' #72:92
 BETA = 'AGCGAGACGAUUAGGACAAUGG' #173:194
-BETA_RANGE = range(173,195)
+BETA_RANGE = range(173, 195)
 GAMMA ='UGGCCCAACCUGAGUUCUGCUA' #229:250
-GAMMA_RANGE = range(229,251)
+GAMMA_RANGE = range(229, 251)
 
-#NEW
-
-
-# for i, b in enumerate(rna_p[72:72+21]):
-#     match_idx = bpd.get(i+72, -1)
-#     beta += "-" if match_idx == -1 else rna_p[match_idx]
+RANGES_DICT = {"alpha_range": ALPHA_RANGE, "beta_range": BETA_RANGE, "gamma_range": GAMMA_RANGE}
 
 
 CONSENSUS_POSITIONS_3_STEM_LOOPS = dict({(73, 107), (74, 106), (75, 105),
@@ -62,7 +52,6 @@ CONSENSUS_POSITIONS_ALPHA_BETA_FOLD = {
         92: 175,
         93: 174}
 
-#NEW  (99, 169)
 CONSENSUS_POSITIONS_EXTENDED_ALPHA_BETA_FOLD = dict({(72, 194), (73, 193), (74, 192), (75, 191),
                                                      (76, 190), (77, 189), (79, 187), (80, 186),
                                                      (83, 184), (84, 183), (85, 182), (86, 181),
