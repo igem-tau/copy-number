@@ -53,11 +53,12 @@ def run_RNAfold_as_webtool(rna_seq: str, params: list = ['RNAfold', '-p', '-d2',
 def get_rna_secondry_structure(rna_seq: str):
     output = run_RNAfold_as_webtool(rna_seq)
     lines = output.split('\n')
-    structure_line = lines[1]
-    structure_line = structure_line.split(" ")[0]
+    mfe_structure_line = lines[1]
+    mfe_structure_line = mfe_structure_line.split(" ")[0]
     # todo: consider taking other formats like line 2 or 3
-    # structure_line = lines[2]
-    return structure_line
+    centroid_structure_line = lines[3]
+    centroid_structure_line = centroid_structure_line.split(" ")[0]
+    return mfe_structure_line, centroid_structure_line
 
 
 # def get_alpha_beta_match(rna_seq: str):
@@ -68,7 +69,7 @@ def get_rna_secondry_structure(rna_seq: str):
 
 
 def get_dist_from_orig_alpha_beta(rna_seq: str):
-    sec_struct = get_rna_secondry_structure(rna_seq)
+    sec_struct, _ = get_rna_secondry_structure(rna_seq)
     base_pairs_dict = extract_base_pairs(sec_struct)
     cnt = 0
     for i, j in CONSENSUS_POSITIONS_ALPHA_BETA_FOLD.items():
@@ -78,7 +79,7 @@ def get_dist_from_orig_alpha_beta(rna_seq: str):
 
 
 def get_alpha_area_match_ratio(rna_seq: str, alpha_range: range = EXTENDED_ALPHA_RANGE):
-    sec_struct = get_rna_secondry_structure(rna_seq)
+    sec_struct, _ = get_rna_secondry_structure(rna_seq)
     base_pairs_dict = extract_base_pairs(sec_struct)
     hits = 0
 
@@ -90,7 +91,7 @@ def get_alpha_area_match_ratio(rna_seq: str, alpha_range: range = EXTENDED_ALPHA
 
 
 def get_match_ratio(rna_seq: str, consensus: dict) -> float:
-    sec_struct = get_rna_secondry_structure(rna_seq)
+    sec_struct, _ = get_rna_secondry_structure(rna_seq)
     bp_dict = extract_base_pairs(sec_struct)
     hits = 0
     for k, v in consensus.items():
@@ -245,6 +246,121 @@ def sum_base_pair_energy(energy_data: List[str], loop: str) -> int:
 
     return total_sum
 
+
+# gets MFE and Centroid structures, compares them and returns a dictionary of the matching base pairs
+def compare_mfe_to_centroid(rna_seq: str) -> dict:
+    mfe_structure, centroid_structure = get_rna_secondry_structure(rna_seq)
+    mfe_bp = extract_base_pairs(mfe_structure)
+    centroid_bp = extract_base_pairs(centroid_structure)
+    identical_bp = {"mfe == centroid %s_%s" %(k, v): 1 for k, v in mfe_bp.items() if k in centroid_bp and centroid_bp[k] == v}
+    return identical_bp
+
+def get_mfe_centroid_comparison_df(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame:
+    df_ls = []
+    for end_idx in tqdm(seq_end_idx):
+        partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
+        seq_mfe_centroid_comparison_df = partial_seqs.apply(lambda seq: compare_mfe_to_centroid(seq))
+        df = pd.DataFrame(seq_mfe_centroid_comparison_df.tolist())
+        df.fillna(0, inplace=True)
+        df_ls.append(df)
+    res_df = pd.concat(df_ls, axis=1)
+    return res_df
+
+
+
+# NEW FUNCTIONS
+
+#how many alpha/beta/gammma bases are paired with any other bases
+def get_alpha_paired_bases(rna_seq: str, alpha_range: range = ALPHA_RANGE):
+    sec_struct = get_rna_secondry_structure(rna_seq)
+    base_pairs_dict = extract_base_pairs(sec_struct)
+    hits = 0
+    for i in alpha_range:
+        if i in base_pairs_dict:
+            hits += 1
+    return hits / len(alpha_range)
+
+def get_beta_paired_bases(rna_seq: str, beta_range: range = BETA_RANGE):
+    sec_struct = get_rna_secondry_structure(rna_seq)
+    base_pairs_dict = extract_base_pairs(sec_struct)
+    hits = 0
+    for i in beta_range:
+        if i in base_pairs_dict:
+            hits += 1
+    return hits / len(beta_range)
+
+def get_gamma_paired_bases(rna_seq: str, gamma_range: range = GAMMA_RANGE):
+    sec_struct = get_rna_secondry_structure(rna_seq)
+    base_pairs_dict = extract_base_pairs(sec_struct)
+    hits = 0
+    for i in gamma_range:
+        if i in base_pairs_dict:
+            hits += 1
+    return hits / len(gamma_range)
+
+#how many alpha/beta/gammma bases are unpaired
+
+def extract_unpaired_bases_ab(rna_seq: str):
+    #get unpaired bases
+    sec_struct = get_rna_secondry_structure(rna_seq)
+    unpaired_bases_idx = []
+
+    for idx, char in enumerate(sec_struct):
+        if char == ".":
+            unpaired_bases_idx.append(idx)
+    # unpaired bases in alpha beta extended
+    unpaired_bases_idx_ab = [x for x in unpaired_bases_idx if 72 <= x <= 194]
+    num_unpaired_ab=len(unpaired_bases_idx_ab)
+
+    # get bows number
+    cnt_bow = 0
+    bows = []
+    mini_bow = []
+    for ind, base_idx in enumerate(unpaired_bases_idx_ab):
+        mini_bow.append(base_idx)
+        if ind == len(unpaired_bases_idx_ab) -1 or unpaired_bases_idx_ab[ind+1] > unpaired_bases_idx_ab[ind]+1  :
+            bows.append(mini_bow)
+            cnt_bow += 1
+            mini_bow = []
+
+    #get bubbles number, bubble is 1 or more unpaired bases from both sides of 1 or 2 paired bases
+    cnt_bub = 0
+    bubbles = []
+    base_pairs_dict = extract_base_pairs(sec_struct)
+    dict_ab = {key: value for key, value in base_pairs_dict.items() if 72 <= key <= 194}
+    dict_items = sorted(dict_ab.items())
+
+
+    # dict_items[ind2][0] key dict_items[ind2][1] value
+    for ind1, bow in enumerate(bows):
+        for ind2, (key, value) in enumerate(dict_items):
+            if bow[0] in [item for sublist in bubbles for item in sublist]:
+                continue
+
+            if ind2 == len(dict_items) - 1 and bow[0] == dict_items[ind2][0]+1 and bow[-1] == dict_items[ind2][1]-1:
+                cnt_bub += 1
+                bubbles.append(bow)
+
+            if not ind2 == len(dict_items) - 1 and bow[0] == dict_items[ind2][0]+1 and bow[-1] == dict_items[ind2][1]-1 :
+                cnt_bub += 1
+                bubbles.append(bow)
+
+            if not ind2 == len(dict_items) - 1 and bow[0] >dict_items[ind2][0] and bow[-1] < dict_items[ind2+1][0]:
+                if dict_items[ind2][1]-dict_items[ind2+1][1] > 1: #Values are ordered opposite to the keys
+                    size_sec_bow = dict_items[ind2][1]-dict_items[ind2+1][1]
+                    ind_sec_bow = list(range(dict_items[ind2+1][1]+1, dict_items[ind2+1][1]+size_sec_bow))
+
+                    if ind_sec_bow in bows:
+                        cnt_bub += 1
+                        bow_copy = bow[:]
+                        bow_copy.append(ind_sec_bow)
+                        flat_bow_copy = [item for sublist in bow_copy for item in (sublist if isinstance(sublist, list) else [sublist])]
+                        bubbles.append(flat_bow_copy)
+
+    return [num_unpaired_ab, unpaired_bases_idx_ab, cnt_bow, bows, cnt_bub, bubbles]
+
+
+# NEW FUNCTIONS
 
 def run_RNAeval(rna_seq: str, secondry_structure: str):
     # Todo: You need to download RNAfold before from:
@@ -501,14 +617,15 @@ def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
 
 
 def make_rna_features(rna: pd.DataFrame) -> pd.DataFrame:
-    sl_match = get_match_rate_to_stem_loop_3(rna, list(range(118, 250, 10)))
-    alpha_beta_match = get_match_rate_to_alpha_beta(rna, list(range(195, 554, 20))[:-1] + [554])
-    alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, list(range(195, 554, 20))[:-1] + [554])
-    c_rich_area_match = get_match_rate_to_c_rich_area(rna, list(range(300, 554, 20))[:-1] + [554])
-    bases_probabilities = get_prob_df(rna, list(range(118, 554, 50))[:-1] + [554])
-    stem_loops_mfe = get_stem_loops_mfe(rna, list(range(118, 554, 20))[:-1] + [554])
+    sl_match = get_match_rate_to_stem_loop_3(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
+    alpha_beta_match = get_match_rate_to_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
+    alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
+    c_rich_area_match = get_match_rate_to_c_rich_area(rna, [])
+    bases_probabilities = get_prob_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])  # check only specific "interesting locations"
+    mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])
+    stem_loops_mfe = get_stem_loops_mfe(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
 
-    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, c_rich_area_match, bases_probabilities, stem_loops_mfe]
+    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, c_rich_area_match, bases_probabilities, mfe_centroid_comparison, stem_loops_mfe]
     result_df = pd.concat(features_dfs, axis=1)
     return result_df
 
@@ -524,17 +641,29 @@ def checks():
     # res = run_RNAeval("CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUCUAUGGUUUAUGACAAGAAGAU", "(((((((.....(((((((((...))))))))).)))))))((((..(((((((...)))))))..))))...(((.(((((.((.(((...))).)).))))).)))..........")
     # r = sum_base_pair_energy(res, "III")
 
-    df = pd.read_csv(r"C:\Users\User1\IGEM\code\copy-number\data\rna_p_data.csv")
+    import os  # to get the direction of the csv file
+    # Get the current directory of your script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Construct the relative path to the CSV file
+    csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
+
+    df = pd.read_csv(csv_file_path)
+    # df = pd.read_csv(r"..data")
     rna_seqs = df["RNAp_seq"]
     rna_seqs = rna_seqs.head(5)
-    make_rna_features(rna_seqs)
+    # make_rna_features(rna_seqs)
     # get_match_ratio("CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUCUAUGGUUUAUGACAAGAAGAU", CONSENSUS_POSITIONS_3_STEM_LOOPS)
     # get_prob_df(seq, seq_end_idx=[10, 20])
-
+    mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna_seqs, [120, 130, 140, 150, 200, 300, 350, 554])
+    return mfe_centroid_comparison
 
 if __name__ == '__main__':
-    checks()
+    m = checks()
+    # print('h')
 
+    # Now, you can work with the 'df' DataFrame as needed
+    # For example, you can access columns and perform data analysis:
+    # print(df.head())  # Print the first few rows of the DataFrame
 
 # features to extract from RNAfold files and RNAeval output
 
