@@ -41,10 +41,10 @@ def plot_energy_matrix():
     fig.set_xlabel('position')
 
 
-def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) -> pd.DataFrame:
+def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int, int]]) -> pd.DataFrame:
     energy_matrix = get_energy_matrix_for_rna_polymeras()
 
-    def calc_zone_strength(seq:str, zone: Tuple[int], energy_matrix_) -> 'pd.Series[float]':
+    def calc_zone_strength(seq:str, zone: Tuple[int, int], energy_matrix_) -> 'pd.Series[float]':
         seq = seq[:-1] # delete +1 position
         start_zone, end_zone = zone
         strength = 0
@@ -55,11 +55,10 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]]) 
 
     print("Running: calc_promoter_zones_strength")
     zones_strength = {}
-    if USE_SELECTED_FEATURES["selective"]:
-        selected_features = get_selected_features(RNA_TYPE_CONST['RNA'])
     for zone in zones:
         zone_name = f'{zone} predicted strength'
         if USE_SELECTED_FEATURES["selective"]:
+            selected_features = get_selected_features(RNA_TYPE_CONST['RNA'])
             if zone_name in selected_features:
                 strength = seq.apply(
                     partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)

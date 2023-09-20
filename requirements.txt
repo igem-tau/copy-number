@@ -5,7 +5,7 @@ xgboost~=1.7.5
 statsmodels~=0.13.5
 numpy~=1.24.2
 pandas~=1.5.3
-optuna~=3.1.0
+optuna~=3.3.0
 matplotlib~=3.7.1
 scikit-learn~=1.2.2
 openpyxl~=3.1.2
@@ -16,4 +16,5 @@ seaborn~=0.12.2
 dnacurve==2023.4.30
 minepy==1.2.6
 pymemesuite==0.1.0a2
+plotly==5.16.1
 
