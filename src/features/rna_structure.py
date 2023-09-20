@@ -47,7 +47,7 @@ def extract_base_pairs(structure_line: str) -> dict:
     return dict(sorted_base_pairs)
 
 
-def run_RNAfold_as_webtool(rna_seq: str, params: list = ['RNAfold', '-p', '-d2', '--noLP', '--noPS', '--noDP']):
+def run_RNAfold_as_webtool(rna_seq: str, params: list = [r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe", '-p', '-d2', '--noLP', '--noPS', '--noDP']):
     result = subprocess.run(params, input=rna_seq, capture_output=True, text=True)
     output = result.stdout.strip()
     return output
@@ -229,7 +229,7 @@ def base_pair_probabilities(file_path: str, end_idx=None) -> dict:
 
 
 def get_prob_for_seq(rna_seq: str, end_idx=None) -> dict:
-    run_RNAfold(rna_seq, params=['RNAfold', '-p', '-d2', '--noLP', '--noPS'])
+    run_RNAfold(rna_seq, params=[r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe", '-p', '-d2', '--noLP', '--noPS'])
 
     # check we got file
     assert os.path.exists("dot.ps"), "dot file with probabilities generation failed"
@@ -302,11 +302,11 @@ def sum_base_pair_energy(energy_data: List[str], loop: str) -> int:
 
 
 # gets MFE and Centroid structures, compares them and returns a dictionary of the matching base pairs
-def compare_mfe_to_centroid(rna_seq: str) -> dict:
+def compare_mfe_to_centroid(rna_seq: str, end_idx: int) -> dict:
     mfe_structure, centroid_structure = get_rna_secondry_structure(rna_seq)
     mfe_bp = extract_base_pairs(mfe_structure)
     centroid_bp = extract_base_pairs(centroid_structure)
-    identical_bp = {"mfe == centroid %s_%s" %(k, v): 1 for k, v in mfe_bp.items() if k in centroid_bp and centroid_bp[k] == v}
+    identical_bp = {"seq_end_%s mfe == centroid %s_%s" %(end_idx, k, v): 1 for k, v in mfe_bp.items() if k in centroid_bp and centroid_bp[k] == v}
     return identical_bp
 
 
@@ -314,7 +314,7 @@ def get_mfe_centroid_comparison_df(seqs: 'pd.Series[List[str]]', seq_end_idx: li
     df_ls = []
     for end_idx in tqdm(seq_end_idx):
         partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
-        seq_mfe_centroid_comparison_df = partial_seqs.apply(lambda seq: compare_mfe_to_centroid(seq))
+        seq_mfe_centroid_comparison_df = partial_seqs.apply(lambda seq: compare_mfe_to_centroid(seq, end_idx))
         df = pd.DataFrame(seq_mfe_centroid_comparison_df.tolist())
         df.fillna(0, inplace=True)
         df_ls.append(df)
@@ -404,13 +404,13 @@ def run_RNAeval(rna_seq: str, secondry_structure: str):
     # Todo: You need to download RNAfold before from:
     #  https://www.tbi.univie.ac.at/RNA/#download
     #  Include it as part of the project later
-    cmd = ['RNAeval', '-v']
+    cmd = [r"C:\Program Files (x86)\ViennaRNA Package\RNAeval.exe", '-v']
     result = subprocess.run(cmd, input=f"{rna_seq}\n{secondry_structure}", capture_output=True, text=True)
     output = result.stdout.strip().split('\n')
     return output
 
 
-def run_RNAfold(rna_seq: str, params: list = ['RNAfold', '-p', '-d2', '--noLP', '--noPS', '--noDP']):
+def run_RNAfold(rna_seq: str, params: list = [r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe", '-p', '-d2', '--noLP', '--noPS', '--noDP']):
     # Todo: You need to download RNAfold before from:
     #  https://www.tbi.univie.ac.at/RNA/#download
     #  Include it as part of the project later
@@ -657,7 +657,7 @@ def make_rna_features(rna: pd.DataFrame) -> pd.DataFrame:
     sl_match = get_match_rate_to_stem_loop_3(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
     alpha_beta_match = get_match_rate_to_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
     alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
-    # c_rich_area_match = get_match_rate_to_c_rich_area(rna, [])
+    c_rich_area_match = get_match_rate_to_c_rich_area(rna, [300, 350, 450, 554])
     bases_probabilities = get_prob_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])  # check only specific "interesting locations"
     mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])
     stem_loops_mfe = get_stem_loops_mfe(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
@@ -688,7 +688,7 @@ def make_rna_features_parallel(rna: pd.DataFrame) -> pd.DataFrame:
         (get_match_rate_to_stem_loop_3, [rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554]]),
         (get_match_rate_to_alpha_beta, [rna, [200, 250, 300, 350, 450, 554]]),
         (get_match_rate_to_extended_alpha_beta, [rna, [200, 250, 300, 350, 450, 554]]),
-        # (get_match_rate_to_c_rich_area, [rna, []]),
+        (get_match_rate_to_c_rich_area, [rna, [300, 350, 450, 554]]),
         (get_prob_df, [rna, [120, 130, 140, 150, 200, 300, 350, 554]]),
         (get_mfe_centroid_comparison_df, [rna, [120, 130, 140, 150, 200, 300, 350, 554]]),
         (get_stem_loops_mfe, [rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554]]),
@@ -727,7 +727,7 @@ def generate_features_csv():
     result_df = make_rna_features_parallel(rna_seqs)
     et = time()
     print(f"Took: {et - st} seconds")  # Took: 58.083433628082275 seconds
-    result_df.to_csv("rna_p_new_features.csv")
+    result_df.to_csv("rna_p_new_features.csv", index=False)
 
 
 def checks():
@@ -756,12 +756,12 @@ def checks():
     # df = rna_features_by_windows(rna_seqs)
     # df.to_csv("windows.csv")
 
-    # print("Running make rna features not paralel")
-    # st_u = time()
-    # result_df_not_par = make_rna_features(rna_seqs)
-    # et_u = time()
-    # print(f"Took: {et_u - st_u} seconds")   # Took: 277.6278851032257 seconds
-    # result_df_not_par.to_csv("not_par.csv")
+    print("Running make rna features not paralel")
+    st_u = time()
+    result_df_not_par = make_rna_features(rna_seqs)
+    et_u = time()
+    print(f"Took: {et_u - st_u} seconds")   # Took: 277.6278851032257 seconds
+    result_df_not_par.to_csv("not_par.csv")
 
     print("Running mae rna features paralel")
     st = time()
@@ -777,10 +777,15 @@ def checks():
     # mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna_seqs, [120, 130, 140, 150, 200, 300, 350, 554])
     # return mfe_centroid_comparison
 
+def check_output():
+    df = pd.read_csv("rna_p_new_features.csv")
+    print(df.shape)
+
 
 if __name__ == '__main__':
     generate_features_csv()
-    # m = checks()
+    check_output()
+    # checks()
     # print('h')
 
     # Now, you can work with the 'df' DataFrame as needed
