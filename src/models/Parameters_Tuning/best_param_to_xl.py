@@ -13,11 +13,13 @@ from src.models.models_functions import prepare_model_data
 from src.data_prep.pre_process import train_validation_split
 import warnings
 import xgboost as xgb
+from catboost import CatBoostRegressor
 from xgboost.callback import EarlyStopping
 import optuna
 from optuna.visualization import *
 from src.utils import get_current_file_parent_path
 from joblib import dump, load
+from scipy.stats import pearsonr
 import plotly as py
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
@@ -26,6 +28,8 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..','..', 'data')
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+def scoring_function(y_true, y_predict):
+    return r2_score(y_true, y_predict)
 
 def write_to_xl(dic, model_name):
     df1=pd.DataFrame(dic.values())
@@ -136,56 +140,78 @@ def find_optimal_alpha_Lasso(X, y, model_name):
     print(f'Best params for {model_name} model are:\n{params}\nAnd their predicted score is {score}')
     return (dict(params))
 
-def objective(trial, X_train, X_val, y_train, y_val):
-    es = EarlyStopping(
-        rounds=30,
-        data_name='validation',
-        metric_name='mse',
-        maximize=True,
-        save_best=True,
-        min_delta=0
-    )
+def objective(trial, X_train, X_val, y_train, y_val, model_name):
+    if model_name=='XGBoost':
+        es = EarlyStopping(
+            rounds=30,
+            data_name='validation_0',
+            metric_name=scoring_function.__name__,
+            maximize=True,
+            save_best=True,
+            min_delta=0
+        )
 
-    param = {
-        'max_depth': trial.suggest_int('max_depth', 1, 15),
-        'learning_rate': trial.suggest_float('learning_rate', 0.01, 1.0),
-        'n_estimators': trial.suggest_categorial('n_estimators', [1000]),
-        'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-        'gamma': trial.suggest_float('gamma', 0.01, 1.0),
-        'subsample': trial.suggest_float('subsample', 0.01, 1.0),
-        'colsample_bytree': trial.suggest_float('colsample_bytree', 0.01, 1.0),
-        'reg_alpha': trial.suggest_float('reg_alpha', 0.01, 1.0),
-        'reg_lambda': trial.suggest_float('reg_lambda', 0.01, 1.0),
-        'callbacks': trial.suggest_categorial('callbacks', [es])
-    }
+        param = {'max_depth': trial.suggest_int('max_depth', 1, 15),
+                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 1.0),
+                 'n_estimators': trial.suggest_categorical('n_estimators', [1000]),
+                 'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+                 'gamma': trial.suggest_float('gamma', 0.01, 1.0),
+                 'subsample': trial.suggest_float('subsample', 0.01, 1.0),
+                 'colsample_bytree': trial.suggest_float('colsample_bytree', 0.01, 1.0),
+                 'reg_alpha': trial.suggest_float('reg_alpha', 0.01, 1.0),
+                 'reg_lambda': trial.suggest_float('reg_lambda', 0.01, 1.0), 'callbacks': [es],
+                 'eval_metric': scoring_function}
 
-    model = xgb.XGBRegressor(**param)
-    model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
-    trial.suggest_categorial('callbacks', [model.best_iteration])
-    y_pred = model.predict(X_val)
-    return mean_squared_error(y_val, y_pred)
+        model = xgb.XGBRegressor(**param)
+        model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
+        trial.set_user_attr('callbacks', model.best_iteration+1)
+        y_pred = model.predict(X_val)
+    else:
+        param = dict(
+        silent=trial.suggest_categorical('silent', [True]),
+        loss_function = trial.suggest_categorical('loss_function', ['RMSE', 'MAE']),
+        learning_rate = trial.suggest_float("learning_rate", 5e-3, 0.1, log=True),
+        depth = trial.suggest_int('depth', 5, 16),
+        l2_leaf_reg = trial.suggest_float('l2_leaf_reg', 0.01, 5.0),
+        subsample = trial.suggest_float("subsample", 0.05, 1.0),
+        colsample_bylevel = trial.suggest_float("colsample_bylevel", 0.05, 0.8),
+        min_child_samples = trial.suggest_categorical('min_child_samples', [1, 4, 8, 16]),
+        grow_policy = trial.suggest_categorical('grow_policy', ['Depthwise','SymmetricTree', 'Lossguide']),
+        )
+        model = CatBoostRegressor(**param)
+        model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
+        y_pred = model.predict(X_val)
 
-def get_best_param_xgb_optuna(X_train, X_val, y_train, y_val, save_plots=True):
-    study = optuna.create_study(direction='minimize')
-    study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val), n_trials=400)
-    best_params = study.best_params
-    best_params['n_estimators'] = best_params['callbacks']
+    return r2_score(y_val, y_pred)
 
-    print('Number of finished trials: ', len(study.trials))
-    print('Best trial:')
-    trial = study.best_trial
+def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, save_plots=True):
+    if Path(DATA_PATH, f'best_params_{model_name}.joblib').exists():
+        best_params = load(Path(DATA_PATH, f'best_params_{model_name}.joblib'))
+    else:
+        print(f'Running: optuna for {model_name}')
 
-    print('  Value: {}'.format(trial.value))
-    print('  Params: ')
-    for key, value in trial.params.items():
-        print('    {}: {}'.format(key, value))
+        study = optuna.create_study(direction='maximize')
+        study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val, model_name=model_name), n_trials=200)
+        best_params = study.best_params
+        if model_name=='XGBoost':
+            best_params['n_estimators'] = study.best_trial.user_attrs['callbacks']*1.1
 
-    if save_plots:
-        save_optuna_plots(study)
+        print('Number of finished trials: ', len(study.trials))
+        print('Best trial:')
+        trial = study.best_trial
+
+        print('  Value: {}'.format(trial.value))
+        print('  Params: ')
+        for key, value in trial.params.items():
+            print('    {}: {}'.format(key, value))
+
+        dump(best_params, Path(DATA_PATH, f'best_params_{model_name}.joblib'))
+        if save_plots:
+            save_optuna_plots(study, model_name)
 
     return best_params
 
-def save_optuna_plots(study):
+def save_optuna_plots(study, model_name):
     importances = optuna.importance.get_param_importances(study)
     params_sorted = list(importances.keys())
 
@@ -196,7 +222,7 @@ def save_optuna_plots(study):
     fig5 = plot_rank(study, params=params_sorted[:4])
     fig6 = plot_optimization_history(study)
 
-    with open(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_pRNA_optuna_graphs.html'), 'w') as f:
+    with open(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_{model_name}_pRNA_optuna_graphs.html'), 'w') as f:
         f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig3.to_html(full_html=False, include_plotlyjs='cdn'))
