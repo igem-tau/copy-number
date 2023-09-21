@@ -25,7 +25,7 @@ from plotly.subplots import make_subplots
 
 from src.models.models_functions import scale
 from src.utils import get_current_file_parent_path
-from joblib import dump, load
+from joblib import dump, load, Parallel, delayed
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
@@ -298,23 +298,53 @@ def feature_selection(RNA_X, RNA_y, param_dict):
         RNA_X_new = RNA_X.iloc[:, (mi > (mi.mean()))]
         new_mi = mi[(mi > (mi.mean()))]
 
+        # parallel approach for feature-feature correlation:
+        # Define a function to calculate mutual information
+        def calculate_mutual_information(feature1, feature2, discrete_features_bool):
+            if feature2.dtype == 'int64':  # y is categorical
+                mi = mutual_info_classif(feature1.to_numpy().reshape(-1, 1), feature2, discrete_features=discrete_features_bool)
+            else:  # y is numerical
+                mi = mutual_info_regression(feature1.to_numpy().reshape(-1, 1), feature2, discrete_features=discrete_features_bool)
+            return mi
+
+        def parallel_calculate_mi(i, j):
+            feature1 = RNA_X_new[new_features[i]]
+            feature2 = RNA_X_new[new_features[j]]
+            discrete_features_bool = True if feature1.dtype == 'int64' else False
+            mi = calculate_mutual_information(feature1, feature2, discrete_features_bool)
+            return mi
+
         # correlation between feature-feature (minimal) with MI
         print('Running: features selection - feature-feature')
         new_features = pd.Series(RNA_X_new.columns)
         corr_matrix = np.zeros((len(new_features), len(new_features)))
-        for i in range(len(new_features)):
-            for j in range(len(new_features)):
-                if i >= j:
-                    continue
-                discrete_features_bool = True if RNA_X_new[new_features[i]].dtype == 'int64' else False
-                if RNA_X_new[new_features[j]].dtype == 'int64':  # y is categorical
-                    corr_matrix[i, j] = mutual_info_classif(RNA_X_new[new_features[i]].to_numpy().reshape(-1, 1),
-                                                            RNA_X_new[new_features[j]],
-                                                            discrete_features=discrete_features_bool)
-                else:  # y is numerical
-                    corr_matrix[i, j] = mutual_info_regression(RNA_X_new[new_features[i]].to_numpy().reshape(-1, 1),
-                                                               RNA_X_new[new_features[j]],
-                                                               discrete_features=discrete_features_bool)
+
+        # Create pairs of feature indices for upper triangle calculation
+        pairs = [(i, j) for i in range(len(new_features)) for j in range(i + 1, len(new_features))]
+
+        # Parallelize the mutual information calculation for upper triangle
+        mi_values_upper = Parallel(n_jobs=-1)(delayed(parallel_calculate_mi)(i, j) for i, j in tqdm(pairs))
+
+        # Fill the correlation matrix with mutual information values for upper triangle
+        for (i, j), mi in zip(pairs, mi_values_upper):
+            corr_matrix[i, j] = mi
+
+        # Mirror the upper triangle to the lower triangle
+        corr_matrix = corr_matrix + corr_matrix.T
+
+        # for i in range(len(new_features)):
+        #     for j in range(len(new_features)):
+        #         if i >= j:
+        #             continue
+        #         discrete_features_bool = True if RNA_X_new[new_features[i]].dtype == 'int64' else False
+        #         if RNA_X_new[new_features[j]].dtype == 'int64':  # y is categorical
+        #             corr_matrix[i, j] = mutual_info_classif(RNA_X_new[new_features[i]].to_numpy().reshape(-1, 1),
+        #                                                     RNA_X_new[new_features[j]],
+        #                                                     discrete_features=discrete_features_bool)
+        #         else:  # y is numerical
+        #             corr_matrix[i, j] = mutual_info_regression(RNA_X_new[new_features[i]].to_numpy().reshape(-1, 1),
+        #                                                        RNA_X_new[new_features[j]],
+        #                                                        discrete_features=discrete_features_bool)
 
         il1 = np.tril_indices(len(new_features))
         corr_matrix[il1] = np.nan
