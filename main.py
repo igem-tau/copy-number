@@ -12,7 +12,6 @@ from src.models.sequences_generator import sequence_df_generator
 from src.utils import get_current_file_parent_path, write_selected_features
 
 
-
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 
@@ -118,6 +117,33 @@ def run_RNAi():
     RNAi_stratify_test = data['RNAi_stratify_test']
 
 
+######### main add rnap features for testing
+    from src.data_prep.pre_process import split_for_testing, train_validation_split, equal_bins_data, get_RNAi_data
+
+    TARGET_COLUMN = 'Copy Number'
+    RNAi_data = get_RNAi_data()
+    RNAi_data, RNAi_stratify_col = equal_bins_data(RNAi_data)
+
+    RNAi_from_RNAp_feats = pd.read_csv(Path(DATA_PATH, 'rna_p_data.csv'))
+    RNAi_from_RNAp_feats_train_val, RNAi_from_RNAp_feats_test = split_for_testing(RNAi_from_RNAp_feats, pd.concat([RNAi_y_train,RNAi_y_val,RNAi_y_test]),
+                                                                                  stratify_by=RNAi_stratify_col)
+
+    RNAi_from_RNAp_feats_train, RNAi_from_RNAp_feats_val, RNAi_y_train, RNAi_y_val = train_validation_split(
+        RNAi_from_RNAp_feats_train_val, pd.concat([RNAi_y_train,RNAi_y_val]), stratify_by=RNAi_stratify_train_val)
+
+    # RNAi_X_train_features = pd.concat([RNAi_X_train_features, RNAi_from_RNAp_feats_train.reset_index()], axis=1)
+    # RNAi_X_val_features = pd.concat([RNAi_X_val_features, RNAi_from_RNAp_feats_val.reset_index()], axis=1)
+    # RNAi_X_test_features = pd.concat([RNAi_X_test_features, RNAi_from_RNAp_feats_test.reset_index()],
+    #                         axis=1)
+
+    # train_shape = RNAi_X_train_features.shape[0]
+    # val_shape = RNAi_X_val_features.shape[0]
+    # RNAi_X_train_features = pd.concat([RNAi_X_train_features, RNAi_from_RNAp_feats.iloc[0: train_shape, :]], axis=1)
+    # RNAi_X_val_features = pd.concat([RNAi_X_val_features, RNAi_from_RNAp_feats.iloc[train_shape: train_shape + val_shape, :].reset_index()], axis=1)
+    # RNAi_X_test_features = pd.concat([RNAi_X_test_features, RNAi_from_RNAp_feats.iloc[train_shape + val_shape:, :].reset_index()], axis=1)
+    # # ######
+
+
     # Feature selection
     RNAi_selected_features_data = feature_selection(RNAi_X_train_features, RNAi_y_train, 'i')
     RNAi_selected_features = RNAi_selected_features_data['selected_features']
@@ -131,7 +157,7 @@ def run_RNAi():
     RNAi_FS_test = RNAi_X_test_features[RNAi_selected_features]
 
     # Exploratory Data Analysis (EDA)
-    EDA(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val)
+    # EDA(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val)
 
     # Hyperparameters tuning
     Best_param_xgb = get_best_params_set_xgb(RNAi_FS_train, RNAi_FS_val, RNAi_y_train, RNAi_y_val, 'xgb_RNAi')
@@ -171,5 +197,5 @@ def run_RNAi():
 
 
 if __name__ == '__main__':
-    run_RNAp()
-    # run_RNAi()
+    # run_RNAp()
+    run_RNAi()
