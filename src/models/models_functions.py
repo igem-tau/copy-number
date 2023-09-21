@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from src.models.lasso import run_lasso
-from src.models.xgboost_model import run_xgboost
+from src.models.boosting_models import run_xgboost, run_catboost
 
 
 def remove_outliers(X: pd.DataFrame, y: pd.DataFrame):
@@ -45,10 +45,13 @@ def model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_
     if model_name == 'lasso':
         model, r2, mse_score, spearman = run_lasso(X_train, X_test, y_train, y_test, data_title=data_name,
                                             Best_param=best_param, save_plots=save_plots)
-    elif model_name == 'xgboost':
-        model, r2, mse_score, spearman = run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name,
+    elif model_name == 'XGBoost':
+        model, r2, mae_score, pearson, spearman, y_pred = run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name,
+                                              Best_param=best_param, save_plots=save_plots)
+    elif model_name == 'CatBoostRegressor':
+        model, r2, mae_score, pearson, spearman, y_pred = run_catboost(X_train, X_test, y_train, y_test, data_title=data_name,
                                               Best_param=best_param, save_plots=save_plots)
     else:
         raise Exception(f'No such model: {model_name}')
-    return model, r2, mse_score, spearman
+    return model, r2, mae_score, pearson, spearman, y_pred
 
