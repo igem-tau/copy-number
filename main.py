@@ -130,7 +130,9 @@ def run_RNAi():
     RNAi_data = get_RNAi_data()
     RNAi_data, RNAi_stratify_col = equal_bins_data(RNAi_data)
 
-    RNAi_from_RNAp_feats = pd.read_csv(Path(DATA_PATH, 'rna_p_data.csv'))
+
+    feat_path = Path(CURRENT_FOLDER_PATH, 'src//features')
+    RNAi_from_RNAp_feats = pd.read_csv(Path(feat_path, 'rna_p_new_features.csv'))
     RNAi_from_RNAp_feats_train_val, RNAi_from_RNAp_feats_test = split_for_testing(RNAi_from_RNAp_feats, pd.concat([RNAi_y_train,RNAi_y_val,RNAi_y_test]),
                                                                                   stratify_by=RNAi_stratify_col)
 
