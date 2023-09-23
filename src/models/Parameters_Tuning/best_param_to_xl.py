@@ -3,7 +3,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import openpyxl
-import os
 import pandas as pd
 from sklearn import metrics
 from sklearn.linear_model import LassoCV
@@ -110,7 +109,7 @@ def converge_randomsearch(X_train, X_test, y_train, y_test, dataset_name, num_of
 
 def get_best_params_set_xgb(X_train, X_val, y_train, y_val, model_name):
     xl_name = f'{model_name}_best_params.xlsx'
-    if not os.path.exists(os.path.join(os.getcwd(), xl_name)):
+    if not Path(DATA_PATH, xl_name).exists():
         for i in range(5):
             [ii, kk] = converge_randomsearch(X_train, X_val, y_train, y_val, model_name, num_of_steps=7, nun_iter=7)
 
@@ -126,7 +125,7 @@ def get_best_params_set_xgb(X_train, X_val, y_train, y_val, model_name):
 
 def find_optimal_alpha_Lasso(X, y, model_name):
     xl_name = f'{model_name}_best_params.xlsx'
-    if not os.path.exists(os.path.join(os.getcwd(), xl_name)):
+    if not Path(DATA_PATH, xl_name).exists():
         X_train, X_test, y_train, y_test = prepare_model_data(X, y)
         # create a LassoCV object with 10-fold cross-validation
         print('running LassoCV to find the optimal alpha')

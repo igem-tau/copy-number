@@ -1,5 +1,4 @@
 # Fixed Import with load Diabitis instead of load boston
-import os
 import re
 from functools import partial
 from tqdm import tqdm
@@ -229,10 +228,8 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
                       'XGBoost': 1,
                       'CatBoostRegressor': 1, 'SVR': 2, 'NN': 1}
             study = optuna.create_study(direction='maximize')
-            if os.path.exists(os.path.join(DATA_PATH, f'{model_name}_study')):
-                last_study = load(
-                    open(os.path.join(DATA_PATH, f'{get_current_date()}_{model_name}_study'),
-                         'rb'))
+            if Path(DATA_PATH, f'{model_name}_study').exists():
+                last_study = load(Path(DATA_PATH, f'{get_current_date()}_{model_name}_study'))
                 study.add_trials(last_study.trials)
             study.optimize(partial(objective, X_train=X_train_scaled, y_train=y_train, X_val=X_val_scaled, y_val=y_val,
                                    regressor=model_name),
@@ -240,8 +237,7 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
 
             params = study.best_trial.params
             params_dict[model_name] = params
-            dump(study,
-                 open(os.path.join(DATA_PATH, f'{get_current_date()}_{model_name}_study'), 'wb'))
+            dump(study, Path(DATA_PATH, f'{get_current_date()}_{model_name}_study'))
 
             model_name, pearson_train, pearson_val, mae_train, mae_val, _, _, _, _ = make_model(X_train, X_val, y_train,
                                                                                                 y_val, model_name,
