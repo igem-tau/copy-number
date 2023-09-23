@@ -78,7 +78,7 @@ def multi_split_forward_selection(data: Dict[str, Union[pd.DataFrame, pd.Series]
         rows.append(new_row)
 
     results = pd.concat(rows, axis=1).T
-    dump(results, get_save_path(rna_type, model_type, file_type='joblib'))
+    dump(results, get_save_path(rna_type, model_type, file_type='joblib'), compress=True)
     results.to_csv(get_save_path(rna_type, model_type, file_type='csv'), index=False)
     return results
 

@@ -304,9 +304,9 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
 
     if specify_date:
         date = datetime.date
-        dump(data, Path(DATA_PATH, date.strftime('%m/%d/%Y') + filename))
+        dump(data, Path(DATA_PATH, date.strftime('%m/%d/%Y') + filename), compress=True)
     else:
-        dump(data, Path(DATA_PATH, filename))
+        dump(data, Path(DATA_PATH, filename), compress=True)
     return data
 
 

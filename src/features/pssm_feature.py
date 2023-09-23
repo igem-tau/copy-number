@@ -60,7 +60,7 @@ def set_pssm_thresholds(RNA_df: pd.DataFrame, rna_type:str = 'p') -> None:
     #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_p
     # else:
     #     PSSM_THRESHOLD_PATH = PSSM_THRESHOLD_PATH_i
-    # dump(pssm_threshold, PSSM_THRESHOLD_PATH)
+    # dump(pssm_threshold, PSSM_THRESHOLD_PATH, compress=True)
     return RNA_pssm
 
 

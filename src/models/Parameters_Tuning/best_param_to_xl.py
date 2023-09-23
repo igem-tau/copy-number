@@ -212,7 +212,7 @@ def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, save_plots
         for key, value in trial.params.items():
             print('    {}: {}'.format(key, value))
 
-        dump(best_params, Path(DATA_PATH, f'best_params_{model_name}.joblib'))
+        dump(best_params, Path(DATA_PATH, f'best_params_{model_name}.joblib'), compress=True)
         if save_plots:
             save_optuna_plots(study, model_name)
 

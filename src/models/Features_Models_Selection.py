@@ -237,7 +237,7 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
 
             params = study.best_trial.params
             params_dict[model_name] = params
-            dump(study, Path(DATA_PATH, f'{get_current_date()}_{model_name}_study'))
+            dump(study, Path(DATA_PATH, f'{get_current_date()}_{model_name}_study'), compress=True)
 
             model_name, pearson_train, pearson_val, mae_train, mae_val, _, _, _, _ = make_model(X_train, X_val, y_train,
                                                                                                 y_val, model_name,
@@ -245,8 +245,8 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
             df_models.loc[len(df_models.index)] = [model_name, pearson_train, pearson_val, mae_train, mae_val]
             print(f"Finished: {model_name} for model selection")
 
-        dump(params_dict, selected_model_params_path)
-        dump(df_models, model_params_path)
+        dump(params_dict, selected_model_params_path, compress=True)
+        dump(df_models, model_params_path, compress=True)
 
         print('Creating plot for model selection')
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -376,6 +376,6 @@ def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
                     'removed_features': features_to_remove}
             models_data[model] = data
 
-        dump(models_data, Path(DATA_PATH, filename))
+        dump(models_data, Path(DATA_PATH, filename), compress=True)
 
     return models_data

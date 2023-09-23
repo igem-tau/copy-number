@@ -136,7 +136,7 @@ if __name__ == '__main__':
             'RNAi_correlations': data_i['Correlation df'],
             'RNAi_permutations': data_i['Permutations df'],
         }
-        dump(data, SAVED_CORRELATIONS_PATH)
+        dump(data, SAVED_CORRELATIONS_PATH, compress=True)
         RNAp_correlations_df = data_p['Correlation df']
         RNAp_permutations_df = data_p['Permutations df']
         RNAi_correlations_df = data_i['Correlation df']

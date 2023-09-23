@@ -67,7 +67,7 @@ def get_features_exploration_data(X: pd.DataFrame, y: 'pd.Series[int]', model_ty
         run_rows.append(new_row.rename(index={0: seed}))
 
     runs_df = pd.concat(run_rows)
-    dump(runs_df, file_path)
+    dump(runs_df, file_path, compress=True)
 
     return runs_df
 
