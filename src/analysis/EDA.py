@@ -1,9 +1,8 @@
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import pandas as pd
-from src.utils import get_current_file_parent_path
+from src.utils import get_current_file_parent_path, get_current_date
 from pathlib import Path
-import os
 import plotly.express as px
 
 
@@ -70,14 +69,16 @@ def plot_scatter_hist(df_x, df_y):
 
     return fig
 
-def EDA(train, val, y_train, y_val):
+
+def exploratory_data_analysis(train: pd.DataFrame, val: pd.DataFrame, y_train: pd.Series, y_val: pd.Series, rna_type: str) -> None:
     df_x = pd.concat([train, val])
     df_y = pd.concat([y_train, y_val])
     fig1 = plot_features_dist(df_x)
     fig2 = plot_features_box(df_x)
     fig3 = plot_scatter_hist(df_x, df_y)
 
-    with open(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_pRNA_features_graphs.html'), 'w') as f:
+    eda_save_path = Path(DATA_PATH, f'{get_current_date()}_RNA{rna_type}_features_graphs.html')
+    with open(eda_save_path, 'w') as f:
         f.write(fig3.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))
