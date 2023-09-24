@@ -315,10 +315,10 @@ def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
         def calculate_mutual_information(feature1, feature2, discrete_features_bool):
             if feature2.dtype == 'int64':  # y is categorical
                 paired_mi = mutual_info_classif(feature1.to_numpy().reshape(-1, 1), feature2,
-                                         discrete_features=discrete_features_bool)
+                                                discrete_features=discrete_features_bool, random_state=0)
             else:  # y is numerical
                 paired_mi = mutual_info_regression(feature1.to_numpy().reshape(-1, 1), feature2,
-                                            discrete_features=discrete_features_bool)
+                                                   discrete_features=discrete_features_bool, random_state=0)
             return paired_mi
 
         def parallel_calculate_mi(i, j):
@@ -326,34 +326,32 @@ def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
             feature2 = RNA_X_new[new_features[j]]
             discrete_features_bool = feature1.dtype == 'int64'
             paired_mi = calculate_mutual_information(feature1, feature2, discrete_features_bool)
-            return paired_mi
+            return float(paired_mi)
 
         # correlation between feature-feature (minimal) with MI
         print('Running: features selection - feature-feature')
         new_features = pd.Series(RNA_X_new.columns)
-        corr_matrix = np.zeros((len(new_features), len(new_features)))
+        num_new_features = len(new_features)
+        corr_matrix = np.zeros((num_new_features, num_new_features))
 
         # Create pairs of feature indices for upper triangle calculation
-        pairs = [(i, j) for i in range(len(new_features)) for j in range (i+1, len(new_features))]
+        upper_triangle_indices = np.triu_indices(num_new_features, k=1)
+        pairs = zip(*upper_triangle_indices)
 
         # Parallelize the mutual information calculation for upper triangle
-        mi_values_upper = Parallel(n_jobs=-2)(delayed(parallel_calculate_mi)(i, j) for i, j in tqdm(pairs))
+        mi_values_upper = Parallel(n_jobs=-2)(delayed(parallel_calculate_mi)(i, j) for i, j in
+                                              tqdm(pairs, total=((num_new_features ** 2 - num_new_features) // 2)))
 
         # Fill the correlation matrix for the upper triangle
-        corr_matrix[np.array(pairs)[:, 0], np.array(pairs)[:, 1]] = mi_values_upper
-        # for i in range(len(new_features)):
-        #     for j in range(len(new_features)):
-        #         if i >= j:
-        #             continue
-        #         corr_matrix[i, j] = parallel_calculate_mi(i, j)
+        corr_matrix[upper_triangle_indices] = mi_values_upper
 
-        #  Transform the lower triangle to np.nan
-        il1 = np.tril_indices(len(new_features))
+        # Transform the lower triangle to np.nan
+        il1 = np.tril_indices(num_new_features)
         corr_matrix[il1] = np.nan
 
-        dump(corr_matrix, Path(DATA_PATH, 'mitual_info_matrix.joblib'), compress=True)
+        dump(corr_matrix, Path(DATA_PATH, 'mutual_info_matrix.joblib'), compress=True)
 
-        (row, col) = (corr_matrix > np.nanquantile(corr_matrix, 0.99)).nonzero()  # TODO: think of different condition
+        row, col = (corr_matrix > np.nanquantile(corr_matrix, 0.99)).nonzero()  # TODO: think of different condition
 
         while len(row) > 0:
             values = np.array([row[0], col[0]])  # first pair
