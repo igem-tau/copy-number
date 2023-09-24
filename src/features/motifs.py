@@ -3,9 +3,9 @@ import pandas as pd
 from pathlib import Path
 from pymemesuite.common import MotifFile, Sequence
 from pymemesuite.fimo import FIMO
-from src.consts import *
-from src.utils import get_current_file_parent_path, get_selected_features
-
+from src.utils import get_current_file_parent_path, is_feature_selected
+from tqdm import tqdm
+from typing import List, Optional
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
@@ -13,87 +13,54 @@ INTERACT_MEME = Path(DATA_PATH, 'motifs', 'dpinteract.meme')
 SWISS_MEME = Path(DATA_PATH, 'motifs', 'SwissRegulon_e_coli.meme')
 
 
-def generate_filtered_motif_dict():
-    selected_features = get_selected_features(RNA_TYPE_CONST['RNA'])
-    motifs = {}
-    motifs_num = 0
-
-    with MotifFile(INTERACT_MEME) as motif_file:
-        motif = motif_file.read()
-        while motif:
-            motif_name = motif.accession.decode()
-
-            # check if in config
-            if motif_name in selected_features:
-                motifs_num += 1
-                motifs[motif_name] = motif
-
-            motif = motif_file.read()
-
-    with MotifFile(SWISS_MEME) as motif_file:
-        motif = motif_file.read()
-        while motif:
-            motif_name = motif.accession.decode()
-
-            # check if in config
-            if motif_name in selected_features:
-                motifs_num += 1
-                motifs[motif_name] = motif
-
-            motif = motif_file.read()
-
-    assert motifs_num == len(motifs)
-    return motifs, motif_file
-
-
 # generate motifs dictionary
-def generate_motif_dict():
-    if USE_SELECTED_FEATURES["selective"]:
-        return generate_filtered_motif_dict()
-
+def generate_motif_dict(selected_features: Optional[List[str]]):
+    meme_files = [INTERACT_MEME, SWISS_MEME]
     motifs = {}
     motifs_num = 0
 
-    with MotifFile(INTERACT_MEME) as motif_file:
-        motif = motif_file.read()
-        while motif:
-            motif_name = motif.accession.decode()
-            motifs_num += 1
-            motifs[motif_name] = motif
+    for meme_file in meme_files:
+        with MotifFile(meme_file) as motif_file:
             motif = motif_file.read()
-
-    with MotifFile(SWISS_MEME) as motif_file:
-        motif = motif_file.read()
-        while motif:
-            motif_name = motif.accession.decode()
-            motifs_num += 1
-            motifs[motif_name] = motif
-            motif = motif_file.read()
+            while motif:
+                motif_name = motif.accession.decode()
+                if (is_feature_selected(f'{motif_name}_pv', selected_features) or is_feature_selected(
+                        f'{motif_name}_score', selected_features)):
+                    motifs_num += 1
+                    motifs[motif_name] = motif
+                motif = motif_file.read()
 
     assert motifs_num == len(motifs)
-    return motifs, motif_file
+    return motifs, motif_file  # TODO -why is only (and always) the later motif_file returned
 
 
-def calc_motifs_pv(seqs: 'pd.Series[str]') -> pd.DataFrame:
-    motifs, motif_file = generate_motif_dict()
-    fimo = FIMO(both_strands=True) #, threshold=1e-3)
+def calc_motifs_pv(seqs: 'pd.Series[str]', selected_features: Optional[List[str]]) -> pd.DataFrame:
+    num_sequences = len(seqs)
+    motifs, motif_file = generate_motif_dict(selected_features)
+    fimo = FIMO(both_strands=True)  # , threshold=1e-3)
 
-    columns_names_pv = []
-    columns_names_score = []
-    for i in motifs.keys():
-        columns_names_pv.append(f'{i}_pv')
-        columns_names_score.append(f'{i}_score')
+    motifs_dict = {}
+    for motif_name, selected_motif in tqdm(motifs.items(), desc='motifs'):
+        pv_feature_name = f'{motif_name}_pv'
+        score_feature_name = f'{motif_name}_score'
 
-    motifs_df = pd.DataFrame(data=np.hstack((np.ones(shape=(len(seqs), len(motifs.keys()))), np.zeros(shape=(len(seqs), len(motifs.keys()))))), columns=columns_names_pv + columns_names_score)
-    for i, seq in enumerate(seqs):
-      for selected_motif in motifs.values():
-          pattern = fimo.score_motif(selected_motif, [Sequence(seq)], motif_file.background)
-          for m in pattern.matched_elements:
-              motifs_df.loc[i, f'{selected_motif.accession.decode()}_pv'] = m.pvalue
-              motifs_df.loc[i, f'{selected_motif.accession.decode()}_score'] = m.score
-    return motifs_df
+        if is_feature_selected(pv_feature_name, selected_features):
+            motifs_dict[pv_feature_name] = np.ones(num_sequences)
+        if is_feature_selected(score_feature_name, selected_features):
+            motifs_dict[score_feature_name] = np.zeros(num_sequences)
+
+        for i, seq in enumerate(seqs):
+            pattern = fimo.score_motif(selected_motif, [Sequence(seq)], motif_file.background)
+            # TODO - update to save the best match instead of the last one
+            for m in pattern.matched_elements:
+                if is_feature_selected(pv_feature_name, selected_features):
+                    motifs_dict[pv_feature_name][i] = m.pvalue
+
+                if is_feature_selected(score_feature_name, selected_features):
+                    motifs_dict[score_feature_name][i] = m.score
+    return pd.DataFrame(motifs_dict)
 
 
 if __name__ == '__main__':
-    motifs, motif_file = generate_motif_dict()
+    motifs_, motif_file_ = generate_motif_dict(selected_features=None)
     print("done")
