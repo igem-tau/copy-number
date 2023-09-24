@@ -4,53 +4,23 @@ from itertools import product
 import math
 import pandas as pd
 from src.consts import *
-from src.utils import get_selected_features
-from typing import List, Dict, Tuple, Union
+from src.utils import get_selected_features, is_feature_selected
+from typing import List, Optional, Tuple
 from tqdm import tqdm
 
 
-def filtered_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
-    def encode(single_nucleotid: pd.Series, index: int = None) -> pd.DataFrame:
+def generate_one_hot_encoding(seq: pd.Series, selected_features: Optional[List[str]]) -> pd.DataFrame:
+    def encode(single_nucleotid: pd.Series, index: int) -> pd.DataFrame:
         columns = {}
         for nucleotide in NUCLEOTIDES:
             column_name = f'{nucleotide}_{index}'
-            if column_name in selected_features:
+            if is_feature_selected(column_name, selected_features):
                 columns[column_name] = (single_nucleotid == nucleotide).astype(int)
 
-        if columns:
-            encoded = pd.concat(columns, axis=1)
-            return encoded
-        return pd.DataFrame()
-
-    selected_features = get_selected_features(RNA_TYPE_CONST['RNA'])
-    full_encoding = []
-    for current_nucleotide_index in tqdm(range(PROMOTER_LENGTH)):
-        current_nucleotide_encoding = encode(seq.str[current_nucleotide_index], current_nucleotide_index + START_INDEX)
-        full_encoding.append(current_nucleotide_encoding)
-
-    return pd.concat(full_encoding, axis=1)
-
-
-def generate_one_hot_encoding(seq: pd.Series) -> pd.DataFrame:
-    def encode(single_nucleotid: pd.Series, index: int = None) -> pd.DataFrame:
-        columns = []
-        for nucleotide in NUCLEOTIDES:
-            columns.append((single_nucleotid == nucleotide).astype(int))
-        encoded = pd.concat(columns, axis=1)
-        if index is not None:
-            columns = [f'{nucleotide}_{index}' for nucleotide in NUCLEOTIDES]
-        else:
-            columns = list(NUCLEOTIDES)
-        encoded.columns = columns
-        return encoded
-
-    print("Running: generate_one_hot_encoding")
-
-    if USE_SELECTED_FEATURES["selective"]:
-        return filtered_one_hot_encoding(seq)
+        return pd.DataFrame(columns)
 
     full_encoding = []
-    for current_nucleotide_index in tqdm(range(PROMOTER_LENGTH)):
+    for current_nucleotide_index in tqdm(range(PROMOTER_LENGTH), desc='one hot encoding'):
         current_nucleotide_encoding = encode(seq.str[current_nucleotide_index], current_nucleotide_index + START_INDEX)
         full_encoding.append(current_nucleotide_encoding)
 
