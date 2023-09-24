@@ -48,7 +48,8 @@ def run_pipeline(rna_type: str):
         RNA_FS_test = RNA_X_test_features[RNA_selected_features]
 
         # Exploratory Data Analysis (EDA)
-        exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
+        if rna_type == 'p':
+            exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
 
         # Hyperparameters tuning
         # Best_param_xgb = get_best_params_set_xgb(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val,
