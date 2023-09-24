@@ -7,6 +7,10 @@ def get_current_file_parent_path(file) -> Path:
     return Path(file).parent.resolve()
 
 
+def is_feature_selected(feature: str, selected_features: Optional[List[str]]) -> bool:
+    return selected_features is None or feature in selected_features
+
+
 def get_selected_features_path(rna_type: str, model: str = '') -> Path:
     model = f'{model}_' if model else model
     return Path(get_current_file_parent_path(__file__), '..', 'data',
