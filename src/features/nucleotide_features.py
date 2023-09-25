@@ -4,7 +4,7 @@ from itertools import product
 import math
 import pandas as pd
 from src.consts import *
-from src.utils import get_selected_features, is_feature_selected
+from src.utils import is_feature_selected
 from typing import List, Optional, Tuple
 from tqdm import tqdm
 

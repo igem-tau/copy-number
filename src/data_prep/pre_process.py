@@ -131,11 +131,12 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     RNA_features.append(calc_motifs_pv(RNA_seq, selected_features))
     RNA_features.append(generate_one_hot_encoding(RNA_seq, selected_features))
     RNA_features.append(extract_nucli_features(RNA_seq, selected_features))
-    # TODO - continue update selected features style from here
     RNA_features.append(
-        calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES))
-    RNA_features.append(entropy(RNA_seq))
-    RNA_features.append(calculate_dG_and_Tx(RNA_seq))  # 3 features based ution biophysical properties (deltaG)
+        calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES,
+                                     selected_features))
+    if is_feature_selected('entropy', selected_features):
+        RNA_features.append(entropy(RNA_seq))
+    RNA_features.append(calculate_dG_and_Tx(RNA_seq, selected_features))  # 3 features based ution biophysical properties (deltaG)
     RNA_features.append(score_denovo_motifs(RNA_seq))
 
     RNA_X = pd.concat(RNA_features, axis=1)

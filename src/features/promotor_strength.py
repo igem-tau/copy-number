@@ -4,8 +4,8 @@ import pandas as pd
 from pathlib import Path
 import seaborn as sns
 from src.consts import *
-from src.utils import get_current_file_parent_path, get_selected_features
-from typing import List, Tuple, Union
+from src.utils import get_current_file_parent_path, is_feature_selected
+from typing import List, Tuple, Union, Optional
 
 
 def get_energy_matrix_for_rna_polymeras() -> pd.DataFrame:
@@ -41,13 +41,14 @@ def plot_energy_matrix():
     fig.set_xlabel('position')
 
 
-def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int, int]]) -> pd.DataFrame:
+def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones: List[Tuple[int, int]],
+                                 selected_features: Optional[List[str]]) -> pd.DataFrame:
     energy_matrix = get_energy_matrix_for_rna_polymeras()
 
-    def calc_zone_strength(seq:str, zone: Tuple[int, int], energy_matrix_) -> 'pd.Series[float]':
-        seq = seq[:-1] # delete +1 position
+    def calc_zone_strength(seq: str, zone: Tuple[int, int], energy_matrix_) -> float:
+        seq = seq[:-1]  # delete +1 position
         start_zone, end_zone = zone
-        strength = 0
+        strength = 0.0
 
         for i in range(start_zone, end_zone + 1):
             strength += energy_matrix_.loc[i, seq[i - START_INDEX]]
@@ -57,17 +58,8 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int, in
     zones_strength = {}
     for zone in zones:
         zone_name = f'{zone} predicted strength'
-        if USE_SELECTED_FEATURES["selective"]:
-            selected_features = get_selected_features(RNA_TYPE_CONST['RNA'])
-            if zone_name in selected_features:
-                strength = seq.apply(
-                    partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
-                )
-                zones_strength[zone_name] = strength
-        else:
-            strength = seq.apply(
-                partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix)
-            )
+        if is_feature_selected(zone_name, selected_features):
+            strength = seq.apply(partial(calc_zone_strength, zone=zone, energy_matrix_=energy_matrix))
             zones_strength[zone_name] = strength
 
     return pd.DataFrame(zones_strength)
@@ -85,4 +77,4 @@ if __name__ == '__main__':
                      "GTTAGATCCTTTTTTTCTGCGCGTTATACACTGCTT",
                      "TTAGAATCGCCTTTTTCTGCGCGTAATCTGCTAAAT"])
     zones = [(-33, -30), (-11, -8)]
-    calc_promoter_zones_strength(seq, zones)
+    calc_promoter_zones_strength(seq, zones, None)
