@@ -1,4 +1,3 @@
-import datetime
 from joblib import dump, load
 import numpy as np
 import pandas as pd
@@ -11,7 +10,7 @@ from src.features.nucleotide_features import generate_one_hot_encoding, entropy,
 from src.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from src.features.pssm_feature import calc_series_pssm_score
 from src.features.delta_G.TX_prediction import calculate_dG_and_Tx
-from src.utils import get_current_file_parent_path, is_feature_selected
+from src.utils import get_current_file_parent_path, is_feature_selected, get_current_date
 import sys
 from typing import Optional, Tuple, Union, List
 
@@ -281,10 +280,9 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
     filename = f'RNA{rna_type}_DataFrame_with_features.joblib'
 
     if specify_date:
-        date = datetime.date
-        dump(data, Path(DATA_PATH, date.strftime('%m/%d/%Y') + filename), compress=True)
-    else:
-        dump(data, Path(DATA_PATH, filename), compress=True)
+        filename = f'{get_current_date()}_{filename}'
+
+    dump(data, Path(DATA_PATH, filename), compress=True)
     return data
 
 
@@ -323,5 +321,5 @@ def check_selective_mode():
 
 
 if __name__ == '__main__':
-    save_features_df()
+    save_features_df(specify_date=True)
     # check_selective_mode()
