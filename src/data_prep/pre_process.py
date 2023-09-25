@@ -137,7 +137,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     if is_feature_selected('entropy', selected_features):
         RNA_features.append(entropy(RNA_seq))
     RNA_features.append(calculate_dG_and_Tx(RNA_seq, selected_features))  # 3 features based ution biophysical properties (deltaG)
-    RNA_features.append(score_denovo_motifs(RNA_seq))
+    RNA_features.append(score_denovo_motifs(RNA_seq, selected_features))
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)
