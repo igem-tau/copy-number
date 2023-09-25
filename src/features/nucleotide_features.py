@@ -9,7 +9,7 @@ from typing import List, Optional, Tuple
 from tqdm import tqdm
 
 
-def generate_one_hot_encoding(seq: pd.Series, selected_features: Optional[List[str]]) -> pd.DataFrame:
+def generate_one_hot_encoding(seq: pd.Series, selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     def encode(single_nucleotid: pd.Series, index: int) -> pd.DataFrame:
         columns = {}
         for nucleotide in NUCLEOTIDES:
@@ -42,7 +42,7 @@ def kmers(seq: str, k: int) -> List[str]:
     return v
 
 
-def pseudo_knc(sequences: 'pd.Series[str]', k: int, selected_features: Optional[List[str]]) -> pd.DataFrame:
+def pseudo_knc(sequences: 'pd.Series[str]', k: int, selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     ### k-mer ###
     ### A, AA, AAA
 
@@ -61,7 +61,7 @@ def pseudo_knc(sequences: 'pd.Series[str]', k: int, selected_features: Optional[
     return pd.DataFrame(d)
 
 
-def z_curve(sequences: 'pd.Series[str]', selected_features: Optional[List[str]]) -> pd.DataFrame:
+def z_curve(sequences: 'pd.Series[str]', selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     ### Z-Curve ### total = 3
 
     if (is_feature_selected('z_curve_x', selected_features) or is_feature_selected('z_curve_y', selected_features) or is_feature_selected('z_curve_z', selected_features)):
@@ -96,7 +96,7 @@ def gc_content(sequences: 'pd.Series[str]') -> pd.DataFrame:
     return pd.DataFrame({'GC content': _gc_content})
 
 
-def cumulative_skew(sequences: 'pd.Series[str]', selected_features: Optional[List[str]]) -> pd.DataFrame:
+def cumulative_skew(sequences: 'pd.Series[str]', selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     d = {}
 
     if is_feature_selected('at_skew', selected_features):
@@ -127,7 +127,7 @@ def get_k_gap_description(nucleotides: Tuple[str], before_gap: int, after_gap: i
     return f'{"".join(nucleotides[:before_gap])}{k*gap}{"".join(nucleotides[before_gap:before_gap+after_gap])}_count'
 
 
-def mono_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Optional[List[str]]) -> pd.DataFrame:  # 1___1
+def mono_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: 'Optional[List[str]]') -> pd.DataFrame:  # 1___1
     ### g-gap
     '''
     A_A     1-gap
@@ -156,7 +156,7 @@ def mono_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: O
     return pd.DataFrame(d)
 
 
-def mono_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Optional[List[str]]) -> pd.DataFrame:  # 1___2
+def mono_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: 'Optional[List[str]]') -> pd.DataFrame:  # 1___2
     def count_matches(V, _gGap):
         _count = 0
         for v in V:
@@ -177,7 +177,7 @@ def mono_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Opt
     return pd.DataFrame(d)
 
 
-def di_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Optional[List[str]]) -> pd.DataFrame:  # 2___1
+def di_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: 'Optional[List[str]]') -> pd.DataFrame:  # 2___1
     def count_matches(V, _gGap):
         _count = 0
         for v in V:
@@ -198,7 +198,7 @@ def di_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Opt
     return pd.DataFrame(d)
 
 
-def mono_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Optional[List[str]]) -> pd.DataFrame:  # 1___3
+def mono_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: 'Optional[List[str]]') -> pd.DataFrame:  # 1___3
     # A_AAA       1-gap
     # A__AAA      2-gap
     # A___AAA     3-gap
@@ -224,7 +224,7 @@ def mono_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Op
     return pd.DataFrame(d)
 
 
-def tri_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Optional[List[str]]) -> pd.DataFrame:  # 3___1
+def tri_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: 'Optional[List[str]]') -> pd.DataFrame:  # 3___1
     # AAA_A       1-gap
     # AAA__A      2-gap
     # AAA___A     3-gap
@@ -250,7 +250,7 @@ def tri_mono_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Op
     return pd.DataFrame(d)
 
 
-def di_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Optional[List[str]]) -> pd.DataFrame:  # 2___2
+def di_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: 'Optional[List[str]]') -> pd.DataFrame:  # 2___2
     ### gapping ### total = [(64xg)] = 2,304 [g=9]
     # AA_AA       1-gap
     # AA__AA      2-gap
@@ -277,7 +277,7 @@ def di_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Optio
     return pd.DataFrame(d)
 
 
-def di_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Optional[List[str]]) -> pd.DataFrame:  # 2___3
+def di_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: 'Optional[List[str]]') -> pd.DataFrame:  # 2___3
     ### gapping ### total = [(64xg)] = 2,304 [g=9]
     # AA_AAA       1-gap
     # AA__AAA      2-gap
@@ -305,7 +305,7 @@ def di_tri_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Opti
     return pd.DataFrame(d)
 
 
-def tri_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Optional[List[str]]) -> pd.DataFrame:  # 3___2
+def tri_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: 'Optional[List[str]]') -> pd.DataFrame:  # 3___2
     ### gapping ### total = [(64xg)] = 2,304 [g=9]
     # AAA_AA       1-gap
     # AAA__AA      2-gap
@@ -333,7 +333,7 @@ def tri_di_k_gap(_kmers: 'pd.Series[List[str]]', g: int, selected_features: Opti
     return pd.DataFrame(d)
 
 
-def extract_nucli_features(sequences: 'pd.Series[str]', selected_features: Optional[List[str]]) -> pd.DataFrame:
+def extract_nucli_features(sequences: 'pd.Series[str]', selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     d = []
     print("Generating KMERS")
     KMERS = [sequences.apply(lambda sequence: kmers(sequence, i)) for i in tqdm(range(5 + k_gap + 1))]

@@ -14,7 +14,7 @@ SWISS_MEME = Path(DATA_PATH, 'motifs', 'SwissRegulon_e_coli.meme')
 
 
 # generate motifs dictionary
-def generate_motif_dict(selected_features: Optional[List[str]]):
+def generate_motif_dict(selected_features: 'Optional[List[str]]'):
     meme_files = [INTERACT_MEME, SWISS_MEME]
     motifs = {}
     motifs_num = 0
@@ -34,7 +34,7 @@ def generate_motif_dict(selected_features: Optional[List[str]]):
     return motifs, motif_file  # TODO -why is only (and always) the later motif_file returned
 
 
-def calc_motifs_pv(seqs: 'pd.Series[str]', selected_features: Optional[List[str]]) -> pd.DataFrame:
+def calc_motifs_pv(seqs: 'pd.Series[str]', selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     num_sequences = len(seqs)
     motifs, motif_file = generate_motif_dict(selected_features)
     fimo = FIMO(both_strands=True)  # , threshold=1e-3)

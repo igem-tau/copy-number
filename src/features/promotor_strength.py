@@ -42,7 +42,7 @@ def plot_energy_matrix():
 
 
 def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones: List[Tuple[int, int]],
-                                 selected_features: Optional[List[str]]) -> pd.DataFrame:
+                                 selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     energy_matrix = get_energy_matrix_for_rna_polymeras()
 
     def calc_zone_strength(seq: str, zone: Tuple[int, int], energy_matrix_) -> float:

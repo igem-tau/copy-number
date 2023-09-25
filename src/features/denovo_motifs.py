@@ -54,7 +54,7 @@ def calc_max_pssm_score_sliding_window(seq: str, pssm: pd.DataFrame) -> float:
     return max_score
 
 
-def score_denovo_motifs(sequences: 'pd.Series[str]', selected_features: Optional[List[str]]):
+def score_denovo_motifs(sequences: 'pd.Series[str]', selected_features: 'Optional[List[str]]'):
     denovo_motifs_features = {}
     high_motifs_dict = get_denovo_motifs_pssms(HOMER_HIGH_MOTIF_PATH)
     low_motifs_dict = get_denovo_motifs_pssms(HOMER_LOW_MOTIF_PATH)

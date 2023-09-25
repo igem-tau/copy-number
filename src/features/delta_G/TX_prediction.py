@@ -83,7 +83,7 @@ def linear_free_energy_model(h35, spacer, h10, disc, dg10_0, dg10_3, dg35_0, dg3
     return dG_total, dG_apparent, dg10, dg35, dg_disc, dg_ext10, dg_spacer  # without UP and ITR regions
 
 
-def calculate_dG_and_Tx(sequence: 'pd.Series[str]', selected_features: Optional[List[str]]) -> pd.DataFrame:
+def calculate_dG_and_Tx(sequence: 'pd.Series[str]', selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     # Specify fixed promoter regions range:
     TSS = 35
     DISC_length = 6

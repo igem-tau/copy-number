@@ -8,8 +8,6 @@ RNAi_SEQ_ORIGINAL = 'TTGAAGTGGTGGCCTAACTACGGCTACACTAGAAGA'
 RNA_DATA_COLUMNS = ['Promoter Sequence (-35 to +1)', 'Initial Counts', 'Final Counts', 'Growth Rate', 'Copy Number', 'Predicted Promoter Strength (KbT)']
 RNAi_PROM_RNAp_COLUMNS = ['Promoter Sequence (-35 to +1)', 'Copy Number', 'Predicted Promoter Strength (KbT)', 'Copy Number', 'RNAp_seq']
 
-USE_SELECTED_FEATURES = {"selective": False}
-
 ALPHA = "CCAUUGACCGAAGUCGUCUCG"   # rna_p[72:72+21]
 ALPHA_RANGE = range(72, 72+21)
 EXTENDED_ALPHA_RANGE = range(72, 72+59)
