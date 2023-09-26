@@ -3,7 +3,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import openpyxl
-import os
 import pandas as pd
 from sklearn import metrics
 from sklearn.linear_model import LassoCV
@@ -17,38 +16,38 @@ from catboost import CatBoostRegressor
 from xgboost.callback import EarlyStopping
 import optuna
 from optuna.visualization import *
-from src.utils import get_current_file_parent_path
+from src.utils import get_current_file_parent_path, get_current_date
 from joblib import dump, load
 from scipy.stats import pearsonr
 import plotly as py
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
-DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..','..', 'data')
-
+DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', '..', 'data')
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
+
 
 def scoring_function(y_true, y_predict):
     return r2_score(y_true, y_predict)
 
+
 def write_to_xl(dic, model_name):
-    df1=pd.DataFrame(dic.values())
-    df1['scores']=dic.keys()
-    xl_name=f'{model_name}_best_params.xlsx'
-    target_file=os.path.join(os.getcwd(), xl_name)
+    df1 = pd.DataFrame(dic.values())
+    df1['scores'] = dic.keys()
+    xl_name = f'{model_name}_best_params.xlsx'
+    target_file = Path(DATA_PATH, xl_name)
     try:
         df2 = pd.read_excel(target_file)
     except:
         print(f'create xl {xl_name}')
         workbook = openpyxl.Workbook()
         workbook.save(target_file)
-        df2=pd.read_excel(target_file)
-    df= pd.concat([df2, df1], ignore_index=True)
-    df.to_excel(target_file,index=False)
+        df2 = pd.read_excel(target_file)
+    df = pd.concat([df2, df1], ignore_index=True)
+    df.to_excel(target_file, index=False)
 
 
-
-def converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name, num_of_steps = 5,nun_iter=7):
+def converge_randomsearch(X_train, X_test, y_train, y_test, dataset_name, num_of_steps=5, nun_iter=7):
     xgb_tuned = xgb.XGBRegressor(random_state=1)
     parameters_base = {'learning_rate': [0.5 / 2], 'n_estimators': [int(2000 / 2)], 'max_depth': [int(20 / 2)],
                        'gamma': [0.8 / 2], 'subsample': [0.99 / 2], 'colsample_bytree': [0.99 / 2]}
@@ -59,7 +58,7 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name, num_of_
         return ([lower_n, upper_num])
 
     scores = [-100]
-    param_d={}
+    param_d = {}
 
     for step in range(num_of_steps):
         parameters_min = {'learning_rate': calc_range('learning_rate', 0.0001, 0.5, step)[0],
@@ -84,7 +83,8 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name, num_of_
             else:
                 parameters[t[1]] = np.linspace(parameters_min[t[1]], parameters_max[t[1]], 4)
             scorer = metrics.make_scorer(metrics.r2_score)
-            rand_obj = RandomizedSearchCV(xgb_tuned, parameters, scoring=scorer, n_iter=nun_iter, n_jobs=-1, cv=2, verbose=1)
+            rand_obj = RandomizedSearchCV(xgb_tuned, parameters, scoring=scorer, n_iter=nun_iter, n_jobs=-1, cv=2,
+                                          verbose=1)
             rand_obj = rand_obj.fit(X_train, y_train)
             parameters_base[t[0]] = rand_obj.best_params_[t[0]]
             parameters_base[t[1]] = rand_obj.best_params_[t[1]]
@@ -96,33 +96,36 @@ def converge_randomsearch(X_train, X_test, y_train, y_test,dataset_name, num_of_
             parameters_base[t[1]] = [rand_obj.best_params_[t[1]]]
             print(
                 f'{t[0]} was set to {rand_obj.best_params_[t[0]]} and {t[1]} was set to {rand_obj.best_params_[t[1]]}')
-            if score>=max(scores):
-                param_d={score:rand_obj.best_params_}
+            if score >= max(scores):
+                param_d = {score: rand_obj.best_params_}
     print(scores)
     # plt.plot(range(len(scores)), scores, label='score')
     # plt.legend()
     # plt.show()
 
     write_to_xl(param_d, dataset_name)
-    return(scores[-1],rand_obj.best_params_)
+    return (scores[-1], rand_obj.best_params_)
 
 
-def get_best_params_set_xgb(X_train, X_val, y_train, y_val, model_name, stratify_by):
+def get_best_params_set_xgb(X_train, X_val, y_train, y_val, model_name):
     xl_name = f'{model_name}_best_params.xlsx'
-    if not os.path.exists(os.path.join(os.getcwd(), xl_name)):
+    if not Path(DATA_PATH, xl_name).exists():
         for i in range(5):
             [ii, kk] = converge_randomsearch(X_train, X_val, y_train, y_val, model_name, num_of_steps=7, nun_iter=7)
 
     df = pd.read_excel(xl_name)
     score = df['scores'].max()
-    params = df.iloc[df['scores'].idxmax(),:].dropna().drop('scores')
+    params = df.iloc[df['scores'].idxmax(), :].dropna().drop('scores')
     print(f'Best params for {model_name} model are:\n{params}\nAnd their predicted score is {score}')
-    return (dict(params))
+    best_params = dict(params)
+    best_params['max_depth'] = int(best_params['max_depth'])
+    best_params['n_estimators'] = int(best_params['n_estimators'])
+    return best_params
 
 
 def find_optimal_alpha_Lasso(X, y, model_name):
     xl_name = f'{model_name}_best_params.xlsx'
-    if not os.path.exists(os.path.join(os.getcwd(), xl_name)):
+    if not Path(DATA_PATH, xl_name).exists():
         X_train, X_test, y_train, y_test = prepare_model_data(X, y)
         # create a LassoCV object with 10-fold cross-validation
         print('running LassoCV to find the optimal alpha')
@@ -140,8 +143,9 @@ def find_optimal_alpha_Lasso(X, y, model_name):
     print(f'Best params for {model_name} model are:\n{params}\nAnd their predicted score is {score}')
     return (dict(params))
 
+
 def objective(trial, X_train, X_val, y_train, y_val, model_name):
-    if model_name=='XGBoost':
+    if model_name == 'XGBoost':
         es = EarlyStopping(
             rounds=30,
             data_name='validation_0',
@@ -164,25 +168,26 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
 
         model = xgb.XGBRegressor(**param)
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
-        trial.set_user_attr('callbacks', model.best_iteration+1)
+        trial.set_user_attr('callbacks', model.best_iteration + 1)
         y_pred = model.predict(X_val)
     else:
         param = dict(
-        silent=trial.suggest_categorical('silent', [True]),
-        loss_function = trial.suggest_categorical('loss_function', ['RMSE', 'MAE']),
-        learning_rate = trial.suggest_float("learning_rate", 5e-3, 0.1, log=True),
-        depth = trial.suggest_int('depth', 5, 16),
-        l2_leaf_reg = trial.suggest_float('l2_leaf_reg', 0.01, 5.0),
-        subsample = trial.suggest_float("subsample", 0.05, 1.0),
-        colsample_bylevel = trial.suggest_float("colsample_bylevel", 0.05, 0.8),
-        min_child_samples = trial.suggest_categorical('min_child_samples', [1, 4, 8, 16]),
-        grow_policy = trial.suggest_categorical('grow_policy', ['Depthwise','SymmetricTree', 'Lossguide']),
+            silent=trial.suggest_categorical('silent', [True]),
+            loss_function=trial.suggest_categorical('loss_function', ['RMSE', 'MAE']),
+            learning_rate=trial.suggest_float("learning_rate", 5e-3, 0.1, log=True),
+            depth=trial.suggest_int('depth', 5, 16),
+            l2_leaf_reg=trial.suggest_float('l2_leaf_reg', 0.01, 5.0),
+            subsample=trial.suggest_float("subsample", 0.05, 1.0),
+            colsample_bylevel=trial.suggest_float("colsample_bylevel", 0.05, 0.8),
+            min_child_samples=trial.suggest_categorical('min_child_samples', [1, 4, 8, 16]),
+            grow_policy=trial.suggest_categorical('grow_policy', ['Depthwise', 'SymmetricTree', 'Lossguide']),
         )
         model = CatBoostRegressor(**param)
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
         y_pred = model.predict(X_val)
 
     return r2_score(y_val, y_pred)
+
 
 def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, save_plots=True):
     if Path(DATA_PATH, f'best_params_{model_name}.joblib').exists():
@@ -191,10 +196,12 @@ def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, save_plots
         print(f'Running: optuna for {model_name}')
 
         study = optuna.create_study(direction='maximize')
-        study.optimize(partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val, model_name=model_name), n_trials=200)
+        study.optimize(
+            partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val, model_name=model_name),
+            n_trials=200)
         best_params = study.best_params
-        if model_name=='XGBoost':
-            best_params['n_estimators'] = study.best_trial.user_attrs['callbacks']*1.1
+        if model_name == 'XGBoost':
+            best_params['n_estimators'] = study.best_trial.user_attrs['callbacks'] * 1.1
 
         print('Number of finished trials: ', len(study.trials))
         print('Best trial:')
@@ -205,11 +212,12 @@ def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, save_plots
         for key, value in trial.params.items():
             print('    {}: {}'.format(key, value))
 
-        dump(best_params, Path(DATA_PATH, f'best_params_{model_name}.joblib'))
+        dump(best_params, Path(DATA_PATH, f'best_params_{model_name}.joblib'), compress=True)
         if save_plots:
             save_optuna_plots(study, model_name)
 
     return best_params
+
 
 def save_optuna_plots(study, model_name):
     importances = optuna.importance.get_param_importances(study)
@@ -222,7 +230,9 @@ def save_optuna_plots(study, model_name):
     fig5 = plot_rank(study, params=params_sorted[:4])
     fig6 = plot_optimization_history(study)
 
-    with open(os.path.join(DATA_PATH, f'{str(pd.to_datetime("today")).split()[0]}_{model_name}_pRNA_optuna_graphs.html'), 'w') as f:
+    with open(
+            Path(DATA_PATH, f'{get_current_date()}_{model_name}_pRNA_optuna_graphs.html'),
+            'w') as f:
         f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig3.to_html(full_html=False, include_plotlyjs='cdn'))
@@ -230,16 +240,8 @@ def save_optuna_plots(study, model_name):
         f.write(fig5.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig6.to_html(full_html=False, include_plotlyjs='cdn'))
 
-
-
 ## example##
 # dic={1200:{'r':4,'t':300}}
 # model_name='xgb'
 # write_to_xl(dic,model_name)
 # a=get_best_params_set(model_name)
-
-
-
-
-
-

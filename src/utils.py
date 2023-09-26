@@ -1,44 +1,52 @@
-import os
-from pathlib import Path, PosixPath
+import pandas as pd
+from pathlib import Path
 import pickle
 
-DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-RNAp_SELECTED_FEATURES_FILE_NAME = os.path.join(DIR, 'data',  "RNAp_selected_features.pkl")
-RNAi_SELECTED_FEATURES_FILE_NAME = os.path.join(DIR, 'data',  "RNAi_selected_features.pkl")
-
-def get_current_file_parent_path(file) -> PosixPath:
+def get_current_file_parent_path(file) -> Path:
     return Path(file).parent.resolve()
 
 
-def write_selected_features(features: list, rna_type: str):
-    if rna_type == 'p':
-        with open(RNAp_SELECTED_FEATURES_FILE_NAME, 'wb') as f:
-            pickle.dump(features, f)
-    elif rna_type == 'i':
-        with open(RNAi_SELECTED_FEATURES_FILE_NAME, 'wb') as f:
-            pickle.dump(features, f)
+def get_selected_features_path(rna_type: str, model: str = '') -> Path:
+    model = f'{model}_' if model else model
+    return Path(get_current_file_parent_path(__file__), '..', 'data',
+                f'{model}RNA{rna_type}_selected_features.pkl')
 
 
-def get_selected_features(rna_type) -> set:
-    if rna_type == 'p':
-        with open(RNAp_SELECTED_FEATURES_FILE_NAME, 'rb') as f:
-            features = pickle.load(f)
+def write_selected_features(features: list, rna_type: str, model: str = ''):
+    selected_features_path = get_selected_features_path(rna_type, model)
 
-    elif rna_type == 'i':
-        with open(RNAi_SELECTED_FEATURES_FILE_NAME, 'rb') as f:
-            features = pickle.load(f)
+    with open(selected_features_path, 'wb') as f:
+        pickle.dump(features, f)
+
+
+# TODO - update the selected features usage - call once and pass trough to the features generation functions
+def get_selected_features(rna_type, model: str = '') -> set:
+    selected_features_path = get_selected_features_path(rna_type, model)
+
+    if not selected_features_path.exists():
+        raise FileNotFoundError(
+            'get_selected_features: you must first run the process that saves the selected features in to a file'
+        )
+
+    with open(selected_features_path, 'rb') as f:
+        features = pickle.load(f)
+
     return set(features)
 
+
+def get_current_date() -> str:
+    return str(pd.to_datetime("today")).split()[0]
 
 
 if __name__ == '__main__':
     # print(f'the current file parent path is: {get_current_file_parent_path(__file__)}')
-    test_features = ["TTT__TC_count", "A_count", "gc_skew", "z_curve_y",
-                     "ada", "fhlA", "Fis_26-48", "UxuR_14-2", "pssm_score",
-                     "Predicted Promoter Strength (KbT)",
-                     "TCMCTCCTTT", "CGCGTTWG", "WNGCNCTYYT",
-                     "(-11, -8) predicted strength",
-                     'G_-35', 'T_-30', 'A_-19', 'C_-2'
-                     ]
-    write_selected_features(test_features)
+    # test_features = ["TTT__TC_count", "A_count", "gc_skew", "z_curve_y",
+    #                  "ada", "fhlA", "Fis_26-48", "UxuR_14-2", "pssm_score",
+    #                  "Predicted Promoter Strength (KbT)",
+    #                  "TCMCTCCTTT", "CGCGTTWG", "WNGCNCTYYT",
+    #                  "(-11, -8) predicted strength",
+    #                  'G_-35', 'T_-30', 'A_-19', 'C_-2'
+    #                  ]
+    # write_selected_features(test_features)
+    pass

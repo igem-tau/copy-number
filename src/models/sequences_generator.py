@@ -100,5 +100,5 @@ def sequence_df_generator(rna_type='p'):
     else:
         generated_RNA_promoter_strength = calc_predicted_promoter_strength(generated_RNA_seq)
         data = pd.concat([generated_RNA_seq, generated_RNA_promoter_strength], axis=1)
-        dump(data, Path(DATA_PATH, filename))
+        dump(data, Path(DATA_PATH, filename), compress=True)
     return data
