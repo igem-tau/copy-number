@@ -31,6 +31,7 @@ def run_pipeline(rna_type: str):
     # Feature and model selection
     param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
     models = ['XGBoost']  # , 'CatBoostRegressor']
+    models = ['CatBoostRegressor']
     models_fs_data = feature_selection(RNA_X_train_features, RNA_y_train, param_dict, models, rna_type)
 
     total_pred = []
@@ -45,13 +46,13 @@ def run_pipeline(rna_type: str):
         RNA_FS_test = RNA_X_test_features[RNA_selected_features]
 
         # Exploratory Data Analysis (EDA)
-        if rna_type == 'p':
-            exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
+        # if rna_type == 'p':
+        #     exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
 
         # Hyperparameters tuning
         # Best_param_xgb = get_best_params_set_xgb(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val,
         #                                          f'xgb_RNA{rna_type}')
-        Best_params = get_best_param_optuna(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, cur_model_name)
+        Best_params = get_best_param_optuna(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, cur_model_name, rna_type)
 
         # Run model
         # TODO - Recalculate train_val with selected_features only while using the entire dataset
@@ -60,7 +61,7 @@ def run_pipeline(rna_type: str):
         trained_model, r2, mae_score, pearson, spearman, y_pred = model(RNA_FS_train_val_X, RNA_FS_test,
                                                                         RNA_train_val_y, RNA_y_test,
                                                                         cur_model_name, f'RNA{rna_type}', Best_params,
-                                                                        save_plots=False)
+                                                                        save_plots=True)
         total_pred.append(y_pred)
 
         # Generate sequences and calculate features
