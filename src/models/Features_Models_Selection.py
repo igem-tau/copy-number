@@ -28,7 +28,7 @@ from joblib import dump, load, Parallel, delayed
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
-model_names = ['NN', 'Ridge', 'Lasso', 'ElasticNet', 'XGBoost', 'CatBoostRegressor', 'LGBMRegressor']
+model_names = ['NN', 'Ridge', 'Lasso', 'ElasticNet', 'XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
 
 
 def make_model(X_tr, X_va, y_tr, y_va, regressor_name: str, params):
@@ -118,8 +118,9 @@ def get_hyper_parameters(trial=None, regressor_name=None):
     #     regressor_obj = GradientBoostingRegressor(**params)
 
     elif regressor_name == 'LGBMRegressor':
-        params = dict(boosting_type=trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
-                      num_leaves=trial.suggest_int('num_leaves', 15, 50),
+        params = dict(verbose=-1,
+                      boosting_type=trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
+                      num_leaves=trial.suggest_int('num_leaves', 15, 30),
                       max_depth=trial.suggest_categorical('max_depth', [-1, 5, 10, 20]),
                       learning_rate=trial.suggest_float('learning_rate', 0.001, 0.1, log=True),
                       reg_alpha=trial.suggest_float('reg_alpha', 0.01, 1.0),
@@ -220,16 +221,17 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
         X_train_scaled, X_val_scaled = scale(X_train, X_val)
         params_dict = {}
         for model_name in tqdm(model_names):
+            study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
             trails = {'Ridge': 150, 'Lasso': 150, 'ElasticNet': 150, 'GradientBoosting': 100, 'LGBMRegressor': 200,
                       'XGBoost': 200,
                       'CatBoostRegressor': 100, 'SVR': 50, 'NN': 100}
-            trails = {'Ridge': 200, 'Lasso': 2, 'ElasticNet': 2, 'GradientBoosting': 2, 'LGBMRegressor': 2,
+            trails = {'Ridge': 1, 'Lasso': 1, 'ElasticNet': 1, 'GradientBoosting': 1, 'LGBMRegressor': 1,
                       'XGBoost': 1,
-                      'CatBoostRegressor': 1, 'SVR': 2, 'NN': 1}
+                      'CatBoostRegressor': 1, 'NN': 1}
             study = optuna.create_study(direction='maximize')
-            if Path(DATA_PATH, f'{model_name}_study').exists():
-                last_study = load(Path(DATA_PATH, f'{get_current_date()}_{model_name}_study'))
+            if Path(DATA_PATH, study_file_name).exists():
+                last_study = load(Path(DATA_PATH, study_file_name))
                 study.add_trials(last_study.trials)
             study.optimize(partial(objective, X_train=X_train_scaled, y_train=y_train, X_val=X_val_scaled, y_val=y_val,
                                    regressor=model_name),
@@ -237,7 +239,7 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
 
             params = study.best_trial.params
             params_dict[model_name] = params
-            dump(study, Path(DATA_PATH, f'{get_current_date()}_{model_name}_study'), compress=True)
+            dump(study, Path(DATA_PATH, study_file_name), compress=True)
 
             model_name, pearson_train, pearson_val, mae_train, mae_val, _, _, _, _ = make_model(X_train, X_val, y_train,
                                                                                                 y_val, model_name,
@@ -321,7 +323,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
                                                    discrete_features=discrete_features_bool, random_state=0)
             return paired_mi
 
-        def parallel_calculate_mi(i, j):
+        def parallel_calculate_mi(i, j, rna_type):
             feature1 = RNA_X_new[new_features[i]]
             feature2 = RNA_X_new[new_features[j]]
             discrete_features_bool = feature1.dtype == 'int64'
@@ -339,7 +341,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
         pairs = zip(*upper_triangle_indices)
 
         # Parallelize the mutual information calculation for upper triangle
-        mi_values_upper = Parallel(n_jobs=-2)(delayed(parallel_calculate_mi)(i, j) for i, j in
+        mi_values_upper = Parallel(n_jobs=-2)(delayed(parallel_calculate_mi)(i, j, rna_type) for i, j in
                                               tqdm(pairs, total=((num_new_features ** 2 - num_new_features) // 2)))
 
         # Fill the correlation matrix for the upper triangle
@@ -349,7 +351,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
         il1 = np.tril_indices(num_new_features)
         corr_matrix[il1] = np.nan
 
-        dump(corr_matrix, Path(DATA_PATH, 'mutual_info_matrix.joblib'), compress=True)
+        dump(corr_matrix, Path(DATA_PATH, f'RNA{rna_type}_mutual_info_matrix.joblib'), compress=True)
 
         row, col = (corr_matrix > np.nanquantile(corr_matrix, 0.99)).nonzero()  # TODO: think of different condition
 
