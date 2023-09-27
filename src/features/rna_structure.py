@@ -1,7 +1,6 @@
 from Bio.SeqUtils import MeltingTemp
 from dnacurve import CurvedDNA
 from multiprocessing import Process, Manager
-import multiprocessing
 import os
 import pandas as pd
 from src.consts import *
@@ -12,7 +11,7 @@ from typing import List
 from time import time
 
 
-CONSENSUS_RNAp_SEQ = 'CGUUUGUUUUUUUGGUGGCGAUGGUCGCCACCAAACAAACGGCCUAGUUCUCGAUGGUUGAGAAAAAGGCUUCCAUUGACCGAAGUCGUCUCGCGUCUAUGGUUUAUGACAAGAAGAUCACAUCGGCAUCAAUCCGGUGGUGAAGUUCUUGAGACAUCGUGGCGGAUGUAUGGAGCGAGACGAUUAGGACAAUGGUCACCGACGACGGUCACCGCUAUUCAGCACAGAAUGGCCCAACCUGAGUUCUGCUAUCAAUGGCCUAUUCCGCGUCGCCAGCCCGACUUGCCCCCCAAGCACGUGUGUCGGGUCGAACCUCGCUUGCUGGAUGUGGCUUGACUCUAUGGAUGUCGCACUCGAUACUCUUUCGCGGUGCGAAGGGCUUCCCUCUUUCCGCCUGUCCAUAGGCCAUUCGCCGUCCCAGCCUUGUCCUCUCGCGUGCUCCCUCGAAGGUCCCCCUUUGCGGACCAUAGAAAUAUCAGGACAGCCCAAAGCGGUGGAGACUGAACUCGCAGCUAAAAACACUACGAGCAGUCCCCCCGCCUCGGAUACCUUU'
+CONSENSUS_RNAp_SEQ = 'UGCAAACAAAAAAACCACCGCUACCAGCGGUGGUUUGUUUGCCGGAUCAAGAGCUACCAACUCUUUUUCCGAAGGUAACUGGCUUCAGCAGAGCGCAGAUACCAAAUACUGUUCUUCUAGUGUAGCCGUAGUUAGGCCACCACUUCAAGAACUCUGUAGCACCGCCUACAUACCUCGCUCUGCUAAUCCUGUUACCAGUGGCUGCUGCCAGUGGCGAUAAGUCGUGUCUUACCGGGUUGGACUCAAGACGAUAGUUACCGGAUAAGGCGCAGCGGUCGGGCUGAACGGGGGGUUCGUGCACACAGCCCAGCUUGGAGCGAACGACCUACACCGAACAGAUACCUACAGCGUGAGCUAUGAGAAAGCGCCACGCUUCCCGAAGGGAGAAAGGCGGACAGGUAUCCGGUAAGCGGCAGGGUCGGAACAGGAGAGCGCACGAGGGAGCUUCCAGGGGGAAACGCCUGGUAUCUUUAUAGUCCUGUCGGGUUUCGCCACCUCUGACUUGAGCGUCGAUUUUUGUGAUGCUCGUCAGGGGGGCGGAGCCUAUGGAAAA'
 
 STEM_LOOPS = ["III", "IV", "VI"]
 
@@ -794,114 +793,61 @@ if __name__ == '__main__':
 
 # features to extract from RNAfold files and RNAeval output
 
-# 1) take rna_p[:111] and make dictionary of the indices:                   V
-# Interior loop ( 74,108) CG; ( 75,107) AU:  -210
-# Interior loop ( 75,107) AU; ( 76,106) UA:  -110
-# Interior loop ( 76,106) UA; ( 78,104) GU:   190
-# Interior loop ( 78,104) GU; ( 79,103) AU:  -130
-# Interior loop ( 79,103) AU; ( 80,102) CG:  -220
-# Interior loop ( 80,102) CG; ( 81,101) CG:  -330
-# Interior loop ( 81,101) CG; ( 82,100) GU:  -140
-# Interior loop ( 82,100) GU; ( 84, 98) AU:   190
-# Interior loop ( 84, 98) AU; ( 85, 97) GC:  -210
-# Interior loop ( 85, 97) GC; ( 87, 95) CG:   -60
-# Interior loop ( 87, 95) CG; ( 88, 94) GC:  -240
-# Interior loop ( 88, 94) GC; ( 89, 93) UG:  -250
-# Hairpin  loop ( 89, 93) UG              :   590
+# 1) take rna_p[:112] and make dictionary of the indices:                   V
+# IInterior loop ( 74,103) GC; ( 75,102) GC:  -330
+# Interior loop ( 75,102) GC; ( 76,101) UA:  -220
+# Interior loop ( 76,101) UA; ( 77,100) AU:  -130
+# Interior loop ( 77,100) AU; ( 79, 98) CG:   120
+# Interior loop ( 79, 98) CG; ( 80, 97) UA:  -210
+# Interior loop ( 80, 97) UA; ( 81, 96) GC:  -210
+# Interior loop ( 81, 96) GC; ( 82, 94) GC:    50
+# Interior loop ( 82, 94) GC; ( 83, 93) CG:  -340
+# Interior loop ( 83, 93) CG; ( 84, 92) UA:  -210
+# Interior loop ( 84, 92) UA; ( 85, 91) UG:  -130
+# Hairpin  loop ( 85, 91) UG              :   550
 
-# for each sequence take:
-# seq[:118], seq[:118+10], etc until seq[:250] beta finish + 53
-# for each partial seq check number of matches to the consensus             V
-
-# same for checking alpha_beta                                              V
-
-# using RNAfold output file to get probabilities DONE:) base_pair_probabilities()
-
-# TODO: for each partial seq make a feature of length and pair probability, for example: "seq_120_3_56" V
 
 # run RNAfold on entire seq and take using RNAeval energy sum of extended alpha beta loop (SL 4)
-# stem-loop IV seq[72:194]
-# Interior loop ( 73,195) CG; ( 74,194) CG:  -330
-# Interior loop ( 74,194) CG; ( 75,193) AU:  -210
-# Interior loop ( 75,193) AU; ( 76,192) UA:  -110
-# Interior loop ( 76,192) UA; ( 77,191) UA:   -90
-# Interior loop ( 77,191) UA; ( 78,190) GC:  -210
-# Interior loop ( 78,190) GC; ( 80,188) CG:    80
-# Interior loop ( 80,188) CG; ( 81,187) CG:  -330
-# Interior loop ( 81,187) CG; ( 84,185) AU:   190
-# Interior loop ( 84,185) AU; ( 85,184) GU:   -60
-# Interior loop ( 85,184) GU; ( 86,183) UA:  -140
-# Interior loop ( 86,183) UA; ( 87,182) CG:  -240
-# Interior loop ( 87,182) CG; ( 88,181) GC:  -240
-# Interior loop ( 88,181) GC; ( 89,180) UA:  -220
-# Interior loop ( 89,180) UA; ( 90,179) CG:  -240
-# Interior loop ( 90,179) CG; ( 91,178) UA:  -210
-# Interior loop ( 91,178) UA; ( 92,177) CG:  -240
-# Interior loop ( 92,177) CG; ( 93,176) GC:  -240
-# Interior loop ( 93,176) GC; ( 94,175) CG:  -340
-# Interior loop ( 94,175) CG; ( 96,174) UA:   170
-# Interior loop ( 96,174) UA; ( 97,173) CG:  -240
-# Interior loop ( 97,173) CG; ( 98,172) UG:  -210
-# Interior loop ( 98,172) UG; ( 99,171) AU:  -100
-# Interior loop ( 99,171) AU; (100,170) UA:  -110
-# Interior loop (110,151) CG; (111,150) AU:  -210
-# Interior loop (111,150) AU; (112,149) AU:   -90
-# Interior loop (112,149) AU; (113,148) GC:  -210
-# Interior loop (113,148) GC; (114,147) AU:  -240
-# Interior loop (114,147) AU; (115,146) AU:   -90
-# Interior loop (115,146) AU; (118,143) UA:   100
-# Interior loop (118,143) UA; (119,142) CG:  -240
-# Interior loop (119,142) CG; (120,141) AU:  -210
-# Interior loop (120,141) AU; (121,140) CG:  -220
-# Interior loop (121,140) CG; (122,138) AU:   170
-# Interior loop (122,138) AU; (123,137) UG:  -140
-# Interior loop (123,137) UG; (124,136) CG:  -150
-# Interior loop (124,136) CG; (125,135) GC:  -240
-# Interior loop (125,135) GC; (126,134) GC:  -330
-# Hairpin  loop (126,134) GC              :   550
-# Interior loop (154,169) AU; (155,168) CG:  -220
-# Interior loop (155,168) CG; (156,167) AU:  -210
-# Interior loop (156,167) AU; (157,166) UA:  -110
-# Interior loop (157,166) UA; (158,165) CG:  -240
-# Hairpin  loop (158,165) CG              :   300
-# Multi    loop (100,170) UA              :   460
+# stem-loop IV seq[74:194]
+# Interior loop ( 75,195) GC; ( 76,194) UA:  -220
+# Interior loop ( 76,194) UA; ( 77,193) AU:  -130
+# Interior loop ( 77,193) AU; ( 78,192) AU:   -90
+# Interior loop ( 78,192) AU; ( 79,191) CG:  -220
+# Interior loop ( 79,191) CG; ( 81,189) GC:    40
+# Interior loop ( 81,189) GC; ( 82,188) GC:  -330
+# Interior loop ( 82,188) GC; ( 84,186) UA:   120
+# Interior loop ( 84,186) UA; ( 85,185) UA:   -90
+# Interior loop ( 85,185) UA; ( 87,184) AU:   250
+# Interior loop ( 87,184) AU; ( 88,183) GC:  -210
+# Interior loop ( 88,183) GC; ( 89,182) CG:  -340
+# Interior loop ( 89,182) CG; ( 90,181) AU:  -210
+# Interior loop ( 90,181) AU; ( 91,180) GC:  -210
+# Interior loop ( 91,180) GC; ( 92,179) AU:  -240
+# Interior loop ( 92,179) AU; ( 93,178) GC:  -210
+# Interior loop ( 93,178) GC; ( 94,177) CG:  -340
+# Interior loop ( 94,177) CG; ( 95,176) GC:  -240
+# Interior loop ( 95,176) GC; ( 97,175) AU:   140
+# Interior loop ( 97,175) AU; ( 98,174) GC:  -210
+# Interior loop (111,152) GC; (112,151) UA:  -220
+# Interior loop (112,151) UA; (113,150) UA:   -90
+# Interior loop (113,150) UA; (114,149) CG:  -240
+# Interior loop (114,149) CG; (115,148) UA:  -210
+# Interior loop (115,148) UA; (116,147) UA:   -90
+# Interior loop (116,147) UA; (119,144) AU:   190
+# Interior loop (119,144) AU; (120,143) GC:  -210
+# Interior loop (120,143) GC; (121,142) UA:  -220
+# Interior loop (121,142) UA; (122,141) GC:  -210
+# Interior loop (122,141) GC; (125,137) GC:   260
+# Interior loop (125,137) GC; (126,136) CG:  -340
+# Interior loop (126,136) CG; (127,135) CG:  -330
+# Hairpin  loop (127,135) CG              :   370
+# Interior loop (155,170) UA; (156,169) GC:  -210
+# Interior loop (156,169) GC; (157,168) UA:  -220
+# Interior loop (157,168) UA; (158,167) AU:  -130
+# Interior loop (158,167) AU; (159,166) GC:  -210
+# Hairpin  loop (159,166) GC              :   470
+# Multi    loop ( 98,174) GC              :   360
 
 # run RNAfold on entire seq and look at the C rich area, compare to consensus, take probabilities and energies.
-# C rich area seq[285:291]  - should be in the loop and not base-paired
-# the whole stem-loop VI  seq[215:327]
-# Interior loop (216,328) UG; (217,327) AU:  -100
-# Interior loop (217,327) AU; (218,326) UA:  -110
-# Interior loop (218,326) UA; (219,325) UG:  -130
-# Interior loop (219,325) UG; (220,324) CG:  -150
-# Interior loop (220,324) CG; (221,323) AU:  -210
-# Interior loop (221,323) AU; (222,322) GC:  -210
-# Interior loop (222,322) GC; (223,321) CG:  -340
-# Interior loop (223,321) CG; (224,320) AU:  -210
-# Interior loop (227,265) GC; (228,264) AU:  -240
-# Interior loop (228,264) AU; (229,263) AU:   -90
-# Interior loop (229,263) AU; (230,262) UA:  -110
-# Interior loop (230,262) UA; (231,260) GC:   170
-# Interior loop (231,260) GC; (232,259) GC:  -330
-# Interior loop (232,259) GC; (233,258) CG:  -340
-# Interior loop (233,258) CG; (234,257) CG:  -330
-# Interior loop (234,257) CG; (242,250) AU:   330
-# Interior loop (242,250) AU; (243,249) GC:  -210
-# Interior loop (243,249) GC; (244,248) UG:  -250
-# Hairpin  loop (244,248) UG              :   590
-# Interior loop (267,318) GC; (268,317) CG:  -340
-# Interior loop (268,317) CG; (269,316) GC:  -240
-# Interior loop (269,316) GC; (270,311) UA:   410
-# Interior loop (270,311) UA; (271,310) CG:  -240
-# Interior loop (271,310) CG; (272,309) GC:  -240
-# Interior loop (272,309) GC; (276,308) GU:   370
-# Interior loop (276,308) GU; (277,307) CG:  -250
-# Interior loop (277,307) CG; (278,306) CG:  -330
-# Interior loop (278,306) CG; (279,305) CG:  -330
-# Interior loop (279,305) CG; (280,304) GC:  -240
-# Interior loop (280,304) GC; (281,303) AU:  -240
-# Interior loop (281,303) AU; (282,302) CG:  -220
-# Interior loop (282,302) CG; (285,299) GU:   120
-# Interior loop (285,299) GU; (286,298) CG:  -250
-# Hairpin  loop (286,298) CG              :   550
-# Multi    loop (224,320) AU              :   400
+# G rich area seq[286:292]  - should be in the loop and not base-paired
 
