@@ -13,7 +13,7 @@ from time import time
 
 CONSENSUS_RNAp_SEQ = 'UGCAAACAAAAAAACCACCGCUACCAGCGGUGGUUUGUUUGCCGGAUCAAGAGCUACCAACUCUUUUUCCGAAGGUAACUGGCUUCAGCAGAGCGCAGAUACCAAAUACUGUUCUUCUAGUGUAGCCGUAGUUAGGCCACCACUUCAAGAACUCUGUAGCACCGCCUACAUACCUCGCUCUGCUAAUCCUGUUACCAGUGGCUGCUGCCAGUGGCGAUAAGUCGUGUCUUACCGGGUUGGACUCAAGACGAUAGUUACCGGAUAAGGCGCAGCGGUCGGGCUGAACGGGGGGUUCGUGCACACAGCCCAGCUUGGAGCGAACGACCUACACCGAACAGAUACCUACAGCGUGAGCUAUGAGAAAGCGCCACGCUUCCCGAAGGGAGAAAGGCGGACAGGUAUCCGGUAAGCGGCAGGGUCGGAACAGGAGAGCGCACGAGGGAGCUUCCAGGGGGAAACGCCUGGUAUCUUUAUAGUCCUGUCGGGUUUCGCCACCUCUGACUUGAGCGUCGAUUUUUGUGAUGCUCGUCAGGGGGGCGGAGCCUAUGGAAAA'
 
-STEM_LOOPS = ["III", "IV", "VI"]
+STEM_LOOPS = ["III", "IV"]
 
 # convert DNA sequence to the RNA sequence that will be transcripted
 def dna_to_rna_complement(dna_sequence):
@@ -158,7 +158,7 @@ def get_rna_form(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFram
         unpaired_cnt = f"unpaired_cnt_seq_end_{end_idx}"
         bow_cnt = f"bow_cnt_seq_end_{end_idx}"
         bubble_cnt = f"bubble_cnt_seq_end_{end_idx}"
-        result = partial_seqs.apply(lambda seq: extract_rna_form(seq, 72, 194))
+        result = partial_seqs.apply(lambda seq: extract_rna_form(seq, 2, 124))
         d[unpaired_cnt], d[bow_cnt], d[bubble_cnt] = zip(*result)
     res_df = pd.DataFrame(d)
     res_df.index = seqs.index
@@ -171,7 +171,7 @@ def rna_features_in_window(rna_seq: str):
     return mfe, unpaired_cnt, bow_cnt, bubble_cnt
 
 
-def rna_features_by_windows(seqs: 'pd.Series[List[str]]', window_start: int = 50, window_end: int = 130, window_size: int = 70, window_jump: int = 10) -> pd.DataFrame:
+def rna_features_by_windows(seqs: 'pd.Series[List[str]]', window_start: int = 0, window_end: int = 60, window_size: int = 70, window_jump: int = 10) -> pd.DataFrame:
     d = {}
     while tqdm(window_start <= window_end):
         partial_seqs = seqs.apply(lambda seq: seq[window_start:window_start + window_size])
@@ -276,7 +276,7 @@ def get_prob_df(seqs: 'pd.Series[List[str]]', seq_end_idx: list) -> pd.DataFrame
 # need to choose the Motif to compare, i.e "loop III", "loop IV", "loop VI"
 # TODO: change the output to match the DataFrame of the features, now it only returns the energy for the desired loop
 def sum_base_pair_energy(energy_data: List[str], loop: str) -> int:
-    ranges = {'III': (74, 108), 'IV': (73, 195), 'VI': (218, 324)}
+    ranges = {'III': (3, 32), 'IV': (3, 125)}
     # Define the range of numbers to look for
     relevant_range = ranges[loop]
 
@@ -653,18 +653,19 @@ def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
 
 
 def make_rna_features(rna: pd.DataFrame) -> pd.DataFrame:
-    sl_match = get_match_rate_to_stem_loop_3(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
-    alpha_beta_match = get_match_rate_to_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
-    alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, [200, 250, 300, 350, 450, 554])
-    c_rich_area_match = get_match_rate_to_c_rich_area(rna, [300, 350, 450, 554])
-    bases_probabilities = get_prob_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])  # check only specific "interesting locations"
-    mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna, [120, 130, 140, 150, 200, 300, 350, 554])
-    stem_loops_mfe = get_stem_loops_mfe(rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554])
+    sl_match = get_match_rate_to_stem_loop_3(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483])
+    alpha_beta_match = get_match_rate_to_alpha_beta(rna, [130, 180, 230, 300, 400, 483])
+    alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, [130, 180, 230, 300, 400, 483])
+    # c_rich_area_match = get_match_rate_to_c_rich_area(rna, [230, 300, 400, 483])  # there is no consensus stem loop VI
+    bases_probabilities = get_prob_df(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483])  # check only specific "interesting locations"
+    mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483])
+    stem_loops_mfe = get_stem_loops_mfe(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483])
     base_pairing_ranges = get_base_pairing_ranges(rna)
-    rna_forms = get_rna_form(rna, range(82, 203, 10))
+    rna_forms = get_rna_form(rna, range(12, 133, 10))
     features_by_windows = rna_features_by_windows(rna)
 
-    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, c_rich_area_match, bases_probabilities, mfe_centroid_comparison, stem_loops_mfe, base_pairing_ranges, rna_forms, features_by_windows]
+    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, bases_probabilities, mfe_centroid_comparison, stem_loops_mfe, base_pairing_ranges, rna_forms, features_by_windows]
+    # excluded c_rich_area_match
     result_df = pd.concat(features_dfs, axis=1)
     return result_df
 
@@ -684,15 +685,15 @@ def worker(func_and_args, results):
 def make_rna_features_parallel(rna: pd.DataFrame) -> pd.DataFrame:
     # Define the list of inner functions and their corresponding arguments
     functions_and_args = [
-        (get_match_rate_to_stem_loop_3, [rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554]]),
-        (get_match_rate_to_alpha_beta, [rna, [200, 250, 300, 350, 450, 554]]),
-        (get_match_rate_to_extended_alpha_beta, [rna, [200, 250, 300, 350, 450, 554]]),
-        (get_match_rate_to_c_rich_area, [rna, [300, 350, 450, 554]]),
-        (get_prob_df, [rna, [120, 130, 140, 150, 200, 300, 350, 554]]),
-        (get_mfe_centroid_comparison_df, [rna, [120, 130, 140, 150, 200, 300, 350, 554]]),
-        (get_stem_loops_mfe, [rna, [120, 130, 140, 150, 200, 250, 300, 350, 450, 554]]),
+        (get_match_rate_to_stem_loop_3, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483]]),
+        (get_match_rate_to_alpha_beta, [rna, [130, 180, 230, 300, 400, 483]]),
+        (get_match_rate_to_extended_alpha_beta, [rna, [130, 180, 230, 300, 400, 483]]),
+        # (get_match_rate_to_c_rich_area, [rna, [230, 300, 400, 483]]),
+        (get_prob_df, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483]]),
+        (get_mfe_centroid_comparison_df, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483]]),
+        (get_stem_loops_mfe, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483]]),
         (get_base_pairing_ranges, [rna]),
-        (get_rna_form, [rna, list(range(82, 203, 10))]),
+        (get_rna_form, [rna, list(range(12, 133, 10))]),
         (rna_features_by_windows, [rna])
     ]
 
@@ -785,7 +786,6 @@ if __name__ == '__main__':
     generate_features_csv()
     check_output()
     # checks()
-    # print('h')
 
     # Now, you can work with the 'df' DataFrame as needed
     # For example, you can access columns and perform data analysis:
@@ -793,61 +793,48 @@ if __name__ == '__main__':
 
 # features to extract from RNAfold files and RNAeval output
 
-# 1) take rna_p[:112] and make dictionary of the indices:                   V
-# IInterior loop ( 74,103) GC; ( 75,102) GC:  -330
-# Interior loop ( 75,102) GC; ( 76,101) UA:  -220
-# Interior loop ( 76,101) UA; ( 77,100) AU:  -130
-# Interior loop ( 77,100) AU; ( 79, 98) CG:   120
-# Interior loop ( 79, 98) CG; ( 80, 97) UA:  -210
-# Interior loop ( 80, 97) UA; ( 81, 96) GC:  -210
-# Interior loop ( 81, 96) GC; ( 82, 94) GC:    50
-# Interior loop ( 82, 94) GC; ( 83, 93) CG:  -340
-# Interior loop ( 83, 93) CG; ( 84, 92) UA:  -210
-# Interior loop ( 84, 92) UA; ( 85, 91) UG:  -130
-# Hairpin  loop ( 85, 91) UG              :   550
+# 1) take rna_p[3:32] and make dictionary of the indices:                   V
+# Interior loop (  4, 33) GC; (  5, 32) GC:  -330
+# Interior loop (  5, 32) GC; (  6, 31) UA:  -220
+# Interior loop (  6, 31) UA; (  7, 30) AU:  -130
+# Interior loop (  7, 30) AU; (  9, 28) CG:   120
+# Interior loop (  9, 28) CG; ( 10, 27) UA:  -210
+# Interior loop ( 10, 27) UA; ( 11, 26) GC:  -210
+# Interior loop ( 11, 26) GC; ( 12, 24) GC:    50
+# Interior loop ( 12, 24) GC; ( 13, 23) CG:  -340
+# Interior loop ( 13, 23) CG; ( 14, 22) UA:  -210
+# Interior loop ( 14, 22) UA; ( 15, 21) UG:  -130
+# Hairpin  loop ( 15, 21) UG              :   550
 
 
 # run RNAfold on entire seq and take using RNAeval energy sum of extended alpha beta loop (SL 4)
-# stem-loop IV seq[74:194]
-# Interior loop ( 75,195) GC; ( 76,194) UA:  -220
-# Interior loop ( 76,194) UA; ( 77,193) AU:  -130
-# Interior loop ( 77,193) AU; ( 78,192) AU:   -90
-# Interior loop ( 78,192) AU; ( 79,191) CG:  -220
-# Interior loop ( 79,191) CG; ( 81,189) GC:    40
-# Interior loop ( 81,189) GC; ( 82,188) GC:  -330
-# Interior loop ( 82,188) GC; ( 84,186) UA:   120
-# Interior loop ( 84,186) UA; ( 85,185) UA:   -90
-# Interior loop ( 85,185) UA; ( 87,184) AU:   250
-# Interior loop ( 87,184) AU; ( 88,183) GC:  -210
-# Interior loop ( 88,183) GC; ( 89,182) CG:  -340
-# Interior loop ( 89,182) CG; ( 90,181) AU:  -210
-# Interior loop ( 90,181) AU; ( 91,180) GC:  -210
-# Interior loop ( 91,180) GC; ( 92,179) AU:  -240
-# Interior loop ( 92,179) AU; ( 93,178) GC:  -210
-# Interior loop ( 93,178) GC; ( 94,177) CG:  -340
-# Interior loop ( 94,177) CG; ( 95,176) GC:  -240
-# Interior loop ( 95,176) GC; ( 97,175) AU:   140
-# Interior loop ( 97,175) AU; ( 98,174) GC:  -210
-# Interior loop (111,152) GC; (112,151) UA:  -220
-# Interior loop (112,151) UA; (113,150) UA:   -90
-# Interior loop (113,150) UA; (114,149) CG:  -240
-# Interior loop (114,149) CG; (115,148) UA:  -210
-# Interior loop (115,148) UA; (116,147) UA:   -90
-# Interior loop (116,147) UA; (119,144) AU:   190
-# Interior loop (119,144) AU; (120,143) GC:  -210
-# Interior loop (120,143) GC; (121,142) UA:  -220
-# Interior loop (121,142) UA; (122,141) GC:  -210
-# Interior loop (122,141) GC; (125,137) GC:   260
-# Interior loop (125,137) GC; (126,136) CG:  -340
-# Interior loop (126,136) CG; (127,135) CG:  -330
-# Hairpin  loop (127,135) CG              :   370
-# Interior loop (155,170) UA; (156,169) GC:  -210
-# Interior loop (156,169) GC; (157,168) UA:  -220
-# Interior loop (157,168) UA; (158,167) AU:  -130
-# Interior loop (158,167) AU; (159,166) GC:  -210
-# Hairpin  loop (159,166) GC              :   470
-# Multi    loop ( 98,174) GC              :   360
+# stem-loop IV seq[3:125]
+# Interior loop (  4,126) GC; (  5,125) GC:  -330
+# Interior loop (  5,125) GC; (  6,124) UA:  -220
+# Interior loop (  6,124) UA; (  7,123) AU:  -130
+# Interior loop (  7,123) AU; (  8,122) AU:   -90
+# Interior loop (  8,122) AU; (  9,121) CG:  -220
+# Interior loop (  9,121) CG; ( 11,119) GC:    40
+# Interior loop ( 11,119) GC; ( 12,118) GC:  -330
+# Interior loop ( 12,118) GC; ( 14,116) UA:   120
+# Interior loop ( 14,116) UA; ( 15,115) UA:   -90
+# Interior loop ( 15,115) UA; ( 17,114) AU:   250
+# Interior loop ( 17,114) AU; ( 18,113) GC:  -210
+# Interior loop ( 18,113) GC; ( 19,112) CG:  -340
+# Interior loop ( 19,112) CG; ( 20,111) AU:  -210
+# Interior loop ( 20,111) AU; ( 21,110) GC:  -210
+# Interior loop ( 21,110) GC; ( 22,109) AU:  -240
+# Interior loop ( 22,109) AU; ( 23,108) GC:  -210
+# Interior loop ( 23,108) GC; ( 24,107) CG:  -340
+# Interior loop ( 24,107) CG; ( 25,106) GC:  -240
+# Interior loop ( 25,106) GC; ( 27,105) AU:   140
+# Interior loop ( 27,105) AU; ( 28,104) GC:  -210
+# Interior loop ( 41, 82) GC; ( 42, 81) UA:  -220
+# Interior loop ( 42, 81) UA; ( 43, 80) UA:   -90
+# Interior loop ALPHA_RANGE GC:  -210
+# Hairpin  loop ( 89, 96) GC              :   470
+# Multi    loop ( 28,104) GC              :   360
 
 # run RNAfold on entire seq and look at the C rich area, compare to consensus, take probabilities and energies.
-# G rich area seq[286:292]  - should be in the loop and not base-paired
+# G rich area seq[216:222]  - should be in the loop and not base-paired
 
