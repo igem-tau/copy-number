@@ -189,9 +189,10 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
     return r2_score(y_val, y_pred)
 
 
-def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, save_plots=True):
-    if Path(DATA_PATH, f'best_params_{model_name}.joblib').exists():
-        best_params = load(Path(DATA_PATH, f'best_params_{model_name}.joblib'))
+def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, save_plots=True):
+    best_params_file_name = f'RNA_{rna_type}_best_params_{model_name}.joblib'
+    if Path(DATA_PATH, best_params_file_name).exists():
+        best_params = load(Path(DATA_PATH, best_params_file_name))
     else:
         print(f'Running: optuna for {model_name}')
 
@@ -212,7 +213,7 @@ def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, save_plots
         for key, value in trial.params.items():
             print('    {}: {}'.format(key, value))
 
-        dump(best_params, Path(DATA_PATH, f'best_params_{model_name}.joblib'), compress=True)
+        dump(best_params, Path(DATA_PATH, best_params_file_name), compress=True)
         if save_plots:
             save_optuna_plots(study, model_name)
 
