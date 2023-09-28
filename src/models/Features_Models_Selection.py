@@ -4,6 +4,7 @@ from functools import partial
 from tqdm import tqdm
 import optuna
 from BorutaShap import BorutaShap
+from eBoruta import eBoruta
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
@@ -228,7 +229,7 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
                       'CatBoostRegressor': 100, 'SVR': 50, 'NN': 100}
             trails = {'Ridge': 1, 'Lasso': 1, 'ElasticNet': 1, 'GradientBoosting': 1, 'LGBMRegressor': 1,
                       'XGBoost': 1,
-                      'CatBoostRegressor': 1, 'NN': 1}
+                      'CatBoostRegressor': 1, 'NN': 1, 'RandomForest':1}
             study = optuna.create_study(direction='maximize')
             if Path(DATA_PATH, study_file_name).exists():
                 last_study = load(Path(DATA_PATH, study_file_name))
@@ -289,7 +290,7 @@ https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.Sele
 '''
 
 
-def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
+def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
     """
     Feature Selection for RNAp or RNAi.
 
@@ -300,10 +301,10 @@ def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
     Using BorutaShap as model for feature selection (Wrapper Method).
     """
     # TODO - rename to a clearer name, since it is not the file used at the end, to read the selected features
-    filename = f'RNA{rna_type}_Selected_Features.joblib'
+    filename = f'RNA{rna_type}_{model}_Selected_Features.joblib'
 
     if Path(DATA_PATH, filename).exists():
-        models_data = load(Path(DATA_PATH, filename))
+        data = load(Path(DATA_PATH, filename))
     else:
         print('Running: features selection - features and copy number')
         # feature vetting: select features based on correlations only
@@ -332,30 +333,35 @@ def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
 
         # correlation between feature-feature (minimal) with MI
         print('Running: features selection - feature-feature')
-        new_features = pd.Series(RNA_X_new.columns)
-        num_new_features = len(new_features)
-        corr_matrix = np.zeros((num_new_features, num_new_features))
+        if Path(DATA_PATH, f'RNA{rna_type}_mutual_info_matrix.joblib').exists():
+            corr_matrix = load(Path(DATA_PATH, f'RNA{rna_type}_mutual_info_matrix.joblib'))
+            new_features = pd.Series(RNA_X_new.columns)
+        else:
+            new_features = pd.Series(RNA_X_new.columns)
+            num_new_features = len(new_features)
+            corr_matrix = np.zeros((num_new_features, num_new_features))
 
-        # Create pairs of feature indices for upper triangle calculation
-        upper_triangle_indices = np.triu_indices(num_new_features, k=1)
-        pairs = zip(*upper_triangle_indices)
+            # Create pairs of feature indices for upper triangle calculation
+            upper_triangle_indices = np.triu_indices(num_new_features, k=1)
+            pairs = zip(*upper_triangle_indices)
 
-        # Parallelize the mutual information calculation for upper triangle
-        mi_values_upper = Parallel(n_jobs=-2)(delayed(parallel_calculate_mi)(i, j, rna_type) for i, j in
-                                              tqdm(pairs, total=((num_new_features ** 2 - num_new_features) // 2)))
+            # Parallelize the mutual information calculation for upper triangle
+            mi_values_upper = Parallel(n_jobs=-2)(delayed(parallel_calculate_mi)(i, j, rna_type) for i, j in
+                                                  tqdm(pairs, total=((num_new_features ** 2 - num_new_features) // 2)))
 
-        # Fill the correlation matrix for the upper triangle
-        corr_matrix[upper_triangle_indices] = mi_values_upper
+            # Fill the correlation matrix for the upper triangle
+            corr_matrix[upper_triangle_indices] = mi_values_upper
 
-        # Transform the lower triangle to np.nan
-        il1 = np.tril_indices(num_new_features)
-        corr_matrix[il1] = np.nan
+            # Transform the lower triangle to np.nan
+            il1 = np.tril_indices(num_new_features)
+            corr_matrix[il1] = np.nan
 
-        dump(corr_matrix, Path(DATA_PATH, f'RNA{rna_type}_mutual_info_matrix.joblib'), compress=True)
+            dump(corr_matrix, Path(DATA_PATH, f'RNA{rna_type}_mutual_info_matrix.joblib'), compress=True)
 
         row, col = (corr_matrix > np.nanquantile(corr_matrix, 0.99)).nonzero()  # TODO: think of different condition
 
         while len(row) > 0:
+
             values = np.array([row[0], col[0]])  # first pair
             inx = new_mi[values].argmin()  # find the feature with less correlation to the copy number
             new_features.drop(values[inx], inplace=True)  # erase from features Series
@@ -368,36 +374,46 @@ def feature_selection(RNA_X, RNA_y, param_dict, models, rna_type):
 
         RNA_X_new = RNA_X_new.loc[:, new_features]
 
-        # feature selection - Boruta Sharp.
-        models_data = {}
-        for model in models:
-            if model == 'XGBoost':
-                print('Running: XGBoost for feature selection using boruta shap')
-                estimator = XGBRegressor(**param_dict[model])
-            elif model == 'CatBoostRegressor':
-                estimator = CatBoostRegressor(**param_dict[model])
-                print('Running: CatBoost for feature selection using boruta shap')
-            else:
-                raise ValueError(
-                    'feature_selection: models accepts only the following values: "XGBoost" or "CatBoostRegressor"')
+        # feature selection - Boruta Shap.
 
-            Feature_Selector = BorutaShap(model=estimator,
-                                          importance_measure='shap',
-                                          classification=False)
+        if model == 'XGBoost':
+            print('Running: XGBoost for feature selection using eboruta')
+            estimator = XGBRegressor(**param_dict[model])
+        elif model == 'CatBoostRegressor':
+            estimator = CatBoostRegressor(**param_dict[model])
+            print('Running: CatBoost for feature selection using eboruta')
+        else:
+            raise ValueError(
+                'feature_selection: models accepts only the following values: "XGBoost" or "CatBoostRegressor"')
 
-            Feature_Selector.fit(X=RNA_X_new, y=RNA_y, n_trials=200, sample=False,  # TODO: sample_fraction=0.85,?
-                                 train_or_test='test', normalize=False,
-                                 verbose=True)
+        # Feature_Selector = BorutaShap(model=estimator,
+        #                               importance_measure='shap',
+        #                               classification=False)
+        #
+        # Feature_Selector.fit(X=RNA_X, y=RNA_y, n_trials=200, sample=False,  # TODO: sample_fraction=0.85,?,, RNA_X_new!!!!
+        #                      train_or_test='test', normalize=False,
+        #                      verbose=True)
 
-            # Return Values :
-            features_to_remove = Feature_Selector.features_to_remove
-            features_to_accept = Feature_Selector.accepted
-            subset_of_data = Feature_Selector.Subset()
+        shap_approximate = False if model == 'CatBoostRegressor' else True
+        eboruta = eBoruta(n_iter=100, classification=False, shap_check_additivity=False, shap_approximate=shap_approximate, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
-            data = {f'RNA{rna_type}_train_FS': subset_of_data, 'selected_features': features_to_accept,
-                    'removed_features': features_to_remove}
-            models_data[model] = data
+        # Return Values :
 
-        dump(models_data, Path(DATA_PATH, filename), compress=True)
+        # features_to_remove = Feature_Selector.features_to_remove
+        # features_to_accept = Feature_Selector.accepted
+        # subset_of_data = Feature_Selector.Subset()
 
-    return models_data
+        # data = {f'RNA{rna_type}_train_FS': subset_of_data, 'selected_features': features_to_accept,
+        #         'removed_features': features_to_remove}
+
+        features = eboruta.features_
+        features_to_remove = features.rejected
+        features_to_accept = features.accepted
+        subset_of_data = RNA_X[features_to_accept]
+
+        data = {f'RNA{rna_type}_train_FS': subset_of_data, 'selected_features': features_to_accept,
+                'removed_features': features_to_remove}
+
+    dump(data, Path(DATA_PATH, filename), compress=True)
+
+    return data
