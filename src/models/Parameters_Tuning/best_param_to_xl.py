@@ -190,7 +190,7 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
 
 
 def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, save_plots=True):
-    best_params_file_name = f'RNA_{rna_type}_best_params_{model_name}.joblib'
+    best_params_file_name = f'RNA{rna_type}_best_params_{model_name}.joblib'
     if Path(DATA_PATH, best_params_file_name).exists():
         best_params = load(Path(DATA_PATH, best_params_file_name))
     else:
