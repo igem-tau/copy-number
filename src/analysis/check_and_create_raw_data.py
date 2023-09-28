@@ -1,5 +1,10 @@
-from src.data_prep.pre_process import get_RNAp_data, get_RNAi_data
 import pandas as pd
+from pathlib import Path
+from src.data_prep.pre_process import get_RNAp_data, get_RNAi_data
+from src.utils import get_current_file_parent_path
+
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
 def reverse_func(x):
     return ((x + 28) / 123) ** (1 / 0.37)
@@ -24,7 +29,7 @@ def raw_data_testing(RNA_df, checking_values_df):
     print(sum(checking_values_df['values'].round(2) == RNA_df['Raw Copy Number'].round(2)))
 
 if __name__ == '__main__':
-    # ssPCN_values = pd.read_csv('ssPCN_values.csv')
+    # ssPCN_values = pd.read_csv(Path(DATA_PATH, 'ssPCN_values.csv'))
     # RNAp_data = get_RNAp_data()
     # raw_data_testing(RNAp_data, ssPCN_values)
 
@@ -33,8 +38,9 @@ if __name__ == '__main__':
     RNAp_data['Raw Copy Number'] = reverse_func(RNAp_data['Copy Number'])
     RNAi_data['Raw Copy Number'] = reverse_func(RNAi_data['Copy Number'])
 
-    RNAp_data.to_csv('RNAp_with_Raw_PCN.csv')
-    RNAi_data.to_csv('RNAi_with_Raw_PCN.csv')
+    RNAp_data.to_csv(Path(DATA_PATH, 'ssPCN_valuesssss.csv'))
+    RNAp_data.to_csv(Path(DATA_PATH, 'RNAp_with_Raw_PCN.csv'))
+    RNAi_data.to_csv(Path(DATA_PATH, 'RNAi_with_Raw_PCN.csv'))
 
 
 
