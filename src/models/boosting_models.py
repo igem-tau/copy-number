@@ -62,9 +62,9 @@ def run_catboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_
                 save_plots: bool = False):
     if Best_param is not None:
         # Best_param['max_depth'], Best_param['n_estimators'] = int(Best_param['max_depth']), int(Best_param['n_estimators'])
-        catb_model = xgb.CatBoostRegressor(**Best_param)
+        catb_model = CatBoostRegressor(**Best_param)
     else:
-        catb_model = xgb.CatBoostRegressor()
+        catb_model = CatBoostRegressor()
 
     catb_model.fit(X_train, y_train)
     y_pred = catb_model.predict(X_test)
@@ -86,7 +86,7 @@ def run_catboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_
     plt.title('Feature Importance')
 
     if save_plots:
-        fig.save(Path(FIGURES_PATH, f'CatBoost feature importance {data_title}.jpg'))
+        plt.savefig(Path(FIGURES_PATH, f'CatBoost feature importance {data_title}.jpg'))
 
     # evaluation plot
     f, ax = plt.subplots()
@@ -95,7 +95,7 @@ def run_catboost(X_train, X_test, y_train, y_test, data_title: str = None, Best_
     plt.xlabel('Actual values')
     plt.ylabel('Predicted values')
     plt.text(0.8, 0.1, 'R2=%.4f' % r2, transform=ax.transAxes)
-    plt.text(0.8, 0.2, 'MSE=%.4f' % mse_score, transform=ax.transAxes)
+    plt.text(0.8, 0.2, 'MAE=%.4f' % mae_score, transform=ax.transAxes)
     plt.title(f'CatBoost - {data_title}')
     if save_plots:
         plt.savefig(Path(FIGURES_PATH, f'CatBoost evaluation {data_title}.jpg'))
