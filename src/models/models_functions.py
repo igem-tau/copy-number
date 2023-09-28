@@ -1,9 +1,18 @@
 import numpy as np
 import pandas as pd
+from scipy.stats import spearmanr, pearsonr
+from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from src.models.lasso import run_lasso
 from src.models.boosting_models import run_xgboost, run_catboost
+import matplotlib.pyplot as plt
+from pathlib import Path
+from src.utils import get_current_file_parent_path
+
+
+CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
+FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 
 
 def remove_outliers(X: pd.DataFrame, y: pd.DataFrame):
@@ -35,9 +44,30 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, outliers=False):
 
     return X_train, X_test, y_train, y_test
 
+def estimate_pred(y_true, y_pred, name_of_model):
+    r2 = r2_score(y_true, y_pred)
+    print(f'R^2 value for {name_of_model}: {r2}')
+    mae_score = mean_absolute_error(y_true, y_pred)
+    print(f'MAE value for {name_of_model}: {mae_score}')
+    pearson, _ = pearsonr(y_true, y_pred)
+    print(f'pearson correlation value for {name_of_model}: {pearson}')
+    spearman, _ = spearmanr(y_true, y_pred)
+    print(f'spearman correlation value for {name_of_model}: {spearman}')
+
+    # evaluation plot
+    f, ax = plt.subplots()
+    plt.scatter(y_true, y_pred)
+    plt.axline((0, 0), slope=1)
+    plt.xlabel('Actual values')
+    plt.ylabel('Predicted values')
+    plt.text(0.8, 0.1, 'pearson correlation=%.4f' % pearson, transform=ax.transAxes)
+    plt.text(0.8, 0.2, 'MAE=%.4f' % mae_score, transform=ax.transAxes)
+    plt.title(f'{name_of_model} evaluation')
+    plt.savefig(Path(FIGURES_PATH, f'{name_of_model} evaluation.jpg'))
+
 
 def model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_test: pd.DataFrame, model_name: str, data_name: str, best_param=None, save_plots=False):
-    print(f'Running {model_name} for {data_name}')
+    print(f'Running {model_name} for {data_name} with {len(X_train.columns)} features')
     X_train, X_test = scale(X_train, X_test)
     if best_param is None:
         best_param = {}
