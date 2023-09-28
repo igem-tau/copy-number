@@ -718,7 +718,8 @@ def make_rna_features_parallel(rna: pd.DataFrame) -> pd.DataFrame:
 
 def generate_features_csv():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
+    # csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
+    csv_file_path = r'C:\Users\YH006_new\Desktop\copy-number\data\rna_p_data'
     df = pd.read_csv(csv_file_path)
     rna_seqs = df["RNAp_seq"]
 
@@ -746,6 +747,7 @@ def checks():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     # # Construct the relative path to the CSV file
     csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
+
     #
     df = pd.read_csv(csv_file_path)
     # # df = pd.read_csv(r"..data")
