@@ -43,7 +43,6 @@ def make_model(X_tr, X_va, y_tr, y_va, regressor_name: str, params):
         model = ElasticNet(**params)
 
     elif regressor_name == 'LGBMRegressor':
-
         X_tr = X_tr.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
         X_va = X_va.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
         model = LGBMRegressor(**params)
@@ -226,10 +225,10 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
             print(f"Running: {model_name} for model selection")
             trails = {'Ridge': 150, 'Lasso': 150, 'ElasticNet': 150, 'GradientBoosting': 100, 'LGBMRegressor': 200,
                       'XGBoost': 200,
-                      'CatBoostRegressor': 100, 'SVR': 50, 'NN': 100}
-            trails = {'Ridge': 1, 'Lasso': 1, 'ElasticNet': 1, 'GradientBoosting': 1, 'LGBMRegressor': 1,
-                      'XGBoost': 1,
-                      'CatBoostRegressor': 1, 'NN': 1, 'RandomForest':1}
+                      'CatBoostRegressor': 100, 'NN': 100, 'RandomForest':100}
+            # trails = {'Ridge': 1, 'Lasso': 1, 'ElasticNet': 1, 'GradientBoosting': 1, 'LGBMRegressor': 1,
+            #           'XGBoost': 1,
+            #           'CatBoostRegressor': 1, 'NN': 1, 'RandomForest':1}
             study = optuna.create_study(direction='maximize')
             if Path(DATA_PATH, study_file_name).exists():
                 last_study = load(Path(DATA_PATH, study_file_name))
@@ -382,9 +381,12 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
         elif model == 'CatBoostRegressor':
             estimator = CatBoostRegressor(**param_dict[model])
             print('Running: CatBoost for feature selection using eboruta')
+        elif model == 'RandomForest':
+            estimator = RandomForestRegressor(**param_dict[model])
+            print('Running: Random Forest for feature selection using eboruta')
         else:
             raise ValueError(
-                'feature_selection: models accepts only the following values: "XGBoost" or "CatBoostRegressor"')
+                'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", or "RandomForest"')
 
         # Feature_Selector = BorutaShap(model=estimator,
         #                               importance_measure='shap',
