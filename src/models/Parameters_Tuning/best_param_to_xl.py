@@ -5,6 +5,7 @@ import numpy as np
 import openpyxl
 import pandas as pd
 from sklearn import metrics
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LassoCV
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
@@ -170,7 +171,7 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
         trial.set_user_attr('callbacks', model.best_iteration + 1)
         y_pred = model.predict(X_val)
-    else:
+    elif model_name == 'CatBoostRegressor':
         param = dict(
             silent=trial.suggest_categorical('silent', [True]),
             loss_function=trial.suggest_categorical('loss_function', ['RMSE', 'MAE']),
@@ -185,6 +186,23 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
         model = CatBoostRegressor(**param)
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
         y_pred = model.predict(X_val)
+
+    elif model_name == 'RandomForest':
+        param = dict(
+            n_estimators=trial.suggest_int("n_estimators", 200, 500),
+            max_depth=trial.suggest_int("max_depth", 10, 40),
+            min_samples_split=trial.suggest_int("min_samples_split", 2, 10),
+            min_samples_leaf=trial.suggest_int("min_samples_leaf", 1, 5),
+            criterion=trial.suggest_categorical('criterion', ["friedman_mse"]),
+            max_features=trial.suggest_categorical('max_features', ["sqrt", "log2", None]),
+            warm_start=trial.suggest_categorical('warm_start', [True, False]))
+        model = RandomForestRegressor(**param)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_val)
+
+    else:
+        raise ValueError(
+            'hyperparameters tuning with optuna: models accepts only the following values: "XGBoost", "CatBoostRegressor", or "Random Forest"')
 
     return r2_score(y_val, y_pred)
 
