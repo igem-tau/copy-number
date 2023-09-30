@@ -25,7 +25,7 @@ def generate_conf_plot(hparam_path,x_train,y_train,X_test,y_test):
     for alpha in [0.05, 0.95]:
         gbr = xgboost.XGBRegressor(objective=log_cosh_quantile(alpha), **common_params)
         all_models["q %1.2f" % alpha] = gbr.fit(x_train,y_train)
-    gbr_ls=xgboost.XGBRegressor(objective="reg:squarederror", **common_params)
+    gbr_ls=xgboost.XGBRegressor(**common_params)
 
     all_models["mse"] = gbr_ls.fit(x_train,y_train)
 
@@ -46,12 +46,12 @@ def generate_conf_plot(hparam_path,x_train,y_train,X_test,y_test):
     plt.legend(loc="upper left")
     plt.title(f'confident socre for RNA{rna_type}')
     plt.show()
-    fig.savefig(f'{DATA_PATH}\\conf_score_RNA{rna_type}_{model_name}.png')
+    fig.savefig(f'{DATA_PATH}\\conf_score_RNA{rna_type}_XGBoost.png')
 
 if __name__=='__main__':
     rna_type='p'
-    hparam_path=Path(DATA_PATH, f'best_params_XGBoost.joblib')
-    selected_features=load(Path(DATA_PATH, f'RNA{rna_type}_Selected_Features.joblib'))['XGBoost']['selected_features']
+    hparam_path=Path(DATA_PATH, f'RNA{rna_type}_best_params_XGBoost.joblib')
+    selected_features=load(Path(DATA_PATH, f'RNA{rna_type}_XGBoost_Selected_Features.joblib'))['selected_features']
 
     data = get_features_df(rna_type=rna_type)
 
