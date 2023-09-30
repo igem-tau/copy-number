@@ -222,7 +222,7 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
 
     else:
         raise ValueError(
-            'hyperparameters tuning with optuna: models accepts only the following values: "XGBoost", "CatBoostRegressor", or "Random Forest"')
+            'hyperparameters tuning with optuna: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "Random Forest"')
 
     return r2_score(y_val, y_pred)
 
