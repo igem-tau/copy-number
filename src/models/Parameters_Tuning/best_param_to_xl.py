@@ -1,9 +1,11 @@
+import re
 from functools import partial
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import openpyxl
 import pandas as pd
+from lightgbm import LGBMRegressor
 from sklearn import metrics
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LassoCV
@@ -200,6 +202,24 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_val)
 
+    elif model_name == 'LGBMRegressor':
+        X_train = X_train.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+        X_val = X_val.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+        param = dict(verbose=-1,
+                      boosting_type=trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
+                      num_leaves=trial.suggest_int('num_leaves', 15, 30),
+                      max_depth=trial.suggest_categorical('max_depth', [-1, 5, 10, 20]),
+                      learning_rate=trial.suggest_float('learning_rate', 0.001, 0.1, log=True),
+                      reg_alpha=trial.suggest_float('reg_alpha', 0.01, 1.0),
+                      reg_lambda=trial.suggest_float('reg_lambda', 0.01, 1.0),
+                      min_split_gain=trial.suggest_float('min_split_gain', 0, 0.5),
+                      min_child_samples=trial.suggest_int('min_child_samples', 10, 30),
+                      subsample=trial.suggest_float('subsample', 0.5, 1),
+                      colsample_bytree=trial.suggest_float('colsample_bytree', 0.01, 1.0))
+        model = LGBMRegressor(**param)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_val)
+
     else:
         raise ValueError(
             'hyperparameters tuning with optuna: models accepts only the following values: "XGBoost", "CatBoostRegressor", or "Random Forest"')
@@ -220,7 +240,7 @@ def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, 
             n_trials=200)
         best_params = study.best_params
         if model_name == 'XGBoost':
-            best_params['n_estimators'] = study.best_trial.user_attrs['callbacks'] * 1.1
+            best_params['n_estimators'] = int(study.best_trial.user_attrs['callbacks'] * 1.1)
 
         print('Number of finished trials: ', len(study.trials))
         print('Best trial:')
