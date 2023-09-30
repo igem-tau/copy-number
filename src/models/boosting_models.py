@@ -1,5 +1,7 @@
+import re
 import matplotlib.pyplot as plt
 from pathlib import Path
+from lightgbm import LGBMRegressor, plot_importance
 from scipy.stats import spearmanr
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
@@ -146,3 +148,45 @@ def run_rf(X_train, X_test, y_train, y_test, data_title: str = None, Best_param:
         plt.savefig(Path(FIGURES_PATH, f'Random Forest evaluation {data_title}.jpg'))
 
     return rf_model, r2, mae_score, pearson, spearman, y_pred
+
+def run_LGBM(X_train, X_test, y_train, y_test, data_title: str = None, Best_param: Optional[dict] = None,
+                save_plots: bool = False):
+    X_train = X_train.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+    X_test = X_test.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+
+    if Best_param is not None:
+        # Best_param['max_depth'], Best_param['n_estimators'] = int(Best_param['max_depth']), int(Best_param['n_estimators'])
+        lgmb_model = LGBMRegressor(**Best_param)
+    else:
+        lgmb_model = LGBMRegressor()
+
+    lgmb_model.fit(X_train, y_train)
+    y_pred = lgmb_model.predict(X_test)
+
+    r2 = r2_score(y_test, y_pred)
+    print(f'R^2 value for LGBMRegressor: {r2}')
+    mae_score = mean_absolute_error(y_test, y_pred)
+    print(f'MAE value for LGBMRegressor: {mae_score}')
+    pearson, _ = pearsonr(y_test, y_pred)
+    print(f'pearson correlation value for LGBMRegressor: {pearson}')
+    spearman, _ = spearmanr(y_test, y_pred)
+    print(f'spearman correlation value for LGBMRegressor: {spearman}')
+
+
+    if save_plots:
+        ax = plot_importance(lgmb_model, max_num_features=20, title=f'{data_title} feature importance - LGBMRegressor')
+        ax.figure.savefig(Path(FIGURES_PATH, f'LGBMRegressor feature importance {data_title}.jpg'))
+
+    # evaluation plot
+    f, ax = plt.subplots()
+    plt.scatter(y_test, y_pred)
+    plt.axline((0, 0), slope=1)
+    plt.xlabel('Actual values')
+    plt.ylabel('Predicted values')
+    plt.text(0.8, 0.1, 'R2=%.4f' % r2, transform=ax.transAxes)
+    plt.text(0.8, 0.2, 'MAE=%.4f' % mae_score, transform=ax.transAxes)
+    plt.title(f'LGBMRegressor - {data_title}')
+    if save_plots:
+        plt.savefig(Path(FIGURES_PATH, f'LGBMRegressor evaluation {data_title}.jpg'))
+
+    return lgmb_model, r2, mae_score, pearson, spearman, y_pred
