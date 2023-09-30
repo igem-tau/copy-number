@@ -226,9 +226,9 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
             trails = {'Ridge': 150, 'Lasso': 150, 'ElasticNet': 150, 'GradientBoosting': 100, 'LGBMRegressor': 200,
                       'XGBoost': 200,
                       'CatBoostRegressor': 100, 'NN': 100, 'RandomForest':100}
-            # trails = {'Ridge': 1, 'Lasso': 1, 'ElasticNet': 1, 'GradientBoosting': 1, 'LGBMRegressor': 1,
-            #           'XGBoost': 1,
-            #           'CatBoostRegressor': 1, 'NN': 1, 'RandomForest':1}
+            trails = {'Ridge': 1, 'Lasso': 1, 'ElasticNet': 1, 'GradientBoosting': 1, 'LGBMRegressor': 1,
+                      'XGBoost': 1,
+                      'CatBoostRegressor': 1, 'NN': 1, 'RandomForest':1}
             study = optuna.create_study(direction='maximize')
             if Path(DATA_PATH, study_file_name).exists():
                 last_study = load(Path(DATA_PATH, study_file_name))
@@ -384,9 +384,12 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
         elif model == 'RandomForest':
             estimator = RandomForestRegressor(**param_dict[model])
             print('Running: Random Forest for feature selection using eboruta')
+        elif model =='LGBMRegressor':
+            RNA_X_new = RNA_X_new.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+            estimator = LGBMRegressor(**param_dict[model])
         else:
             raise ValueError(
-                'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", or "RandomForest"')
+                'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
 
         # Feature_Selector = BorutaShap(model=estimator,
         #                               importance_measure='shap',
@@ -396,7 +399,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
         #                      train_or_test='test', normalize=False,
         #                      verbose=True)
 
-        shap_approximate = False if model == 'CatBoostRegressor' else True
+        shap_approximate = False if model == 'CatBoostRegressor' or model =='LGBMRegressor' else True
         eboruta = eBoruta(n_iter=100, classification=False, shap_check_additivity=False, shap_approximate=shap_approximate, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
         # Return Values :
