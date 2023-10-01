@@ -21,9 +21,11 @@ def run_pipeline(rna_type: str):
     data = get_features_df(rna_type=rna_type)
 
     RNA_X_train_features = data[f'RNA{rna_type}_X_train']
+    RNA_X_train_seq = data[f'RNA{rna_type}_X_train_sequences']
     RNA_y_train = data[f'RNA{rna_type}_y_train']
 
     RNA_X_val_features = data[f'RNA{rna_type}_X_val']
+    RNA_X_val_seq = data[f'RNA{rna_type}_X_val_sequences']
     RNA_y_val = data[f'RNA{rna_type}_y_val']
 
     RNA_X_test_features = data[f'RNA{rna_type}_X_test']
@@ -54,6 +56,7 @@ def run_pipeline(rna_type: str):
         # Run model
         # TODO - Recalculate train_val with selected_features only while using the entire dataset
         RNA_FS_train_val_X = pd.concat([RNA_FS_train, RNA_FS_val])
+        RNA_train_val_seq = pd.concat([RNA_X_train_seq, RNA_X_val_seq])
         RNA_train_val_y = pd.concat([RNA_y_train, RNA_y_val])
         trained_model, r2, mae_score, pearson, spearman, y_pred = model(RNA_FS_train_val_X, RNA_FS_test,
                                                                         RNA_train_val_y, RNA_y_test,
@@ -70,8 +73,9 @@ def run_pipeline(rna_type: str):
             axis=1
         )
         # cp is False because RNA_y should be None because we need to predict the copy number
+        RNA_train_val_data_seq = pd.concat([RNA_train_val_data.reset_index(drop=True), RNA_train_val_seq['Promoter Sequence (-35 to +1)'].reset_index(drop=True)], axis=1)
         all_seqs_selected_features, _ = generate_features(generated_RNA_df, rna_type=rna_type,
-                                                          reference_RNA_data=RNA_train_val_data, cp=False,
+                                                          reference_RNA_data=RNA_train_val_data_seq, cp=False,
                                                           selected_features=RNA_selected_features)
 
         # Predict
@@ -101,5 +105,5 @@ def run_pipeline(rna_type: str):
 
 if __name__ == '__main__':
     # run_pipeline(rna_type='p')
-    # run_pipeline(rna_type='i')
-    run_pipeline(rna_type='i_w_folding')
+    run_pipeline(rna_type='i')
+    # run_pipeline(rna_type='i_w_folding')
