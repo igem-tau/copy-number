@@ -11,7 +11,6 @@ from src.consts import RNA_DATA_COLUMNS, NUCLEOTIDES, RNAp_SEQ_ORIGINAL, RNAi_SE
 from src.utils import get_current_file_parent_path
 from joblib import dump, load
 
-
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
@@ -19,7 +18,7 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 def sequence_generator(mutation_locations: List[Tuple[int, int]], rna_type: str) -> 'pd.Series[str]':
     if rna_type == 'p':
         template = RNAp_SEQ_ORIGINAL
-    elif rna_type == 'i':
+    elif rna_type == 'i' or rna_type == 'i_w_folding':
         template = RNAi_SEQ_ORIGINAL
     else:
         raise 'Choose a valid rna_type (i or p)'
@@ -53,7 +52,6 @@ timepoints_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_3_seq_cnt_p_rna.
 RNAi_df = pd.read_excel(os.path.join(DATA_PATH, 'sup_data_2_i_rna.xlsx'), names=RNA_DATA_COLUMNS)
 
 
-
 # promoter energy matrix
 def get_energy_matrix_for_rna_polymeras() -> pd.DataFrame:
     FIRST_INDEX = -40
@@ -64,6 +62,8 @@ def get_energy_matrix_for_rna_polymeras() -> pd.DataFrame:
 
 # calculate the energy matrix:
 energy_matrix = get_energy_matrix_for_rna_polymeras()
+
+
 def calc_zone_strength(seq: str, zone: Tuple[int], energy_mat=energy_matrix) -> 'pd.Series[float]':
     seq = seq[:-1]  # delete +1 position
     start_zone, end_zone = zone
@@ -73,7 +73,9 @@ def calc_zone_strength(seq: str, zone: Tuple[int], energy_mat=energy_matrix) -> 
         strength += energy_mat.loc[i, seq[i - START_INDEX]]
     return strength
 
-def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]], energy_mat=energy_matrix) -> pd.DataFrame:
+
+def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]],
+                                 energy_mat=energy_matrix) -> pd.DataFrame:
     zones_strength = {}
     for zone in zones:
         strength = seq.apply(
@@ -84,14 +86,16 @@ def calc_promoter_zones_strength(seq: 'pd.Series[str]', zones=List[Tuple[int]], 
 
 
 def calc_predicted_promoter_strength(seq: Union[str, 'pd.Series[str]']) -> Union[float, 'pd.Series[float]']:
-    predicted_promoter_strength = calc_promoter_zones_strength(seq, [(-35,-1)], energy_mat=energy_matrix)['(-35, -1) predicted strength']
+    predicted_promoter_strength = calc_promoter_zones_strength(seq, [(-35, -1)], energy_mat=energy_matrix)[
+        '(-35, -1) predicted strength']
     return predicted_promoter_strength.rename('Predicted Promoter Strength (KbT)')
+
 
 def sequence_df_generator(rna_type='p'):
     if rna_type == 'p':
         filename = 'RNAp_Generated_Sequences.joblib'
         generated_RNA_seq = sequence_generator([(-33, -30), (-11, -8), (0, 0)], rna_type)
-    elif rna_type == 'i':
+    elif rna_type == 'i' or rna_type == 'i_w_folding':
         filename = 'RNAi_Generated_Sequences.joblib'
         generated_RNA_seq = sequence_generator([(-33, -30), (-10, -7), (0, 0)], rna_type)
 
