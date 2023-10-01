@@ -197,7 +197,7 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
     data = {}
     if rna_type == 'p':
         RNA_data = get_RNAp_data()
-    elif rna_type == 'i':
+    elif rna_type == 'i' or rna_type == 'i_w_folding':
         RNA_data = get_RNAi_data()
     else:
         raise ValueError('save_features_df: rna_type must be one of the following values: "p" or "i"')
@@ -226,6 +226,7 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
 
     RNA_X_train, RNA_y_train = generate_features(RNA_data_train, rna_type=rna_type)
     temp_RNA_X_train = remove_zero_variance_features(RNA_X_train)
+
     temp_RNA_X_train_features = temp_RNA_X_train.columns.values
     RNA_X_val, RNA_y_val = generate_features(RNA_data_val, reference_RNA_data=RNA_data_train, rna_type=rna_type,
                                              selected_features=temp_RNA_X_train_features)
@@ -233,7 +234,7 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
                                                selected_features=temp_RNA_X_train_features)
 
     # TODO - move into generate_features
-    if rna_type == 'i':
+    if rna_type == 'i_w_folding':
         RNAi_from_RNAp_feats = pd.read_csv(Path(CURRENT_FOLDER_PATH, '..', 'features', 'rna_p_new_features.csv'))
 
         RNAi_from_RNAp_feats_train_val, RNAi_from_RNAp_feats_test = split_for_testing(RNAi_from_RNAp_feats, RNA_y,
@@ -301,7 +302,7 @@ def create_fasta_file(RNA_df, rna_type):
     if rna_type == 'p':
         output_file_high = Path(DATA_PATH, RNAp_high_filename)
         output_file_low = Path(DATA_PATH, RNAp_low_filename)
-    elif rna_type == 'i':
+    elif rna_type == 'i' or rna_type == 'i_w_folding':
         output_file_high = Path(DATA_PATH, RNAi_high_filename)
         output_file_low = Path(DATA_PATH, RNAi_low_filename)
     with open(output_file_high, 'w') as file:

@@ -1,10 +1,13 @@
+import re
 from functools import partial
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import openpyxl
 import pandas as pd
+from lightgbm import LGBMRegressor
 from sklearn import metrics
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LassoCV
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
@@ -170,7 +173,7 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
         trial.set_user_attr('callbacks', model.best_iteration + 1)
         y_pred = model.predict(X_val)
-    else:
+    elif model_name == 'CatBoostRegressor':
         param = dict(
             silent=trial.suggest_categorical('silent', [True]),
             loss_function=trial.suggest_categorical('loss_function', ['RMSE', 'MAE']),
@@ -182,15 +185,50 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
             min_child_samples=trial.suggest_categorical('min_child_samples', [1, 4, 8, 16]),
             grow_policy=trial.suggest_categorical('grow_policy', ['Depthwise', 'SymmetricTree', 'Lossguide']),
         )
-        model = CatBoostRegressor(**param)
+        model = CatBoostRegressor(**param, allow_writing_files=False)
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
         y_pred = model.predict(X_val)
+
+    elif model_name == 'RandomForest':
+        param = dict(
+            n_estimators=trial.suggest_int("n_estimators", 200, 500),
+            max_depth=trial.suggest_int("max_depth", 10, 40),
+            min_samples_split=trial.suggest_int("min_samples_split", 2, 10),
+            min_samples_leaf=trial.suggest_int("min_samples_leaf", 1, 5),
+            criterion=trial.suggest_categorical('criterion', ["friedman_mse"]),
+            max_features=trial.suggest_categorical('max_features', ["sqrt", "log2", None]),
+            warm_start=trial.suggest_categorical('warm_start', [True, False]))
+        model = RandomForestRegressor(**param)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_val)
+
+    elif model_name == 'LGBMRegressor':
+        X_train = X_train.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+        X_val = X_val.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+        param = dict(verbose=-1,
+                      boosting_type=trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
+                      num_leaves=trial.suggest_int('num_leaves', 15, 30),
+                      max_depth=trial.suggest_categorical('max_depth', [-1, 5, 10, 20]),
+                      learning_rate=trial.suggest_float('learning_rate', 0.001, 0.1, log=True),
+                      reg_alpha=trial.suggest_float('reg_alpha', 0.01, 1.0),
+                      reg_lambda=trial.suggest_float('reg_lambda', 0.01, 1.0),
+                      min_split_gain=trial.suggest_float('min_split_gain', 0, 0.5),
+                      min_child_samples=trial.suggest_int('min_child_samples', 10, 30),
+                      subsample=trial.suggest_float('subsample', 0.5, 1),
+                      colsample_bytree=trial.suggest_float('colsample_bytree', 0.01, 1.0))
+        model = LGBMRegressor(**param)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_val)
+
+    else:
+        raise ValueError(
+            'hyperparameters tuning with optuna: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "Random Forest"')
 
     return r2_score(y_val, y_pred)
 
 
 def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, save_plots=True):
-    best_params_file_name = f'RNA_{rna_type}_best_params_{model_name}.joblib'
+    best_params_file_name = f'RNA{rna_type}_best_params_{model_name}.joblib'
     if Path(DATA_PATH, best_params_file_name).exists():
         best_params = load(Path(DATA_PATH, best_params_file_name))
     else:
@@ -202,7 +240,7 @@ def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, 
             n_trials=200)
         best_params = study.best_params
         if model_name == 'XGBoost':
-            best_params['n_estimators'] = study.best_trial.user_attrs['callbacks'] * 1.1
+            best_params['n_estimators'] = int(study.best_trial.user_attrs['callbacks'] * 1.1)
 
         print('Number of finished trials: ', len(study.trials))
         print('Best trial:')

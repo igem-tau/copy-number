@@ -51,13 +51,14 @@ def calc_motifs_pv(seqs: 'pd.Series[str]', selected_features: 'Optional[List[str
 
         for i, seq in enumerate(seqs):
             pattern = fimo.score_motif(selected_motif, [Sequence(seq)], motif_file.background)
-            # TODO - update to save the best match instead of the last one
-            for m in pattern.matched_elements:
+            sorted_matches = sorted(pattern.matched_elements, key=lambda m: (-m.pvalue, m.score))
+            if len(sorted_matches)>0:
                 if is_feature_selected(pv_feature_name, selected_features):
-                    motifs_dict[pv_feature_name][i] = m.pvalue
+                        motifs_dict[pv_feature_name][i] = sorted_matches[0].pvalue
 
                 if is_feature_selected(score_feature_name, selected_features):
-                    motifs_dict[score_feature_name][i] = m.score
+                        motifs_dict[score_feature_name][i] = sorted_matches[0].score
+
     return pd.DataFrame(motifs_dict)
 
 
