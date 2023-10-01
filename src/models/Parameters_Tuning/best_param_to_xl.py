@@ -185,7 +185,7 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
             min_child_samples=trial.suggest_categorical('min_child_samples', [1, 4, 8, 16]),
             grow_policy=trial.suggest_categorical('grow_policy', ['Depthwise', 'SymmetricTree', 'Lossguide']),
         )
-        model = CatBoostRegressor(**param)
+        model = CatBoostRegressor(**param, allow_writing_files=False)
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
         y_pred = model.predict(X_val)
 
