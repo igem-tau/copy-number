@@ -32,8 +32,7 @@ def run_pipeline(rna_type: str):
 
     # Feature and model selection
     param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
-    models = ['XGBoost', 'CatBoostRegressor']
-    # models = ['CatBoostRegressor']
+    models = ['XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
 
     total_pred = []
     final_predicted_dfs = []
@@ -47,13 +46,9 @@ def run_pipeline(rna_type: str):
         RNA_FS_test = RNA_X_test_features[RNA_selected_features]
 
         # Exploratory Data Analysis (EDA)
-        # if rna_type == 'p':
-        #     exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
-
+        # exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
 
         # Hyperparameters tuning
-        # Best_params = get_best_params_set_xgb(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val,
-        #                                          f'xgb_RNA{rna_type}')
         Best_params = get_best_param_optuna(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, cur_model_name, rna_type)
 
         # Run model
@@ -105,5 +100,6 @@ def run_pipeline(rna_type: str):
 
 
 if __name__ == '__main__':
-    run_pipeline(rna_type='p')
+    # run_pipeline(rna_type='p')
     # run_pipeline(rna_type='i')
+    run_pipeline(rna_type='i_w_folding')

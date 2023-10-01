@@ -5,7 +5,7 @@ from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from src.models.lasso import run_lasso
-from src.models.boosting_models import run_trees_model #run_xgboost, run_catboost, run_rf, run_LGBM,
+from src.models.boosting_models import run_trees_model
 import matplotlib.pyplot as plt
 from pathlib import Path
 from src.utils import get_current_file_parent_path
@@ -79,19 +79,5 @@ def model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_
         model, r2, mae_score, pearson, spearman, y_pred = run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title=data_name,
                                             Best_param=best_param, save_plots=save_plots)
 
-    # elif model_name == 'XGBoost':
-    #     model, r2, mae_score, pearson, spearman, y_pred = run_xgboost(X_train, X_test, y_train, y_test, data_title=data_name,
-    #                                           Best_param=best_param, save_plots=save_plots)
-    # elif model_name == 'CatBoostRegressor':
-    #     model, r2, mae_score, pearson, spearman, y_pred = run_catboost(X_train, X_test, y_train, y_test, data_title=data_name,
-    #                                           Best_param=best_param, save_plots=save_plots)
-    # elif model_name == 'RandomForest':
-    #     model, r2, mae_score, pearson, spearman, y_pred = run_rf(X_train, X_test, y_train, y_test, data_title=data_name,
-    #                                           Best_param=best_param, save_plots=save_plots)
-    # elif model_name == 'LGBMRegressor':
-    #     model, r2, mae_score, pearson, spearman, y_pred = run_LGBM(X_train, X_test, y_train, y_test, data_title=data_name,
-    #                                           Best_param=best_param, save_plots=save_plots)
-    # else:
-    #     raise Exception(f'No such model: {model_name}')
     return model, r2, mae_score, pearson, spearman, y_pred
 

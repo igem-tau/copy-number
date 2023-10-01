@@ -1,18 +1,15 @@
-# Fixed Import with load Diabitis instead of load boston
 import re
 from functools import partial
 from tqdm import tqdm
 import optuna
-from BorutaShap import BorutaShap
 from eBoruta import eBoruta
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_selection import mutual_info_regression, mutual_info_classif, SelectFromModel
 from sklearn.linear_model import Ridge, Lasso, ElasticNet
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from scipy.stats import pearsonr
-from sklearn.model_selection import cross_val_score, RepeatedKFold
 from xgboost import XGBRegressor
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
@@ -101,22 +98,6 @@ def get_hyper_parameters(trial=None, regressor_name=None):
                       warm_start=trial.suggest_categorical('warm_start', [True, False]))
         regressor_obj = ElasticNet(**params)
 
-    # elif regressor_name == 'GradientBoosting':
-    #     params = dict(
-    #         loss = trial.suggest_categorical('loss', ["squared_error", "absolute_error", "huber", "quantile"]),
-    #         learning_rate= trial.suggest_float('learning_rate', 0.005, 0.5),
-    #         subsample= trial.suggest_float('subsample', 0.5, 1.0),
-    #         criterion = trial.suggest_categorical('criterion', ["friedman_mse", "squared_error"]),
-    #         n_estimators = trial.suggest_int('n_estimators', 50, 200),
-    #         min_samples_split = trial.suggest_int('min_samples_split', 2, 20),
-    #         min_samples_leaf = trial.suggest_int('min_samples_leaf', 1, 20),
-    #         max_depth = trial.suggest_int('max_depth', 2, 20),
-    #         alpha = trial.suggest_float("alpha", 0.5, 1),
-    #         tol = trial.suggest_float("tol", 1e-4, 0.01, log=True),
-    #         max_features = trial.suggest_categorical('max_features', ["sqrt", "log2", None]),
-    #         warm_start=trial.suggest_categorical('warm_start', [True, False]))
-    #     regressor_obj = GradientBoostingRegressor(**params)
-
     elif regressor_name == 'LGBMRegressor':
         params = dict(verbose=-1,
                       boosting_type=trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
@@ -170,17 +151,6 @@ def get_hyper_parameters(trial=None, regressor_name=None):
         )
         regressor_obj = CatBoostRegressor(**params)
 
-    elif regressor_name == 'SVR':
-        params = dict(
-            kernel=trial.suggest_categorical('kernel', ["linear", "poly", "rbf", "sigmoid"]),
-            degree=trial.suggest_int('degree', 2, 5),
-            gamma=trial.suggest_categorical('gamma', ['scale', 'auto']),
-            tol=trial.suggest_float("tol", 1e-3, 0.1, log=True),
-            C=trial.suggest_float('C', 1, 3),
-            epsilon=trial.suggest_float('epsilon', 0.001, 1, log=True)
-        )
-        regressor_obj = SVR(**params)
-
     elif regressor_name == 'NN':
         params = dict(
             hidden_layer_sizes=trial.suggest_int('hidden_layer_sizes', 100, 400),
@@ -226,9 +196,6 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
             trails = {'Ridge': 150, 'Lasso': 150, 'ElasticNet': 150, 'GradientBoosting': 100, 'LGBMRegressor': 200,
                       'XGBoost': 200,
                       'CatBoostRegressor': 100, 'NN': 100, 'RandomForest':100}
-            trails = {'Ridge': 1, 'Lasso': 1, 'ElasticNet': 1, 'GradientBoosting': 1, 'LGBMRegressor': 1,
-                      'XGBoost': 1,
-                      'CatBoostRegressor': 1, 'NN': 1, 'RandomForest':1}
             study = optuna.create_study(direction='maximize')
             if Path(DATA_PATH, study_file_name).exists():
                 last_study = load(Path(DATA_PATH, study_file_name))
@@ -391,26 +358,11 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
             raise ValueError(
                 'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
 
-        # Feature_Selector = BorutaShap(model=estimator,
-        #                               importance_measure='shap',
-        #                               classification=False)
-        #
-        # Feature_Selector.fit(X=RNA_X, y=RNA_y, n_trials=200, sample=False,  # TODO: sample_fraction=0.85,?,, RNA_X_new!!!!
-        #                      train_or_test='test', normalize=False,
-        #                      verbose=True)
 
-        shap_approximate = False if model == 'CatBoostRegressor' or model =='LGBMRegressor' else True
+        shap_approximate = model not in ['CatBoostRegressor', 'LGBMRegressor']
         eboruta = eBoruta(n_iter=100, classification=False, shap_check_additivity=False, shap_approximate=shap_approximate, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
         # Return Values :
-
-        # features_to_remove = Feature_Selector.features_to_remove
-        # features_to_accept = Feature_Selector.accepted
-        # subset_of_data = Feature_Selector.Subset()
-
-        # data = {f'RNA{rna_type}_train_FS': subset_of_data, 'selected_features': features_to_accept,
-        #         'removed_features': features_to_remove}
-
         features = eboruta.features_
         features_to_remove = features.rejected
         features_to_accept = features.accepted
