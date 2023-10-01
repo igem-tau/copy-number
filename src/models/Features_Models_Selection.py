@@ -53,9 +53,6 @@ def make_model(X_tr, X_va, y_tr, y_va, regressor_name: str, params):
     elif regressor_name == 'CatBoostRegressor':
         model = CatBoostRegressor(**params)
 
-    elif regressor_name == 'SVR':
-        model = SVR(**params)
-
     elif regressor_name == 'NN':
         model = MLPRegressor(**params)
 
