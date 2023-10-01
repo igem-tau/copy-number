@@ -51,7 +51,7 @@ def make_model(X_tr, X_va, y_tr, y_va, regressor_name: str, params):
         model = XGBRegressor(**params)
 
     elif regressor_name == 'CatBoostRegressor':
-        model = CatBoostRegressor(**params)
+        model = CatBoostRegressor(**params, allow_writing_files=False)
 
     elif regressor_name == 'NN':
         model = MLPRegressor(**params)
@@ -146,7 +146,7 @@ def get_hyper_parameters(trial=None, regressor_name=None):
             min_child_samples=trial.suggest_categorical('min_child_samples', [1, 4, 8, 16]),
             grow_policy=trial.suggest_categorical('grow_policy', ['Depthwise', 'SymmetricTree', 'Lossguide']),
         )
-        regressor_obj = CatBoostRegressor(**params)
+        regressor_obj = CatBoostRegressor(**params, allow_writing_files=False)
 
     elif regressor_name == 'NN':
         params = dict(
@@ -272,7 +272,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
         print('Running: features selection - features and copy number')
         # feature vetting: select features based on correlations only
         # correlation between features and copy number (maximal) with MI
-        mi = mutual_info_regression(RNA_X, RNA_y, discrete_features=(RNA_X.dtypes == 'int64'))
+        mi = mutual_info_regression(RNA_X, RNA_y, discrete_features=(RNA_X.dtypes == 'int64'), random_state=0)
         RNA_X_new = RNA_X.iloc[:, (mi > (mi.mean()))]
         new_mi = mi[(mi > (mi.mean()))]
 
@@ -343,7 +343,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
             print('Running: XGBoost for feature selection using eboruta')
             estimator = XGBRegressor(**param_dict[model])
         elif model == 'CatBoostRegressor':
-            estimator = CatBoostRegressor(**param_dict[model])
+            estimator = CatBoostRegressor(**param_dict[model], allow_writing_files=False)
             print('Running: CatBoost for feature selection using eboruta')
         elif model == 'RandomForest':
             estimator = RandomForestRegressor(**param_dict[model])
@@ -356,8 +356,8 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
                 'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
 
 
-        shap_approximate = model not in ['CatBoostRegressor', 'LGBMRegressor']
-        eboruta = eBoruta(n_iter=100, classification=False, shap_check_additivity=False, shap_approximate=shap_approximate, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
+        importance_getter = get_features_importance if model in ['CatBoostRegressor', 'LGBMRegressor'] else None
+        eboruta = eBoruta(n_iter=100, classification=False, shap_check_additivity=False, shap_approximate=True, importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
         # Return Values :
         features = eboruta.features_
@@ -371,3 +371,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
     dump(data, Path(DATA_PATH, filename), compress=True)
 
     return data
+
+def get_features_importance(model):
+    if isinstance(model, CatBoostRegressor) or isinstance(model, LGBMRegressor):
+        return model.feature_importances_
