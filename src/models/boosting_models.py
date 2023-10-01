@@ -30,9 +30,9 @@ def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: st
 
     elif model_name == 'CatBoostRegressor':
         if Best_param is not None:
-            model = CatBoostRegressor(**Best_param)
+            model = CatBoostRegressor(**Best_param, allow_writing_files=False)
         else:
-            model = CatBoostRegressor()
+            model = CatBoostRegressor(allow_writing_files=False)
 
     elif model_name == 'RandomForest':
         if Best_param is not None:
