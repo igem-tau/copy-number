@@ -47,7 +47,7 @@ def extract_base_pairs(structure_line: str) -> dict:
     return dict(sorted_base_pairs)
 
 
-def run_RNAfold_as_webtool(rna_seq: str, params: list = [r"/usr/local/bin/RNAfold.exe", '-p', '-d2', '--noLP', '--noPS', '--noDP']):
+def run_RNAfold_as_webtool(rna_seq: str, params: list = [r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe", '-p', '-d2', '--noLP', '--noPS', '--noDP']):
     result = subprocess.run(params, input=rna_seq, capture_output=True, text=True)
     output = result.stdout.strip()
     return output
@@ -148,11 +148,12 @@ def get_match_rate_to_extended_alpha_beta(seqs: 'pd.Series[List[str]]', seq_end_
 def get_base_pairing_ranges(seqs: 'pd.Series[List[str]]', selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     d = {}
     for k, r in tqdm(RANGES_DICT.items()):
-        if is_feature_selected(f"base_pairing_mfe_{k}", selected_features):
-            col_desc_mfe = f"base_pairing_mfe_{k}"
+        col_desc_mfe = f"base_pairing_mfe_{k}"
+        if is_feature_selected(col_desc_mfe, selected_features):
             d[col_desc_mfe] = seqs.apply(lambda seq: get_range_paired_bases(seq, r, "mfe"))
-        if is_feature_selected(f"base_pairing_centorid_{k}", selected_features):
-            col_desc_centroid = f"base_pairing_centorid_{k}"
+
+        col_desc_centroid = f"base_pairing_centorid_{k}"
+        if is_feature_selected(col_desc_centroid, selected_features):
             d[col_desc_centroid] = seqs.apply(lambda seq: get_range_paired_bases(seq, r, "centroid"))
     return pd.DataFrame(d)
 
@@ -160,21 +161,24 @@ def get_base_pairing_ranges(seqs: 'pd.Series[List[str]]', selected_features: 'Op
 def get_rna_form(seqs: 'pd.Series[List[str]]', seq_end_idx: list, selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     d = {}
     for end_idx in tqdm(seq_end_idx):
-        unpaired_condition = is_feature_selected(f"unpaired_cnt_seq_end_{end_idx}", selected_features)
-        bow_condition = is_feature_selected(f"bow_cnt_seq_end_{end_idx}", selected_features)
-        bubble_condition = is_feature_selected(f"bubble_cnt_seq_end_{end_idx}", selected_features)
-        partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
+        unpaired_cnt = f"unpaired_cnt_seq_end_{end_idx}"
+        bow_cnt = f"bow_cnt_seq_end_{end_idx}"
+        bubble_cnt = f"bubble_cnt_seq_end_{end_idx}"
+
+        unpaired_condition = is_feature_selected(unpaired_cnt, selected_features)
+        bow_condition = is_feature_selected(bow_cnt, selected_features)
+        bubble_condition = is_feature_selected(bubble_cnt, selected_features)
+
         if unpaired_condition or bow_condition or bubble_condition:  # calculate only if desired
+            partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
             result = partial_seqs.apply(lambda seq: extract_rna_form(seq, 2, end_idx))
-        if unpaired_condition:
-            unpaired_cnt = f"unpaired_cnt_seq_end_{end_idx}"
-            d[unpaired_cnt] = result[0]
-        if bow_condition:
-            bow_cnt = f"bow_cnt_seq_end_{end_idx}"
-            d[bow_cnt] = result[1]
-        if bubble_condition:
-            bubble_cnt = f"bubble_cnt_seq_end_{end_idx}"
-            d[bubble_cnt] = result[2]
+            d[unpaired_cnt], d[bow_cnt], d[bubble_cnt] = zip(*result)
+            if not unpaired_condition:
+                d.pop(unpaired_cnt)
+            if not bow_condition:
+                d.pop(bow_cnt)
+            if not bubble_condition:
+                d.pop(bubble_cnt)
 
     res_df = pd.DataFrame(d)
     res_df.index = seqs.index
@@ -187,16 +191,31 @@ def rna_features_in_window(rna_seq: str):
     return mfe, unpaired_cnt, bow_cnt, bubble_cnt
 
 
-def rna_features_by_windows(seqs: 'pd.Series[List[str]]', window_start: int = 0, window_end: int = 60, window_size: int = 70, window_jump: int = 10) -> pd.DataFrame:
+def rna_features_by_windows(seqs: 'pd.Series[List[str]]', selected_features: 'Optional[List[str]]', window_start: int = 0, window_end: int = 60, window_size: int = 70, window_jump: int = 10) -> pd.DataFrame:
     d = {}
     while tqdm(window_start <= window_end):
-        partial_seqs = seqs.apply(lambda seq: seq[window_start:window_start + window_size])
-        result = partial_seqs.apply(lambda seq: rna_features_in_window(seq))
-        mfe = f"mfe_window_{window_start}_{window_start+window_size}"
-        unpaired_cnt = f"unpaired_cnt_window_{window_start}_{window_start+window_size}"
-        bow_cnt = f"bow_cnt_window_{window_start}_{window_start+window_size}"
-        bubble_cnt = f"bubble_cnt_window_{window_start}_{window_start+window_size}"
-        d[mfe], d[unpaired_cnt], d[bow_cnt], d[bubble_cnt] = zip(*result)
+        mfe = f"mfe_window_{window_start}_{window_start + window_size}"
+        unpaired_cnt = f"unpaired_cnt_window_{window_start}_{window_start + window_size}"
+        bow_cnt = f"bow_cnt_window_{window_start}_{window_start + window_size}"
+        bubble_cnt = f"bubble_cnt_window_{window_start}_{window_start + window_size}"
+
+        mfe_condition = is_feature_selected(mfe, selected_features)
+        unpaired_condition = is_feature_selected(unpaired_cnt, selected_features)
+        bow_condition = is_feature_selected(bow_cnt, selected_features)
+        bubble_condition = is_feature_selected(bubble_cnt, selected_features)
+
+        if mfe_condition or unpaired_condition or bow_condition or bubble_condition:
+            partial_seqs = seqs.apply(lambda seq: seq[window_start:window_start + window_size])
+            result = partial_seqs.apply(lambda seq: rna_features_in_window(seq))
+            d[mfe], d[unpaired_cnt], d[bow_cnt], d[bubble_cnt] = zip(*result)
+            if not mfe_condition:
+                d.pop(mfe)
+            if not unpaired_condition:
+                d.pop(unpaired_cnt)
+            if not bow_condition:
+                d.pop(bow_cnt)
+            if not bubble_condition:
+                d.pop(bubble_cnt)
         window_start += window_jump
     res_df = pd.DataFrame(d)
     res_df.index = seqs.index
@@ -228,29 +247,13 @@ def base_pair_probabilities(file_path: str, end_idx: int, selected_features: 'Op
                 try:
                     key = f"seq_end_{end_idx}_{parts[0]}_{parts[1]}"  # name the feature "1st_index 2nd_index"
                     value = parts[2]  # and assign to it the value 'probability'
-                    probabilities_dict[key] = value
+                    if is_feature_selected(key, selected_features):
+                        probabilities_dict[key] = value
                 except Exception as ex:
                     print(ex)
 
             if line == start_marker:
                 inside_target_section = True
-
-    if selected_features is not None:  # in case only selected features are desired
-        def extract_indices_from_feature_name(feature: str):
-            indices = feature.split()[-1]
-            idx1, idx2 = indices.split('_')
-            return int(idx1), int(idx2)
-
-        relevant_features = [feature for feature in selected_features if feature.startswith(f"seq_end_{end_idx}_")]
-        for feature in relevant_features:
-            idx1, idx2 = extract_indices_from_feature_name(feature)
-            key = f"seq_end_{end_idx}_{idx1}_{idx2}"
-            if key not in probabilities_dict:
-                probabilities_dict[key] = 0.0  # Set the value to 0 if the key is not found
-
-        # Filter the dictionary to remove keys not in the selected features
-        probabilities_dict = {key: value for key, value in probabilities_dict.items() if
-                              key not in selected_features}
 
     return probabilities_dict
 
@@ -299,7 +302,8 @@ def get_prob_df(seqs: 'pd.Series[List[str]]', seq_end_idx: list, selected_featur
             df_ls.append(df)
     else:
         for end_idx in tqdm(seq_end_idx):
-            if f"seq_end_{end_idx}_" in selected_features:  # unique naming of these features
+            feature_exists = any(s.startswith(f"seq_end_{end_idx}_") for s in selected_features)
+            if feature_exists:
                 partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
                 seq_and_prob_df = partial_seqs.apply(lambda seq: get_prob_for_seq(seq, end_idx, selected_features))
                 df = pd.DataFrame(seq_and_prob_df.tolist())
@@ -350,6 +354,7 @@ def compare_mfe_to_centroid_with_feature_selection(rna_seq: str, end_idx: int, s
     mfe_bp = extract_base_pairs(mfe_structure)
     centroid_bp = extract_base_pairs(centroid_structure)
     relevant_features = [feature for feature in selected_features if feature.startswith(f"seq_end_{end_idx} mfe == centroid")]
+
     def extract_bp_from_feature_name(feature: str):
         indices = feature.split()[-1]
         idx1, idx2 = indices.split('_')
@@ -379,6 +384,7 @@ def get_mfe_centroid_comparison_df(seqs: 'pd.Series[List[str]]', seq_end_idx: li
                 seq_mfe_centroid_comparison_df = partial_seqs.apply(
                     lambda seq: compare_mfe_to_centroid_with_feature_selection(seq, end_idx, selected_features))
                 df = pd.DataFrame(seq_mfe_centroid_comparison_df.tolist())
+                df.fillna(0, inplace=True)
                 df_ls.append(df)
     res_df = pd.concat(df_ls, axis=1)
     res_df.index = seqs.index
@@ -805,6 +811,7 @@ def checks():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     # # Construct the relative path to the CSV file
     csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
+    # csv_file_path = os.path.join(script_dir, r'..\..\data\rna_p_data.csv')
 
     #
     df = pd.read_csv(csv_file_path)
@@ -816,16 +823,31 @@ def checks():
     # df = rna_features_by_windows(rna_seqs)
     # df.to_csv("windows.csv")
 
-    print("Running make rna features not paralel")
-    st_u = time()
-    result_df_not_par = make_rna_features(rna_seqs)
-    et_u = time()
-    print(f"Took: {et_u - st_u} seconds")   # Took: 277.6278851032257 seconds
-    result_df_not_par.to_csv("not_par.csv")
+    # print("Running make rna features not paralel")
+    # st_u = time()
+    # result_df_not_par = make_rna_features(rna_seqs)
+    # et_u = time()
+    # print(f"Took: {et_u - st_u} seconds")   # Took: 277.6278851032257 seconds
+    # result_df_not_par.to_csv("not_par.csv")
 
     print("Running mae rna features paralel")
     st = time()
-    result_df = make_rna_features_parallel(rna_seqs)
+    # not selected 45
+    result_df = make_rna_features_parallel(rna_seqs, selected_features=None)
+    # selected took 21 secs
+    # result_df = make_rna_features_parallel(rna_seqs, selected_features=["mfe_seq_end_400_sl_III",
+    #                                                                     "base_pairing_centorid_gamma_range",
+    #                                                                     "mfe_seq_end_60_sl_IV",
+    #                                                                     "seq_end_483_62_390",
+    #                                                                     "seq_end_230_159_195",
+    #                                                                     "seq_end_60 mfe == centroid 23_42",
+    #                                                                     "bow_cnt_seq_end_52",
+    #                                                                     "bubble_cnt_seq_end_12",
+    #                                                                     "unpaired_cnt_seq_end_32",
+    #                                                                     "alpha_beta_match_seq_end_180",
+    #                                                                     "sl3_match_seq_end_60",
+    #                                                                     "alpha_beta_extended_match_seq_end_400",
+    #                                                                     "base_pairing_mfe_beta_range"])
     et = time()
     print(f"Took: {et - st} seconds")   # Took: 58.083433628082275 seconds
     result_df.to_csv("par.csv")
@@ -837,15 +859,16 @@ def checks():
     # mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna_seqs, [120, 130, 140, 150, 200, 300, 350, 554])
     # return mfe_centroid_comparison
 
+
 def check_output():
     df = pd.read_csv("rna_p_new_features.csv")
     print(df.shape)
 
 
 if __name__ == '__main__':
-    generate_features_csv()
-    check_output()
-    # checks()
+    # generate_features_csv()
+    # check_output()
+    checks()
 
     # Now, you can work with the 'df' DataFrame as needed
     # For example, you can access columns and perform data analysis:
