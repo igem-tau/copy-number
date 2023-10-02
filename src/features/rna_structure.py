@@ -47,7 +47,8 @@ def extract_base_pairs(structure_line: str) -> dict:
     return dict(sorted_base_pairs)
 
 
-def run_RNAfold_as_webtool(rna_seq: str, params: list = [r"/usr/local/bin/RNAfold.exe", '-p', '-d2', '--noLP', '--noPS', '--noDP']):
+# in Dvir's laptop the path is: r"/usr/local/bin/RNAfold.exe"
+def run_RNAfold_as_webtool(rna_seq: str, params: list = [r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe", '-p', '-d2', '--noLP', '--noPS', '--noDP']):
     result = subprocess.run(params, input=rna_seq, capture_output=True, text=True)
     output = result.stdout.strip()
     return output
@@ -160,22 +161,26 @@ def get_base_pairing_ranges(seqs: 'pd.Series[List[str]]', selected_features: 'Op
 def get_rna_form(seqs: 'pd.Series[List[str]]', seq_end_idx: list, selected_features: 'Optional[List[str]]') -> pd.DataFrame:
     d = {}
     for end_idx in tqdm(seq_end_idx):
-        unpaired_condition = is_feature_selected(f"unpaired_cnt_seq_end_{end_idx}", selected_features)
-        bow_condition = is_feature_selected(f"bow_cnt_seq_end_{end_idx}", selected_features)
-        bubble_condition = is_feature_selected(f"bubble_cnt_seq_end_{end_idx}", selected_features)
+        # unpaired_condition = is_feature_selected(f"unpaired_cnt_seq_end_{end_idx}", selected_features)
+        # bow_condition = is_feature_selected(f"bow_cnt_seq_end_{end_idx}", selected_features)
+        # bubble_condition = is_feature_selected(f"bubble_cnt_seq_end_{end_idx}", selected_features)
         partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
-        if unpaired_condition or bow_condition or bubble_condition:  # calculate only if desired
-            result = partial_seqs.apply(lambda seq: extract_rna_form(seq, 2, end_idx))
-        if unpaired_condition:
-            unpaired_cnt = f"unpaired_cnt_seq_end_{end_idx}"
-            d[unpaired_cnt] = result[0]
-        if bow_condition:
-            bow_cnt = f"bow_cnt_seq_end_{end_idx}"
-            d[bow_cnt] = result[1]
-        if bubble_condition:
-            bubble_cnt = f"bubble_cnt_seq_end_{end_idx}"
-            d[bubble_cnt] = result[2]
-
+        # if unpaired_condition or bow_condition or bubble_condition:  # calculate only if desired
+        #     result = partial_seqs.apply(lambda seq: extract_rna_form(seq, 0, end_idx))
+        # if unpaired_condition:
+        #     unpaired_cnt = f"unpaired_cnt_seq_end_{end_idx}"
+        #     d[unpaired_cnt] = result[0]
+        # if bow_condition:
+        #     bow_cnt = f"bow_cnt_seq_end_{end_idx}"
+        #     d[bow_cnt] = result[1]
+        # if bubble_condition:
+        #     bubble_cnt = f"bubble_cnt_seq_end_{end_idx}"
+        #     d[bubble_cnt] = result[2]
+        result = partial_seqs.apply(lambda seq: extract_rna_form(seq, 0, end_idx))
+        unpaired_cnt = f"unpaired_cnt_seq_end_{end_idx}"
+        bow_cnt = f"bow_cnt_seq_end_{end_idx}"
+        bubble_cnt = f"bubble_cnt_seq_end_{end_idx}"
+        d[unpaired_cnt], d[bow_cnt], d[bubble_cnt] = zip(*result)
     res_df = pd.DataFrame(d)
     res_df.index = seqs.index
     return res_df
@@ -187,7 +192,7 @@ def rna_features_in_window(rna_seq: str):
     return mfe, unpaired_cnt, bow_cnt, bubble_cnt
 
 
-def rna_features_by_windows(seqs: 'pd.Series[List[str]]', window_start: int = 0, window_end: int = 60, window_size: int = 70, window_jump: int = 10) -> pd.DataFrame:
+def rna_features_by_windows(seqs: 'pd.Series[List[str]]', selected_features: 'Optional[List[str]]', window_start: int = 0, window_end: int = 60, window_size: int = 70, window_jump: int = 10) -> pd.DataFrame:
     d = {}
     while tqdm(window_start <= window_end):
         partial_seqs = seqs.apply(lambda seq: seq[window_start:window_start + window_size])
@@ -740,7 +745,7 @@ def worker(func_and_args, results):
     results.append(result)
 
 
-def make_rna_features_parallel(rna: pd.DataFrame, selected_features: 'Optional[List[str]]') -> pd.DataFrame:
+def make_rna_features_parallel(rna: pd.DataFrame, selected_features: 'Optional[List[str]]' = None) -> pd.DataFrame:
     # Define the list of inner functions and their corresponding arguments
     functions_and_args = [
         (get_match_rate_to_stem_loop_3, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features]),
@@ -751,7 +756,7 @@ def make_rna_features_parallel(rna: pd.DataFrame, selected_features: 'Optional[L
         (get_mfe_centroid_comparison_df, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features]),
         (get_stem_loops_mfe, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features]),
         (get_base_pairing_ranges, [rna, selected_features]),
-        (get_rna_form, [rna, list(range(12, 133, 10)), selected_features]),  # TODO: check with Shani what is the purpose of the function to fix the range
+        (get_rna_form, [rna, list(range(20, 140, 10)), selected_features]),  # TODO: check with Shani what is the purpose of the function to fix the range
         (rna_features_by_windows, [rna, selected_features])  # TODO: same
     ]
 
