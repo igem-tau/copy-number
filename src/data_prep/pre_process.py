@@ -20,7 +20,6 @@ timepoints_df = pd.read_excel(
     Path(DATA_PATH, 'sup_data_3_seq_cnt_p_rna.xlsx'))  # priming RNA time points
 PSSM_THRESHOLD_PATH_p = Path(DATA_PATH, 'pssm_threshold_pRNA.pkl')
 PSSM_THRESHOLD_PATH_i = Path(DATA_PATH, 'pssm_threshold_iRNA.pkl')
-TARGET_COLUMN = 'Copy Number'
 RNAp_high_filename = 'pRNA high copy number.fasta'
 RNAp_low_filename = 'pRNA low copy number.fasta'
 RNAi_high_filename = 'iRNA high copy number.fasta'
@@ -32,11 +31,18 @@ def get_RNAp_data():
     get RNA_P df, with additional columns
     :return:
     """
-    RNAp_df = pd.read_excel(Path(DATA_PATH, 'sup_data_1_p_rna.xlsx'),
-                            names=RNA_DATA_COLUMNS)  # priming RNA
-    RNAp_df['cnt_grw'] = RNAp_df['Final Counts'] / RNAp_df['Initial Counts']
-    shift = abs(RNAp_df[TARGET_COLUMN].min()) + 1e-10
-    RNAp_df['copy_num_log'] = np.log(RNAp_df[TARGET_COLUMN] + shift)
+    if TARGET_COLUMN == 'Copy Numer':
+        RNAp_df = pd.read_excel(Path(DATA_PATH, 'sup_data_1_p_rna.xlsx'),
+                                names=RNA_DATA_COLUMNS)  # priming RNA
+        RNAp_df['cnt_grw'] = RNAp_df['Final Counts'] / RNAp_df['Initial Counts']
+        shift = abs(RNAp_df[TARGET_COLUMN].min()) + 1e-10
+        RNAp_df['copy_num_log'] = np.log(RNAp_df[TARGET_COLUMN] + shift)
+    else:
+        RNAp_df = pd.read_csv(Path(DATA_PATH, 'RNAp_with_Raw_PCN.csv'), index_col=0)
+        shift = 0
+        RNAp_df['cnt_grw'] = RNAp_df['Final Counts'] / RNAp_df['Initial Counts']
+        # RNAp_df['Raw Copy Number Original'] = RNAp_df[TARGET_COLUMN]
+        RNAp_df[TARGET_COLUMN] = np.log(RNAp_df[TARGET_COLUMN] + shift)
     return RNAp_df
 
 
@@ -45,9 +51,16 @@ def get_RNAi_data():
     get RNA_I df, with additional columns
     :return:
     """
-    RNAi_df = pd.read_excel(Path(DATA_PATH, 'sup_data_2_i_rna.xlsx'),
-                            names=RNA_DATA_COLUMNS)  # inhibitory RNA
-    RNAi_df['cnt_grw'] = RNAi_df['Final Counts'] / RNAi_df['Initial Counts']
+    if TARGET_COLUMN == 'Copy Numer':
+        RNAi_df = pd.read_excel(Path(DATA_PATH, 'sup_data_2_i_rna.xlsx'),
+                                names=RNA_DATA_COLUMNS)  # inhibitory RNA
+        RNAi_df['cnt_grw'] = RNAi_df['Final Counts'] / RNAi_df['Initial Counts']
+    else:
+        RNAi_df = pd.read_csv(Path(DATA_PATH, 'RNAi_with_Raw_PCN.csv'), index_col=0)
+        shift = 0
+        RNAi_df['cnt_grw'] = RNAi_df['Final Counts'] / RNAi_df['Initial Counts']
+        # RNAp_df['Raw Copy Number Original'] = RNAp_df[TARGET_COLUMN]
+        RNAi_df[TARGET_COLUMN] = np.log(RNAi_df[TARGET_COLUMN] + shift)
     return RNAi_df
 
 
@@ -146,10 +159,10 @@ def is_high_copy_number(copy_number: 'pd.Series[int]') -> 'pd.Series[int]':
 
 def equal_bins_data(RNA_df: pd.DataFrame, zero_flag: bool = False) -> Tuple[pd.DataFrame, pd.Series]:
     if zero_flag:
-        RNA_df['Copy Number'][RNA_df['Copy Number'] < 0] = 0
-    RNA_df = RNA_df.sort_values(by='Copy Number')
+        RNA_df[TARGET_COLUMN][RNA_df[TARGET_COLUMN] < 0] = 0
+    RNA_df = RNA_df.sort_values(by=TARGET_COLUMN)
     num_bins = RNA_df.shape[0] // 15
-    bins_series = pd.qcut(RNA_df['Copy Number'], num_bins, labels=False).rename('stratify')
+    bins_series = pd.qcut(RNA_df[TARGET_COLUMN], num_bins, labels=False).rename('stratify')
     return RNA_df, bins_series
 
 
@@ -210,6 +223,16 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
     RNA_data_train_val, RNA_data_test = split_for_testing(RNA_X, RNA_y, stratify_by=RNA_stratify_col)
     RNA_stratify_train_val, RNA_stratify_test = split_for_testing(RNA_stratify_col, RNA_y,
                                                                   stratify_by=RNA_stratify_col)
+
+    if RNAp_SEQ_ORIGINAL in RNA_data_train_val['Promoter Sequence (-35 to +1)'].to_list():
+        row = RNA_data_train_val[RNA_data_train_val['Promoter Sequence (-35 to +1)'] == RNAp_SEQ_ORIGINAL]
+        row_statify = RNA_stratify_train_val.iloc[row.index, :]
+        RNA_data_test = RNA_data_test.append(row, ignore_index=True)
+        RNA_data_train_val.drop(row.index, inplace=True)
+        RNA_stratify_test = RNA_stratify_test.append(row_statify, ignore_index=True)
+        RNA_stratify_train_val.drop(row_statify.index, inplace=True)
+
+
     RNA_stratify_train_val = RNA_stratify_train_val['stratify']
     RNA_X_train_val = RNA_data_train_val.drop(TARGET_COLUMN, axis=1)
     RNA_y_train_val = RNA_data_train_val[TARGET_COLUMN]
