@@ -2,6 +2,7 @@ from Bio.SeqUtils import MeltingTemp
 from dnacurve import CurvedDNA
 from multiprocessing import Process, Manager
 import os
+from pathlib import Path
 import pandas as pd
 from src.consts import *
 import subprocess
@@ -15,6 +16,14 @@ from src.utils import is_feature_selected
 CONSENSUS_RNAp_SEQ = 'UGCAAACAAAAAAACCACCGCUACCAGCGGUGGUUUGUUUGCCGGAUCAAGAGCUACCAACUCUUUUUCCGAAGGUAACUGGCUUCAGCAGAGCGCAGAUACCAAAUACUGUUCUUCUAGUGUAGCCGUAGUUAGGCCACCACUUCAAGAACUCUGUAGCACCGCCUACAUACCUCGCUCUGCUAAUCCUGUUACCAGUGGCUGCUGCCAGUGGCGAUAAGUCGUGUCUUACCGGGUUGGACUCAAGACGAUAGUUACCGGAUAAGGCGCAGCGGUCGGGCUGAACGGGGGGUUCGUGCACACAGCCCAGCUUGGAGCGAACGACCUACACCGAACAGAUACCUACAGCGUGAGCUAUGAGAAAGCGCCACGCUUCCCGAAGGGAGAAAGGCGGACAGGUAUCCGGUAAGCGGCAGGGUCGGAACAGGAGAGCGCACGAGGGAGCUUCCAGGGGGAAACGCCUGGUAUCUUUAUAGUCCUGUCGGGUUUCGCCACCUCUGACUUGAGCGUCGAUUUUUGUGAUGCUCGUCAGGGGGGCGGAGCCUAUGGAAAA'
 
 STEM_LOOPS = ["III", "IV"]
+
+# script_dir = os.path.dirname(os.path.abspath(__file__))
+# RNAfold_path = os.path.join(script_dir, '..', '..', 'external_tools/RNAfold')
+# RNAeval_path = os.path.join(script_dir, '..', '..', 'external_tools/RNAeval')
+
+script_dir = Path(__file__).resolve().parent
+RNAfold_path = script_dir.parent.parent / "external_tools" / "RNAfold"
+RNAeval_path = script_dir.parent.parent / "external_tools" / "RNAeval"
 
 # convert DNA sequence to the RNA sequence that will be transcripted
 def dna_to_rna_complement(dna_sequence):
@@ -48,7 +57,8 @@ def extract_base_pairs(structure_line: str) -> dict:
 
 
 # in Dvir's laptop the path is: r"/usr/local/bin/RNAfold.exe"
-def run_RNAfold_as_webtool(rna_seq: str, params: list = [r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe", '-p', '-d2', '--noLP', '--noPS', '--noDP']):
+# in lab's computer the path is: r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe"
+def run_RNAfold_as_webtool(rna_seq: str, params: list = [RNAfold_path, '-p', '-d2', '--noLP', '--noPS', '--noDP']):
     result = subprocess.run(params, input=rna_seq, capture_output=True, text=True)
     output = result.stdout.strip()
     return output
@@ -172,7 +182,7 @@ def get_rna_form(seqs: 'pd.Series[List[str]]', seq_end_idx: list, selected_featu
 
         if unpaired_condition or bow_condition or bubble_condition:  # calculate only if desired
             partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
-            result = partial_seqs.apply(lambda seq: extract_rna_form(seq, 2, end_idx))
+            result = partial_seqs.apply(lambda seq: extract_rna_form(seq, 0, end_idx))
             d[unpaired_cnt], d[bow_cnt], d[bubble_cnt] = zip(*result)
             if not unpaired_condition:
                 d.pop(unpaired_cnt)
@@ -260,7 +270,7 @@ def base_pair_probabilities(file_path: str, end_idx: int, selected_features: 'Op
 
 
 def get_prob_for_seq(rna_seq: str, end_idx: int, selected_features: 'Optional[List[str]]') -> dict:
-    run_RNAfold(rna_seq, params=[r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe", '-p', '-d2', '--noLP', '--noPS'])
+    run_RNAfold(rna_seq, params=[RNAfold_path, '-p', '-d2', '--noLP', '--noPS'])
 
     # check we got file
     assert os.path.exists("dot.ps"), "dot file with probabilities generation failed"
@@ -473,13 +483,13 @@ def run_RNAeval(rna_seq: str, secondry_structure: str):
     # Todo: You need to download RNAfold before from:
     #  https://www.tbi.univie.ac.at/RNA/#download
     #  Include it as part of the project later
-    cmd = [r"C:\Program Files (x86)\ViennaRNA Package\RNAeval.exe", '-v']
+    cmd = [RNAeval_path, '-v']
     result = subprocess.run(cmd, input=f"{rna_seq}\n{secondry_structure}", capture_output=True, text=True)
     output = result.stdout.strip().split('\n')
     return output
 
 
-def run_RNAfold(rna_seq: str, params: list = [r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe", '-p', '-d2', '--noLP', '--noPS', '--noDP']):
+def run_RNAfold(rna_seq: str, params: list = [RNAfold_path, '-p', '-d2', '--noLP', '--noPS', '--noDP']):
     # Todo: You need to download RNAfold before from:
     #  https://www.tbi.univie.ac.at/RNA/#download
     #  Include it as part of the project later
@@ -758,8 +768,8 @@ def make_rna_features_parallel(rna: pd.DataFrame, selected_features: 'Optional[L
         (get_mfe_centroid_comparison_df, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features]),
         (get_stem_loops_mfe, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features]),
         (get_base_pairing_ranges, [rna, selected_features]),
-        (get_rna_form, [rna, list(range(20, 140, 10)), selected_features]),  # TODO: check with Shani what is the purpose of the function to fix the range
-        (rna_features_by_windows, [rna, selected_features])  # TODO: same
+        (get_rna_form, [rna, list(range(20, 140, 10)), selected_features]),
+        (rna_features_by_windows, [rna, selected_features])
     ]
 
     manager = Manager()
@@ -809,9 +819,11 @@ def checks():
 
     # import os  # to get the direction of the csv file
     # # Get the current directory of your script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    # # Construct the relative path to the CSV file
-    csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
+    # script_dir = os.path.dirname(os.path.abspath(__file__))
+    # # # Construct the relative path to the CSV file
+    # csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
+    script_dir = Path(__file__).resolve().parent
+    csv_file_path = script_dir.parent.parent / "data" / "rna_p_data.csv"
 
     #
     df = pd.read_csv(csv_file_path)
@@ -830,7 +842,7 @@ def checks():
     # print(f"Took: {et_u - st_u} seconds")   # Took: 277.6278851032257 seconds
     # result_df_not_par.to_csv("not_par.csv")
 
-    print("Running mae rna features paralel")
+    print("Running make rna features paralel")
     st = time()
     # not selected 46
     # result_df = make_rna_features_parallel(rna_seqs, selected_features=None)
