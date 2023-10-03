@@ -72,14 +72,14 @@ def make_model(X_tr, X_va, y_tr, y_va, regressor_name: str, params):
 
 def get_hyper_parameters(trial=None, regressor_name=None):
     if regressor_name == 'Ridge':
-        params = dict(alpha=trial.suggest_float("alpha", 0, 5),
+        params = dict(alpha=trial.suggest_float("alpha", 0, 20),
                       fit_intercept=trial.suggest_categorical("fit_intercept", [True, False]),
                       tol=trial.suggest_float("tol", 1e-6, 0.001, log=True),
                       solver=trial.suggest_categorical("solver", ["auto", "svd", "cholesky", "lsqr"]))
         regressor_obj = Ridge(**params)
 
     elif regressor_name == 'Lasso':
-        params = dict(alpha=trial.suggest_float("alpha", 0, 1),
+        params = dict(alpha=trial.suggest_float("alpha", 0, 5),
                       fit_intercept=trial.suggest_categorical("fit_intercept", [True, False]),
                       tol=trial.suggest_float("tol", 1e-4, 0.01, log=True),
                       selection=trial.suggest_categorical("selection", ["cyclic", "random"]),
@@ -87,7 +87,7 @@ def get_hyper_parameters(trial=None, regressor_name=None):
         regressor_obj = Lasso(**params)
 
     elif regressor_name == 'ElasticNet':
-        params = dict(alpha=trial.suggest_float("alpha", 0, 1),
+        params = dict(alpha=trial.suggest_float("alpha", 0, 5),
                       fit_intercept=trial.suggest_categorical("fit_intercept", [True, False]),
                       l1_ratio=trial.suggest_float('l1_ratio', 0, 0.5),
                       tol=trial.suggest_float("tol", 1e-5, 0.001, log=True),
@@ -149,7 +149,7 @@ def get_hyper_parameters(trial=None, regressor_name=None):
         regressor_obj = CatBoostRegressor(**params, allow_writing_files=False)
 
     elif regressor_name == 'NN':
-        params = dict(
+        params = dict(max_iter = 10000,
             hidden_layer_sizes=trial.suggest_int('hidden_layer_sizes', 100, 400),
             solver=trial.suggest_categorical('solver', ["lbfgs", "sgd", "adam"]),
             activation=trial.suggest_categorical('activation', ["logistic", "tanh", "relu"]),
@@ -190,9 +190,9 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
         for model_name in tqdm(model_names):
             study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
-            trails = {'Ridge': 150, 'Lasso': 150, 'ElasticNet': 150, 'GradientBoosting': 100, 'LGBMRegressor': 200,
+            trails = {'Ridge': 200, 'Lasso': 200, 'ElasticNet': 200, 'LGBMRegressor': 200,
                       'XGBoost': 200,
-                      'CatBoostRegressor': 100, 'NN': 100, 'RandomForest':100}
+                      'CatBoostRegressor': 100, 'NN': 100, 'RandomForest':200}
             study = optuna.create_study(direction='maximize')
             if Path(DATA_PATH, study_file_name).exists():
                 last_study = load(Path(DATA_PATH, study_file_name))
