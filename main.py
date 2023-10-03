@@ -83,8 +83,12 @@ def run_pipeline(rna_type: str):
         y_pred = trained_model.predict(all_seqs_selected_features_scaled)
         print(f"Range of copy nums predicted: {y_pred.min()} - {y_pred.max()}")
 
-        final_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
-            pd.DataFrame({'copy number': y_pred}))
+        if TARGET_COLUMN == 'Raw Copy Number':
+            final_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
+                pd.DataFrame({'Copy Number': np.exp(y_pred)}))
+        else:
+            final_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
+                pd.DataFrame({'Copy Number': y_pred}))
         final_predicted_dfs.append(final_predicted_df)
         final_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_{cur_model_name}.csv', index=False)
 
