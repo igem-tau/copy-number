@@ -1,4 +1,5 @@
 import logomaker
+from src.consts import *
 import pandas as pd
 from pathlib import Path
 from src.data_prep.pre_process import get_RNAp_data, get_RNAi_data
@@ -12,8 +13,8 @@ FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 def low_high_cp(df: pd.DataFrame):
     percentage = 0.2
     n = int(df.shape[0] * percentage)
-    high_cp = df.nlargest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
-    low_cp = df.nsmallest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
+    high_cp = df.nlargest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
+    low_cp = df.nsmallest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
     return high_cp, low_cp
 
 
