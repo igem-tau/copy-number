@@ -85,3 +85,4 @@ CONSENSUS_POSITIONS_C_RICH_AREA = {218: 324,
                                   285: 297}
 
 RNA_TYPE_CONST = {"RNA": 'p'}
+TARGET_COLUMN = 'Raw Copy Number'

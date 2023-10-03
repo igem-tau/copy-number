@@ -1,4 +1,5 @@
 from Bio import motifs
+from src.consts import *
 from functools import partial
 from joblib import load
 import numpy as np
@@ -52,8 +53,8 @@ def calc_series_pssm_score(seq: 'pd.Series[str]', ref_seq: 'pd.Series[str]', pss
 def set_pssm_thresholds(RNA_df: pd.DataFrame, rna_type:str = 'p') -> None:
     percentage = 0.2
     n = int(len(RNA_df) * percentage)
-    high_cp = RNA_df.nlargest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
-    low_cp = RNA_df.nsmallest(n, 'Copy Number')['Promoter Sequence (-35 to +1)']
+    high_cp = RNA_df.nlargest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
+    low_cp = RNA_df.nsmallest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
     RNA_pssm = calc_pssm_matrix(high_cp)
     # pssm_threshold = {'high': high_cp.min(), 'low': low_cp.max(), 'pssm_matrix': RNA_pssm}
     # if rna_type == 'p':
