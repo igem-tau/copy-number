@@ -47,6 +47,7 @@ def extract_base_pairs(structure_line: str) -> dict:
     return dict(sorted_base_pairs)
 
 
+# in Dvir's laptop the path is: r"/usr/local/bin/RNAfold.exe"
 def run_RNAfold_as_webtool(rna_seq: str, params: list = [r"C:\Program Files (x86)\ViennaRNA Package\RNAfold.exe", '-p', '-d2', '--noLP', '--noPS', '--noDP']):
     result = subprocess.run(params, input=rna_seq, capture_output=True, text=True)
     output = result.stdout.strip()
@@ -302,7 +303,7 @@ def get_prob_df(seqs: 'pd.Series[List[str]]', seq_end_idx: list, selected_featur
             df_ls.append(df)
     else:
         for end_idx in tqdm(seq_end_idx):
-            feature_exists = any(s.startswith(f"seq_end_{end_idx}_") for s in selected_features)
+            feature_exists = any(feature.startswith(f"seq_end_{end_idx}_") for feature in selected_features)
             if feature_exists:
                 partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
                 seq_and_prob_df = partial_seqs.apply(lambda seq: get_prob_for_seq(seq, end_idx, selected_features))
@@ -746,7 +747,7 @@ def worker(func_and_args, results):
     results.append(result)
 
 
-def make_rna_features_parallel(rna: pd.DataFrame, selected_features: 'Optional[List[str]]') -> pd.DataFrame:
+def make_rna_features_parallel(rna: pd.DataFrame, selected_features: 'Optional[List[str]]' = None) -> pd.DataFrame:
     # Define the list of inner functions and their corresponding arguments
     functions_and_args = [
         (get_match_rate_to_stem_loop_3, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features]),
@@ -757,7 +758,7 @@ def make_rna_features_parallel(rna: pd.DataFrame, selected_features: 'Optional[L
         (get_mfe_centroid_comparison_df, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features]),
         (get_stem_loops_mfe, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features]),
         (get_base_pairing_ranges, [rna, selected_features]),
-        (get_rna_form, [rna, list(range(12, 133, 10)), selected_features]),  # TODO: check with Shani what is the purpose of the function to fix the range
+        (get_rna_form, [rna, list(range(20, 140, 10)), selected_features]),  # TODO: check with Shani what is the purpose of the function to fix the range
         (rna_features_by_windows, [rna, selected_features])  # TODO: same
     ]
 
@@ -811,7 +812,6 @@ def checks():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     # # Construct the relative path to the CSV file
     csv_file_path = os.path.join(script_dir, '..', '..', 'data/rna_p_data.csv')
-    # csv_file_path = os.path.join(script_dir, r'..\..\data\rna_p_data.csv')
 
     #
     df = pd.read_csv(csv_file_path)
@@ -832,22 +832,22 @@ def checks():
 
     print("Running mae rna features paralel")
     st = time()
-    # not selected 45
-    result_df = make_rna_features_parallel(rna_seqs, selected_features=None)
+    # not selected 46
+    # result_df = make_rna_features_parallel(rna_seqs, selected_features=None)
     # selected took 21 secs
-    # result_df = make_rna_features_parallel(rna_seqs, selected_features=["mfe_seq_end_400_sl_III",
-    #                                                                     "base_pairing_centorid_gamma_range",
-    #                                                                     "mfe_seq_end_60_sl_IV",
-    #                                                                     "seq_end_483_62_390",
-    #                                                                     "seq_end_230_159_195",
-    #                                                                     "seq_end_60 mfe == centroid 23_42",
-    #                                                                     "bow_cnt_seq_end_52",
-    #                                                                     "bubble_cnt_seq_end_12",
-    #                                                                     "unpaired_cnt_seq_end_32",
-    #                                                                     "alpha_beta_match_seq_end_180",
-    #                                                                     "sl3_match_seq_end_60",
-    #                                                                     "alpha_beta_extended_match_seq_end_400",
-    #                                                                     "base_pairing_mfe_beta_range"])
+    result_df = make_rna_features_parallel(rna_seqs, selected_features=["mfe_seq_end_400_sl_III",
+                                                                        "base_pairing_centorid_gamma_range",
+                                                                        "mfe_seq_end_60_sl_IV",
+                                                                        "seq_end_483_62_390",
+                                                                        "seq_end_230_159_195",
+                                                                        "seq_end_60 mfe == centroid 23_42",
+                                                                        "bow_cnt_seq_end_50",
+                                                                        "bubble_cnt_seq_end_90",
+                                                                        "unpaired_cnt_window_0_70",
+                                                                        "alpha_beta_match_seq_end_180",
+                                                                        "sl3_match_seq_end_60",
+                                                                        "alpha_beta_extended_match_seq_end_400",
+                                                                        "base_pairing_mfe_beta_range"])
     et = time()
     print(f"Took: {et - st} seconds")   # Took: 58.083433628082275 seconds
     result_df.to_csv("par.csv")
