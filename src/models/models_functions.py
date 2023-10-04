@@ -47,7 +47,7 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, outliers=False):
 
     return X_train, X_test, y_train, y_test
 
-def estimate_pred(y_true, y_pred, name_of_model):
+def estimate_pred(y_true, y_pred, name_of_model, rna_type):
     r2 = r2_score(y_true, y_pred)
     print(f'R^2 value for {name_of_model}: {r2}')
     mae_score = mean_absolute_error(y_true, y_pred)
@@ -68,7 +68,7 @@ def estimate_pred(y_true, y_pred, name_of_model):
                        yref='paper', font=dict(size=15))
     fig.add_annotation(x=1, y=0.2, text=f'MAE={mae_score:.4f}', showarrow=False, xref='paper', yref='paper',
                        font=dict(size=15))
-    fig.update_layout(title=f'{name_of_model} evaluation')
+    fig.update_layout(title=f'{name_of_model} evaluation for RNA{rna_type}')
     with open(Path(FIGURES_PATH, f'{name_of_model} evaluation.html'), 'w') as f:
         f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
