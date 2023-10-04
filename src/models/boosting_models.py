@@ -80,7 +80,7 @@ def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: st
                 y=top_features,
                 orientation='h',
                 labels={'x': 'Feature Importance', 'y': 'Feature'},
-                title=f'{data_title} feature importance - XGBoost',
+                title=f'XGBoost Feature Importance {data_title}',
             )
 
             # Update the figure layout
@@ -91,7 +91,7 @@ def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: st
 
         elif model_name =='CatBoostRegressor' or model_name == 'RandomForest':
             feature_importance = model.feature_importances_
-            sorted_idx = np.argsort(feature_importance)
+            sorted_idx = np.flip(np.argsort(feature_importance))
             sorted_features = np.array(X_test.columns)[sorted_idx]
             sorted_importance = feature_importance[sorted_idx]
             fig = px.bar(
