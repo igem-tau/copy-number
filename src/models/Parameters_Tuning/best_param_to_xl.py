@@ -253,12 +253,12 @@ def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, 
 
         dump(best_params, Path(DATA_PATH, best_params_file_name), compress=True)
         if save_plots:
-            save_optuna_plots(study, model_name)
+            save_optuna_plots(study, model_name, rna_type)
 
     return best_params
 
 
-def save_optuna_plots(study, model_name):
+def save_optuna_plots(study, model_name, rna_type):
     importances = optuna.importance.get_param_importances(study)
     params_sorted = list(importances.keys())
 
@@ -270,7 +270,7 @@ def save_optuna_plots(study, model_name):
     fig6 = plot_optimization_history(study)
 
     with open(
-            Path(DATA_PATH, f'{get_current_date()}_{model_name}_pRNA_optuna_graphs.html'),
+            Path(DATA_PATH, f'{get_current_date()}_{model_name}_RNA{rna_type}_optuna_graphs.html'),
             'w') as f:
         f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))
