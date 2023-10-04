@@ -9,6 +9,9 @@ from src.models.boosting_models import run_trees_model
 import matplotlib.pyplot as plt
 from pathlib import Path
 from src.utils import get_current_file_parent_path
+import plotly.graph_objects as go
+import plotly.express as px
+
 
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
@@ -55,15 +58,19 @@ def estimate_pred(y_true, y_pred, name_of_model):
     print(f'spearman correlation value for {name_of_model}: {spearman}')
 
     # evaluation plot
-    f, ax = plt.subplots()
-    plt.scatter(y_true, y_pred)
-    plt.axline((0, 0), slope=1)
-    plt.xlabel('Actual values')
-    plt.ylabel('Predicted values')
-    plt.text(0.8, 0.1, 'pearson correlation=%.4f' % pearson, transform=ax.transAxes)
-    plt.text(0.8, 0.2, 'MAE=%.4f' % mae_score, transform=ax.transAxes)
-    plt.title(f'{name_of_model} evaluation')
-    plt.savefig(Path(FIGURES_PATH, f'{name_of_model} evaluation.jpg'))
+    # evaluation plot
+    fig = px.scatter(x=y_true, y=y_pred, labels={'x': 'Actual values (log scale)', 'y': 'Predicted values (log scale)'})
+    fig.add_trace(
+        go.Scatter(x=[min(y_true), max(y_true)], y=[min(y_true), max(y_true)], mode='lines', name='', showlegend=False))
+    fig.add_annotation(x=1, y=0.01, text=f'spearman correlation={spearman:.4f}', showarrow=False, xref='paper',
+                       yref='paper', font=dict(size=15))
+    fig.add_annotation(x=1, y=0.1, text=f'pearson correlation={pearson:.4f}', showarrow=False, xref='paper',
+                       yref='paper', font=dict(size=15))
+    fig.add_annotation(x=1, y=0.2, text=f'MAE={mae_score:.4f}', showarrow=False, xref='paper', yref='paper',
+                       font=dict(size=15))
+    fig.update_layout(title=f'{name_of_model} evaluation')
+    with open(Path(FIGURES_PATH, f'{name_of_model} evaluation.html'), 'w') as f:
+        f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
 
 def model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_test: pd.DataFrame, model_name: str, data_name: str, best_param=None, save_plots=False):

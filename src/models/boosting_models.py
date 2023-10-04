@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 from pathlib import Path
 from lightgbm import LGBMRegressor, plot_importance
 from scipy.stats import spearmanr
@@ -64,39 +66,75 @@ def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: st
 
     if save_plots:
         if model_name == 'XGBoost':
-            ax = xgb.plot_importance(model, max_num_features=20, title=f'{data_title} feature importance - XGBoost')
-            ax.figure.savefig(Path(FIGURES_PATH, f'XGBoost feature importance {data_title}.jpg'))
-        elif model_name =='CatBoostRegressor':
+            # Get feature importance from the XGBoost model
+            importance_dict = model.get_booster().get_fscore()
+            sorted_importance = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)
+
+            # Extract the top 20 features and their importance scores
+            top_features = [x[0] for x in sorted_importance[:20]]
+            top_importance = [x[1] for x in sorted_importance[:20]]
+
+            # Create a bar chart
+            fig = px.bar(
+                x=top_importance,
+                y=top_features,
+                orientation='h',
+                labels={'x': 'Feature Importance', 'y': 'Feature'},
+                title=f'{data_title} feature importance - XGBoost',
+            )
+
+            # Update the figure layout
+            fig.update_layout(width=800, height=400)
+            with open(Path(FIGURES_PATH, f'XGBoost feature importance {data_title}.html'), 'w') as f:
+                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+
+
+        elif model_name =='CatBoostRegressor' or model_name == 'RandomForest':
             feature_importance = model.feature_importances_
             sorted_idx = np.argsort(feature_importance)
-            fig = plt.figure(figsize=(12, 6))
-            plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
-            plt.yticks(range(len(sorted_idx)), np.array(X_test.columns)[sorted_idx])
-            plt.title('Feature Importance')
-            plt.savefig(Path(FIGURES_PATH, f'CatBoost feature importance {data_title}.jpg'))
-        elif model_name == 'RandomForest':
-            feature_importance = model.feature_importances_
-            sorted_idx = np.argsort(feature_importance)
-            fig = plt.figure(figsize=(12, 6))
-            plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
-            plt.yticks(range(len(sorted_idx)), np.array(X_test.columns)[sorted_idx])
-            plt.title('Feature Importance')
-            plt.savefig(Path(FIGURES_PATH, f'Random Forest feature importance {data_title}.jpg'))
+            sorted_features = np.array(X_test.columns)[sorted_idx]
+            sorted_importance = feature_importance[sorted_idx]
+            fig = px.bar(
+                x=sorted_importance,
+                y=sorted_features,
+                orientation='h',
+                labels={'x': 'Feature Importance', 'y': 'Feature'},
+                title=f'{model_name} Feature Importance {data_title}',
+            )
+            fig.update_layout(width=800, height=400)
+            with open(Path(FIGURES_PATH, f'{model_name} Feature Importance {data_title}.html'), 'w') as f:
+                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+
+
         elif model_name =='LGBMRegressor':
-            ax = plot_importance(model, max_num_features=20,
-                                 title=f'{data_title} feature importance - LGBMRegressor')
-            ax.figure.savefig(Path(FIGURES_PATH, f'LGBMRegressor feature importance {data_title}.jpg'))
+            importance_dict = model.feature_importances_
+            sorted_importance = sorted(enumerate(importance_dict), key=lambda x: x[1], reverse=True)
+            top_indices = [x[0] for x in sorted_importance[:20]]
+            top_features = [X_test.columns[i] for i in top_indices]
+            top_importance = [x[1] for x in sorted_importance[:20]]
+            fig = px.bar(
+                x=top_importance,
+                y=top_features,
+                orientation='h',
+                labels={'x': 'Feature Importance', 'y': 'Feature'},
+                title=f'LGBMRegressor Feature Importance {data_title}',
+            )
+            fig.update_layout(width=800, height=400)
+            with open(Path(FIGURES_PATH, f'LGBMRegressor Feature Importance {data_title}.html'), 'w') as f:
+                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+
 
         # evaluation plot
-        f, ax = plt.subplots()
-        plt.scatter(y_test, y_pred)
-        plt.axline((0, 0), slope=1)
-        plt.xlabel('Actual values')
-        plt.ylabel('Predicted values')
-        plt.text(0.8, 0.1, 'pearson correlation=%.4f' % pearson, transform=ax.transAxes)
-        plt.text(0.8, 0.2, 'MAE=%.4f' % mae_score, transform=ax.transAxes)
-        plt.title(f'{model_name} - {data_title}')
-        if save_plots:
-            plt.savefig(Path(FIGURES_PATH, f'{model_name} evaluation {data_title}.jpg'))
+        fig = px.scatter(x=y_test, y=y_pred, labels={'x': 'Actual values (log scale)', 'y': 'Predicted values (log scale)'})
+        fig.add_trace(
+            go.Scatter(x=[min(y_test), max(y_test)], y=[min(y_test), max(y_test)], mode='lines', name='', showlegend=False))
+        fig.add_annotation(x=1, y=0.01, text=f'spearman correlation={spearman:.4f}', showarrow=False, xref='paper',
+                           yref='paper', font=dict(size=15))
+        fig.add_annotation(x=1, y=0.1, text=f'pearson correlation={pearson:.4f}', showarrow=False, xref='paper',
+                           yref='paper' ,font=dict(size=15))
+        fig.add_annotation(x=1, y=0.2, text=f'MAE={mae_score:.4f}', showarrow=False, xref='paper', yref='paper',font=dict(size=15))
+        fig.update_layout(title=f'{model_name} - {data_title}')
+        with open(Path(FIGURES_PATH, f'{model_name} evaluation {data_title}.html'), 'w') as f:
+            f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
     return model, r2, mae_score, pearson, spearman, y_pred
