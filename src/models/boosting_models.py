@@ -65,64 +65,21 @@ def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: st
     print(f'spearman correlation value for {model_name}: {spearman}')
 
     if save_plots:
-        if model_name == 'XGBoost':
-            # Get feature importance from the XGBoost model
-            importance_dict = model.get_booster().get_fscore()
-            sorted_importance = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)
-
-            # Extract the top 20 features and their importance scores
-            top_features = [x[0] for x in sorted_importance[:20]]
-            top_importance = [x[1] for x in sorted_importance[:20]]
-
-            # Create a bar chart
-            fig = px.bar(
-                x=top_importance,
-                y=top_features,
-                orientation='h',
-                labels={'x': 'Feature Importance', 'y': 'Feature'},
-                title=f'XGBoost Feature Importance {data_title}',
-            )
-
-            # Update the figure layout
-            fig.update_layout(width=800, height=400)
-            with open(Path(FIGURES_PATH, f'XGBoost feature importance {data_title}.html'), 'w') as f:
-                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
-
-
-        elif model_name =='CatBoostRegressor' or model_name == 'RandomForest':
-            feature_importance = model.feature_importances_
-            sorted_idx = np.flip(np.argsort(feature_importance))
-            sorted_features = np.array(X_test.columns)[sorted_idx]
-            sorted_importance = feature_importance[sorted_idx]
-            fig = px.bar(
-                x=sorted_importance,
-                y=sorted_features,
-                orientation='h',
-                labels={'x': 'Feature Importance', 'y': 'Feature'},
-                title=f'{model_name} Feature Importance {data_title}',
-            )
-            fig.update_layout(width=800, height=400)
-            with open(Path(FIGURES_PATH, f'{model_name} Feature Importance {data_title}.html'), 'w') as f:
-                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
-
-
-        elif model_name =='LGBMRegressor':
-            importance_dict = model.feature_importances_
-            sorted_importance = sorted(enumerate(importance_dict), key=lambda x: x[1], reverse=True)
-            top_indices = [x[0] for x in sorted_importance[:20]]
-            top_features = [X_test.columns[i] for i in top_indices]
-            top_importance = [x[1] for x in sorted_importance[:20]]
-            fig = px.bar(
-                x=top_importance,
-                y=top_features,
-                orientation='h',
-                labels={'x': 'Feature Importance', 'y': 'Feature'},
-                title=f'LGBMRegressor Feature Importance {data_title}',
-            )
-            fig.update_layout(width=800, height=400)
-            with open(Path(FIGURES_PATH, f'LGBMRegressor Feature Importance {data_title}.html'), 'w') as f:
-                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
-
+        # feature importance
+        feature_importance = model.feature_importances_
+        sorted_idx = np.flip(np.argsort(feature_importance))
+        sorted_features = np.array(X_test.columns)[sorted_idx]
+        sorted_importance = feature_importance[sorted_idx]
+        fig = px.bar(
+            x=sorted_importance,
+            y=sorted_features,
+            orientation='h',
+            labels={'x': 'Feature Importance', 'y': 'Feature'},
+            title=f'{model_name} Feature Importance {data_title}',
+        )
+        fig.update_layout(width=800, height=400)
+        with open(Path(FIGURES_PATH, f'{model_name} Feature Importance {data_title}.html'), 'w') as f:
+            f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
         # evaluation plot
         fig = px.scatter(x=y_test, y=y_pred, labels={'x': 'Actual values (log scale)', 'y': 'Predicted values (log scale)'})
