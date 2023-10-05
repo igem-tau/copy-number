@@ -1,4 +1,5 @@
 import os
+import re
 import pandas as pd
 from pathlib import Path
 from joblib import load, dump
@@ -34,22 +35,16 @@ def run_pipeline(rna_type: str):
 
     # Feature and model selection
     param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
-    models = ['XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
+    models = ['XGBoost', 'CatBoostRegressor',  'LGBMRegressor', 'RandomForest']
 
     total_pred = []
     final_predicted_dfs = []
     for cur_model_name in models:
-        RNA_selected_features_data = feature_selection(RNA_X_train_features, RNA_y_train, param_dict, cur_model_name,
-                                                       rna_type)
-        RNA_selected_features = RNA_selected_features_data['selected_features']
+        RNA_selected_features = feature_selection(RNA_X_train_features, RNA_y_train, param_dict, cur_model_name, rna_type)
 
-        # Data by selected features
         RNA_FS_train = RNA_X_train_features[RNA_selected_features]
         RNA_FS_val = RNA_X_val_features[RNA_selected_features]
         RNA_FS_test = RNA_X_test_features[RNA_selected_features]
-
-        # Exploratory Data Analysis (EDA)
-        # exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
 
         # Hyperparameters tuning
         Best_params = get_best_param_optuna(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, cur_model_name, rna_type)
@@ -61,13 +56,15 @@ def run_pipeline(rna_type: str):
         RNA_train_val_y = pd.concat([RNA_y_train, RNA_y_val])
         trained_model, r2, mae_score, pearson, spearman, y_pred = model(RNA_FS_train_val_X, RNA_FS_test,
                                                                         RNA_train_val_y, RNA_y_test,
-                                                                        cur_model_name, f'RNA{rna_type}', Best_params,
+                                                       cur_model_name, f'RNA{rna_type}', Best_params,
                                                                         save_plots=True)
         total_pred.append(y_pred)
 
+        # Exploratory Data Analysis (EDA)
+        # exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
+
         # Generate sequences and calculate features
         generated_RNA_df = sequence_df_generator(rna_type=rna_type)
-
         # Generate selected features
         all_seqs_selected_features = pd.DataFrame()
         all_seqs_features_file_path = Path(DATA_PATH, f'RNA{rna_type[0]}_all_sequences_features.joblib')
@@ -121,12 +118,12 @@ def run_pipeline(rna_type: str):
 
     # TODO: combine the two models prediction
     final_pred = np.array(total_pred).mean(axis=0)
-    estimate_pred(RNA_y_test, final_pred, 'voting model')
+    estimate_pred(RNA_y_test, final_pred, 'voting model', rna_type = rna_type)
 
     # final_predicted_df
 
 
 if __name__ == '__main__':
-    # run_pipeline(rna_type='p')
-    run_pipeline(rna_type='i')
+    run_pipeline(rna_type='p')
+    # run_pipeline(rna_type='i')
     # run_pipeline(rna_type='i_w_folding')
