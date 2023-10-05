@@ -3,7 +3,7 @@ from src.features.rna_structure import get_avg_mfe_per_position, \
 
 from src.rna_p.data_prep import load_data, get_wild_type
 from src.data_prep.pre_process import get_RNAi_prom_RNAp
-from src.features.rna_structure import make_rna_features
+from src.features.rna_structure import make_rna_features_parallel
 
 from sklearn.model_selection import train_test_split
 from src.models.models_functions import model
