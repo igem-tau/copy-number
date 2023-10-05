@@ -71,6 +71,8 @@ def run_pipeline(rna_type: str):
         # Exploratory Data Analysis (EDA)
         # exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
 
+        # Generate sequences and calculate features
+        generated_RNA_df = sequence_df_generator(rna_type=rna_type)
         # Generate selected features
         RNA_train_val_data = pd.concat(
             (pd.concat((RNA_X_train_features, RNA_X_val_features)), pd.concat((RNA_y_train, RNA_y_val))),
