@@ -83,7 +83,7 @@ if __name__ == '__main__': #TODO- use correct files for both rnai rnap
     hparam_path = Path(DATA_PATH, f'RNA{rna_type}_best_params_XGBoost.joblib')
     selected_features = load(Path(DATA_PATH, f'RNA{rna_type}_XGBoost_Selected_Features.joblib'))['selected_features']
 
-    data =load(r'C:\Users\Dell\PycharmProjects\pythonProject\copy-number\data\RNAp_DataFrame_with_features.joblib')#get_features_df(rna_type=rna_type)
+    data =get_features_df(rna_type=rna_type)
 
     RNA_X_train_features = data[f'RNA{rna_type}_X_train'][selected_features]
     RNA_y_train = data[f'RNA{rna_type}_y_train']
