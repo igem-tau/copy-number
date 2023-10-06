@@ -1,4 +1,6 @@
 import os
+import re
+
 import pandas as pd
 from pathlib import Path
 from src.analysis.EDA import exploratory_data_analysis
@@ -14,6 +16,9 @@ import numpy as np
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 
+import warnings
+
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 def run_pipeline(rna_type: str):
     # Load the data features if exists, write if it doesn't
@@ -33,14 +38,19 @@ def run_pipeline(rna_type: str):
 
 
     # Feature and model selection
-    param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
+    # param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
     models = ['XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
-
+    param_dict = {}
     total_pred = []
     final_predicted_dfs = []
     for cur_model_name in models:
         RNA_selected_features_data = feature_selection(RNA_X_train_features, RNA_y_train, param_dict, cur_model_name, rna_type)
         RNA_selected_features = RNA_selected_features_data['selected_features']
+
+        if model == 'LGBMRegressor':
+            RNA_X_train_features = RNA_X_train_features.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+            RNA_X_val_features = RNA_X_val_features.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+            RNA_X_test_features = RNA_X_test_features.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 
         # Data by selected features
         RNA_FS_train = RNA_X_train_features[RNA_selected_features]
@@ -108,6 +118,7 @@ def run_pipeline(rna_type: str):
 
 
 if __name__ == '__main__':
+
     # run_pipeline(rna_type='p')
-    run_pipeline(rna_type='i')
-    # run_pipeline(rna_type='i_w_folding')
+    # run_pipeline(rna_type='i')
+    run_pipeline(rna_type='i_w_folding')
