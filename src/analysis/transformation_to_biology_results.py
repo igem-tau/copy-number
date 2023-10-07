@@ -74,6 +74,8 @@ if __name__ == '__main__':
         pd.DataFrame(
             {'x': concat_qpcr[RAW_PCN_COLUMN_NAME], 'y': concat_qpcr[TARGET_PCN_COLUMN_NAME], 'type': 'qPCR'})), axis=0)
 
+    raw_target_pcn_df = raw_target_pcn_df.query('x < 25')
+
     fig = scatter_plot_raw_target(raw_target_pcn_df)
 
     option_1_popt, _ = curve_fit(fit_func_option_1, raw_target_pcn_df['x'], raw_target_pcn_df['y'])
@@ -83,7 +85,6 @@ if __name__ == '__main__':
 
     option_5_z = np.polyfit(raw_target_pcn_df['x'], raw_target_pcn_df['y'], 3)
     fit_func_option_5 = np.poly1d(option_5_z)
-
 
     x_space = pd.Series(np.linspace(raw_target_pcn_df['x'].min(), raw_target_pcn_df['x'].max(), 1000))
     fig.add_trace(go.Scatter(x=x_space,
