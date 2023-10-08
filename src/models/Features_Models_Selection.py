@@ -187,6 +187,7 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
                                  columns=['Algorithm', 'pearson_train', 'pearson_val', 'mae_train', 'mae_val'])
         X_train_scaled, X_val_scaled = scale(X_train, X_val)
         params_dict = {}
+        max_trials_per_optimization_cycle = 10
         for model_name in tqdm(model_names):
             study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
@@ -200,21 +201,14 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
                 study.add_trials(last_study.trials)
 
             num_trials_left = min(0, trials[model_name] - len(study.trials))
-            if num_trials_left > 0:
+            while num_trials_left > 0:
+                current_num_trials = min(num_trials_left, max_trials_per_optimization_cycle)
                 study.optimize(
                     partial(objective, X_train=X_train_scaled, y_train=y_train, X_val=X_val_scaled, y_val=y_val,
                             regressor=model_name),
-                    n_trials=num_trials_left)
+                    n_trials=current_num_trials)
                 dump(study, Path(DATA_PATH, study_file_name), compress=True)
-
-            if model_name == 'CatBoostRegressor':
-                for i in range(9):
-                    print(i)
-                    dump(study, Path(DATA_PATH, study_file_name), compress=True)
-                    study.optimize(
-                        partial(objective, X_train=X_train_scaled, y_train=y_train, X_val=X_val_scaled, y_val=y_val,
-                                regressor=model_name),
-                        n_trials=trials[model_name])
+                num_trials_left -= current_num_trials
 
             params = study.best_trial.params
             params_dict[model_name] = params

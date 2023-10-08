@@ -229,31 +229,47 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
 
 def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, save_plots=True):
     best_params_file_name = f'RNA{rna_type}_best_params_{model_name}.joblib'
-    if Path(DATA_PATH, best_params_file_name).exists():
-        best_params = load(Path(DATA_PATH, best_params_file_name))
-    else:
-        print(f'Running: optuna for {model_name}')
+    best_params_file_path = Path(DATA_PATH, best_params_file_name)
+    best_params_study_file_name = f'RNA{rna_type}_best_params_study_{model_name}.joblib'
+    best_params_study_file_path = Path(DATA_PATH, best_params_study_file_name)
+    num_trials = 200
+    max_trials_per_optimization_cycle = 10
 
-        study = optuna.create_study(direction='maximize')
+    if best_params_file_path.exists():
+        best_params = load(best_params_file_path)
+        return best_params
+
+    study = optuna.create_study(direction='maximize')
+    if best_params_study_file_path.exists():
+        last_study = load(best_params_study_file_path)
+        study.add_trials(last_study.trials)
+
+    num_trials_left = min(0, num_trials - len(study.trials))
+    print(f'Running: optuna for {model_name}, {num_trials_left} trials left')
+    while num_trials_left > 0:
+        current_num_trials = min(num_trials_left, max_trials_per_optimization_cycle)
         study.optimize(
             partial(objective, X_train=X_train, X_val=X_val, y_train=y_train, y_val=y_val, model_name=model_name),
-            n_trials=200)
-        best_params = study.best_params
-        if model_name == 'XGBoost':
-            best_params['n_estimators'] = int(study.best_trial.user_attrs['callbacks'] * 1.1)
+            n_trials=current_num_trials)
+        dump(study, best_params_study_file_path, compress=True)
+        num_trials_left -= current_num_trials
 
-        print('Number of finished trials: ', len(study.trials))
-        print('Best trial:')
-        trial = study.best_trial
+    best_params = study.best_params
+    if model_name == 'XGBoost':
+        best_params['n_estimators'] = int(study.best_trial.user_attrs['callbacks'] * 1.1)
 
-        print('  Value: {}'.format(trial.value))
-        print('  Params: ')
-        for key, value in trial.params.items():
-            print('    {}: {}'.format(key, value))
+    print('Number of finished trials: ', len(study.trials))
+    print('Best trial:')
+    trial = study.best_trial
 
-        dump(best_params, Path(DATA_PATH, best_params_file_name), compress=True)
-        if save_plots:
-            save_optuna_plots(study, model_name, rna_type)
+    print('  Value: {}'.format(trial.value))
+    print('  Params: ')
+    for key, value in trial.params.items():
+        print('    {}: {}'.format(key, value))
+
+    dump(best_params, Path(DATA_PATH, best_params_file_name), compress=True)
+    if save_plots:
+        save_optuna_plots(study, model_name, rna_type)
 
     return best_params
 
