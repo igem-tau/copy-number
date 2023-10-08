@@ -190,16 +190,22 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
         for model_name in tqdm(model_names):
             study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
-            trails = {'Ridge': 200, 'Lasso': 200, 'ElasticNet': 200, 'LGBMRegressor': 200,
-                      'XGBoost': 100,
-                      'CatBoostRegressor': 10, 'NN': 100, 'RandomForest': 200}
+            trials = {'Ridge': 200, 'Lasso': 200, 'ElasticNet': 200, 'LGBMRegressor': 200,
+                      'XGBoost': 200,
+                      'CatBoostRegressor': 100, 'NN': 100, 'RandomForest': 200}
+
             study = optuna.create_study(direction='maximize')
             if Path(DATA_PATH, study_file_name).exists():
                 last_study = load(Path(DATA_PATH, study_file_name))
                 study.add_trials(last_study.trials)
-            study.optimize(partial(objective, X_train=X_train_scaled, y_train=y_train, X_val=X_val_scaled, y_val=y_val,
-                                   regressor=model_name),
-                           n_trials=trails[model_name])
+
+            num_trials_left = min(0, trials[model_name] - len(study.trials))
+            if num_trials_left > 0:
+                study.optimize(
+                    partial(objective, X_train=X_train_scaled, y_train=y_train, X_val=X_val_scaled, y_val=y_val,
+                            regressor=model_name),
+                    n_trials=num_trials_left)
+                dump(study, Path(DATA_PATH, study_file_name), compress=True)
 
             if model_name == 'CatBoostRegressor':
                 for i in range(9):
@@ -208,11 +214,10 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
                     study.optimize(
                         partial(objective, X_train=X_train_scaled, y_train=y_train, X_val=X_val_scaled, y_val=y_val,
                                 regressor=model_name),
-                        n_trials=trails[model_name])
+                        n_trials=trials[model_name])
 
             params = study.best_trial.params
             params_dict[model_name] = params
-            dump(study, Path(DATA_PATH, study_file_name), compress=True)
 
             model_name, pearson_train, pearson_val, mae_train, mae_val, _, _, _, _ = make_model(X_train, X_val, y_train,
                                                                                                 y_val, model_name,
