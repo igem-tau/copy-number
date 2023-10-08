@@ -368,7 +368,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
 
         # Return Values :
         features = eboruta.features_
-        features_to_accept = features.accepted
+        features_to_accept = list(features.accepted)
 
         if model == 'LGBMRegressor':
             original_columns = pd.Series(RNA_X.columns)
