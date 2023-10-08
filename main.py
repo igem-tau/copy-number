@@ -34,12 +34,13 @@ def run_pipeline(rna_type: str):
 
     # Feature and model selection
     param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
-    models = ['XGBoost', 'CatBoostRegressor',  'LGBMRegressor', 'RandomForest']
+    models = ['XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
 
     total_pred = []
     final_predicted_dfs = []
     for cur_model_name in models:
-        RNA_selected_features = feature_selection(RNA_X_train_features, RNA_y_train, param_dict, cur_model_name, rna_type)
+        RNA_selected_features = feature_selection(RNA_X_train_features, RNA_y_train, param_dict, cur_model_name,
+                                                  rna_type)
 
         RNA_FS_train = RNA_X_train_features[RNA_selected_features]
         RNA_FS_val = RNA_X_val_features[RNA_selected_features]
@@ -55,7 +56,7 @@ def run_pipeline(rna_type: str):
         RNA_train_val_y = pd.concat([RNA_y_train, RNA_y_val])
         trained_model, r2, mae_score, pearson, spearman, y_pred = model(RNA_FS_train_val_X, RNA_FS_test,
                                                                         RNA_train_val_y, RNA_y_test,
-                                                       cur_model_name, f'RNA{rna_type}', Best_params,
+                                                                        cur_model_name, f'RNA{rna_type}', Best_params,
                                                                         save_plots=True)
         total_pred.append(y_pred)
 
@@ -80,7 +81,8 @@ def run_pipeline(rna_type: str):
             )
             # cp is False because RNA_y should be None because we need to predict the copy number
             RNA_train_val_data_seq = pd.concat([RNA_train_val_data.reset_index(drop=True),
-                                                RNA_train_val_seq['Promoter Sequence (-35 to +1)'].reset_index(drop=True)],
+                                                RNA_train_val_seq['Promoter Sequence (-35 to +1)'].reset_index(
+                                                    drop=True)],
                                                axis=1)
             all_seqs_additional_selected_features, _ = generate_features(generated_RNA_df, rna_type=rna_type,
                                                                          reference_RNA_data=RNA_train_val_data_seq,
@@ -108,12 +110,18 @@ def run_pipeline(rna_type: str):
         final_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_{cur_model_name}.csv', index=False)
 
         # save models
-        trained_model.save_model(
-            os.path.join(
+        try:
+            model_path = Path(
                 DATA_PATH,
                 f'{get_current_date()}_{cur_model_name}_RNA{rna_type}_model.json'
             )
-        )
+            trained_model.save_model(model_path)
+        except AttributeError:
+            model_path = Path(
+                DATA_PATH,
+                f'{get_current_date()}_{cur_model_name}_RNA{rna_type}_model.joblib'
+            )
+            dump(trained_model, model_path, compress=True)
 
     # TODO: combine the two models prediction
     final_pred = np.array(total_pred).mean(axis=0)
