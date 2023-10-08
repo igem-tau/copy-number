@@ -110,17 +110,14 @@ def run_pipeline(rna_type: str):
         final_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_{cur_model_name}.csv', index=False)
 
         # save models
+        model_file_name = f'{get_current_date()}_{cur_model_name}_RNA{rna_type}_model'
         try:
-            model_path = Path(
-                DATA_PATH,
-                f'{get_current_date()}_{cur_model_name}_RNA{rna_type}_model.json'
-            )
+            model_file_name += '.json'
+            model_path = Path(DATA_PATH, model_file_name)
             trained_model.save_model(model_path)
         except AttributeError:
-            model_path = Path(
-                DATA_PATH,
-                f'{get_current_date()}_{cur_model_name}_RNA{rna_type}_model.joblib'
-            )
+            model_file_name += '.joblib'
+            model_path = Path(DATA_PATH, model_file_name)
             dump(trained_model, model_path, compress=True)
 
     # TODO: combine the two models prediction
