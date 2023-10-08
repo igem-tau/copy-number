@@ -1,6 +1,4 @@
 import os
-import re
-
 import pandas as pd
 from pathlib import Path
 from src.analysis.EDA import exploratory_data_analysis
@@ -19,7 +17,7 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 
 def run_pipeline(rna_type: str):
     # Load the data features if exists, write if it doesn't
-    RNA_TYPE_CONST['RNA'] = rna_type
+    RNA_TYPE_CONST['RNA'] = rna_type[0]
     data = get_features_df(rna_type=rna_type)
 
     RNA_X_train_features = data[f'RNA{rna_type}_X_train']
@@ -101,12 +99,13 @@ def run_pipeline(rna_type: str):
 
     # TODO: combine the two models prediction
     final_pred = np.array(total_pred).mean(axis=0)
-    estimate_pred(RNA_y_test, final_pred, 'voting model', rna_type = rna_type)
+    estimate_pred(RNA_y_test, final_pred, 'voting model', rna_type=rna_type)
 
     # final_predicted_df
 
 
 if __name__ == '__main__':
-    run_pipeline(rna_type='p')
+    # run_pipeline(rna_type='p')
+    run_pipeline(rna_type='p_fitted')
     # run_pipeline(rna_type='i')
     # run_pipeline(rna_type='i_w_folding')
