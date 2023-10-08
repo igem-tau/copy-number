@@ -244,7 +244,7 @@ def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, 
         last_study = load(best_params_study_file_path)
         study.add_trials(last_study.trials)
 
-    num_trials_left = min(0, num_trials - len(study.trials))
+    num_trials_left = max(0, num_trials - len(study.trials))
     print(f'Running: optuna for {model_name}, {num_trials_left} trials left')
     while num_trials_left > 0:
         current_num_trials = min(num_trials_left, max_trials_per_optimization_cycle)

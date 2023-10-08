@@ -200,7 +200,7 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
                 last_study = load(Path(DATA_PATH, study_file_name))
                 study.add_trials(last_study.trials)
 
-            num_trials_left = min(0, trials[model_name] - len(study.trials))
+            num_trials_left = max(0, trials[model_name] - len(study.trials))
             while num_trials_left > 0:
                 current_num_trials = min(num_trials_left, max_trials_per_optimization_cycle)
                 study.optimize(
