@@ -36,6 +36,9 @@ def run_pipeline(rna_type: str):
     param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
     models = ['XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
 
+    # Generate sequences and calculate features
+    generated_RNA_df = sequence_df_generator(rna_type=rna_type)
+
     total_pred = []
     final_predicted_dfs = []
     for cur_model_name in models:
@@ -63,8 +66,6 @@ def run_pipeline(rna_type: str):
         # Exploratory Data Analysis (EDA)
         # exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
 
-        # Generate sequences and calculate features
-        generated_RNA_df = sequence_df_generator(rna_type=rna_type)
         # Generate selected features
         all_seqs_selected_features = pd.DataFrame()
         all_seqs_features_file_path = Path(DATA_PATH, f'RNA{rna_type[0]}_all_sequences_features.joblib')
@@ -102,12 +103,15 @@ def run_pipeline(rna_type: str):
 
         if TARGET_COLUMN == 'Raw Copy Number':
             final_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
-                pd.DataFrame({'Copy Number': np.exp(y_pred)}))
-        else:
+                pd.DataFrame({'Copy Number': y_pred if rna_type == 'p_fitted' else np.exp(y_pred)}))
+        elif TARGET_COLUMN == 'Copy Number':
             final_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
                 pd.DataFrame({'Copy Number': y_pred}))
-        final_predicted_dfs.append(final_predicted_df)
+        else:
+            raise ValueError('main: TARGET_COLUMN must be one of the following values: "Copy Number" or "Raw Copy Number"')
+
         final_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_{cur_model_name}.csv', index=False)
+        final_predicted_dfs.append(final_predicted_df)
 
         # save models
         model_file_name = f'{get_current_date()}_{cur_model_name}_RNA{rna_type}_model'
@@ -125,6 +129,10 @@ def run_pipeline(rna_type: str):
     estimate_pred(RNA_y_test, final_pred, 'voting model', rna_type=rna_type)
 
     # final_predicted_df
+    all_seq_voting_pred = pd.concat([df['Copy Number'] for df in final_predicted_dfs], axis=1).mean(axis=1)
+    final_voting_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
+                pd.DataFrame({'Copy Number': all_seq_voting_pred}))
+    final_voting_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_voting.csv', index=False)
 
 
 if __name__ == '__main__':
