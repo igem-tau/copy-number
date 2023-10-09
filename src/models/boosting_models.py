@@ -5,10 +5,7 @@ from pathlib import Path
 from lightgbm import LGBMRegressor, plot_importance
 from scipy.stats import spearmanr
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.inspection import permutation_importance
 from sklearn.metrics import r2_score, mean_absolute_error
-from sklearn.neural_network import MLPRegressor
-
 from src.utils import get_current_file_parent_path
 from typing import Optional
 import warnings
@@ -52,15 +49,9 @@ def run_model(model_name, X_train, X_test, y_train, y_test, data_title: str = No
         else:
             model = LGBMRegressor(random_state=RANDOM_STATE)
 
-    elif model_name == 'NN':
-        if Best_param is not None:
-            model = MLPRegressor(**Best_param, random_state=RANDOM_STATE)
-        else:
-            model = MLPRegressor(random_state=RANDOM_STATE)
-
     else:
         raise ValueError(
-            'models: models accepts only the following values: "NN", "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "Random Forest"')
+            'models: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "Random Forest"')
 
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
@@ -76,12 +67,7 @@ def run_model(model_name, X_train, X_test, y_train, y_test, data_title: str = No
 
     if save_plots:
         # feature importance
-        if model_name == 'NN':
-            r = permutation_importance(model, X_test, y_test, n_repeats=50, random_state=RANDOM_STATE)
-            feature_importance = r.importances_mean
-        else:
-            feature_importance = model.feature_importances_
-
+        feature_importance = model.feature_importances_
         sorted_idx = np.flip(np.argsort(feature_importance))
         sorted_features = np.array(X_test.columns)[sorted_idx]
         sorted_importance = feature_importance[sorted_idx]

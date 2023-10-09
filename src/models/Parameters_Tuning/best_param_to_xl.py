@@ -181,10 +181,6 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
         regressor_obj.fit(X_train, y_train)
         y_pred = regressor_obj.predict(X_val)
 
-    elif model_name == 'NN':
-        regressor_obj.fit(X_train, y_train)
-        y_pred = regressor_obj.predict(X_val)
-
     else:
         raise ValueError(
             'hyperparameters tuning with optuna: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "Random Forest"')

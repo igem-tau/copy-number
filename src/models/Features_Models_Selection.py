@@ -1,7 +1,4 @@
 import re
-
-from sklearn.inspection import permutation_importance
-
 from src.consts import RANDOM_STATE
 from functools import partial
 from tqdm import tqdm
@@ -372,14 +369,12 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
             print('Running: Random Forest for feature selection using eboruta')
         elif model == 'LGBMRegressor':
             estimator = LGBMRegressor(**param_dict[model], random_state=RANDOM_STATE)
-        elif model == 'NN':
-            estimator = MLPRegressor(**param_dict[model], random_state=RANDOM_STATE)
         else:
             raise ValueError(
-                'feature_selection: models accepts only the following values: "NN", "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
+                'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
 
-        importance_getter = get_features_importance_wrapper(rna_type) if model in ['NN', 'CatBoostRegressor', 'LGBMRegressor'] else None
-        eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=False,
+        importance_getter = get_features_importance(rna_type) if model in ['CatBoostRegressor', 'LGBMRegressor'] else None
+        eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=True,
                           importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
         # Return Values :
@@ -397,21 +392,9 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
     return features_to_accept
 
 
-def get_features_importance_wrapper(rna_type):
-    def get_features_importance(model):
-        if isinstance(model, CatBoostRegressor) or isinstance(model, LGBMRegressor):
-            feature_importance = model.feature_importances_
-        elif isinstance(model, MLPRegressor):
-            filename = f'RNA{rna_type}_DataFrame_with_features.joblib'
-            data = load(filename)
-            X_val = data[f'RNA{rna_type}_X_val']
-            y_val = data[f'RNA{rna_type}_y_val']
-            r = permutation_importance(model, X_val, y_val, n_repeats=50, random_state=RANDOM_STATE)
-            feature_importance = r.importances_mean
-        else:
-            raise ValueError('wrong model instance')
-        return feature_importance
-    return get_features_importance
+def get_features_importance(model):
+    if isinstance(model, CatBoostRegressor) or isinstance(model, LGBMRegressor):
+        return model.feature_importances_
 
 
 
