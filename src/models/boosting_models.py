@@ -6,6 +6,8 @@ from lightgbm import LGBMRegressor, plot_importance
 from scipy.stats import spearmanr
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_absolute_error
+from sklearn.neural_network import MLPRegressor
+
 from src.utils import get_current_file_parent_path
 from typing import Optional
 import warnings
@@ -21,7 +23,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 
-def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: str = None, Best_param: Optional[dict] = None,
+def run_model(model_name, X_train, X_test, y_train, y_test, data_title: str = None, Best_param: Optional[dict] = None,
                 save_plots: bool = False):
     if model_name == 'XGBoost':
         Best_param.pop('callbacks', None)
@@ -49,9 +51,15 @@ def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: st
         else:
             model = LGBMRegressor(random_state=RANDOM_STATE)
 
+    elif model_name == 'NN':
+        if Best_param is not None:
+            model = MLPRegressor(**Best_param, random_state=RANDOM_STATE)
+        else:
+            model = MLPRegressor(random_state=RANDOM_STATE)
+
     else:
         raise ValueError(
-            'models: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "Random Forest"')
+            'models: models accepts only the following values: "NN", "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "Random Forest"')
 
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
@@ -66,21 +74,24 @@ def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: st
     print(f'spearman correlation value for {model_name}: {spearman}')
 
     if save_plots:
-        # feature importance
-        feature_importance = model.feature_importances_
-        sorted_idx = np.flip(np.argsort(feature_importance))
-        sorted_features = np.array(X_test.columns)[sorted_idx]
-        sorted_importance = feature_importance[sorted_idx]
-        fig = px.bar(
-            x=sorted_importance,
-            y=sorted_features,
-            orientation='h',
-            labels={'x': 'Feature Importance', 'y': 'Feature'},
-            title=f'{model_name} Feature Importance {data_title}',
-        )
-        fig.update_layout(width=800, height=400)
-        with open(Path(FIGURES_PATH, f'{model_name} Feature Importance {data_title}.html'), 'w') as f:
-            f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+        if model_name == 'NN':
+            pass
+        else:
+            # feature importance
+            feature_importance = model.feature_importances_
+            sorted_idx = np.flip(np.argsort(feature_importance))
+            sorted_features = np.array(X_test.columns)[sorted_idx]
+            sorted_importance = feature_importance[sorted_idx]
+            fig = px.bar(
+                x=sorted_importance,
+                y=sorted_features,
+                orientation='h',
+                labels={'x': 'Feature Importance', 'y': 'Feature'},
+                title=f'{model_name} Feature Importance {data_title}',
+            )
+            fig.update_layout(width=800, height=400)
+            with open(Path(FIGURES_PATH, f'{model_name} Feature Importance {data_title}.html'), 'w') as f:
+                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
         # evaluation plot
         fig = px.scatter(x=y_test, y=y_pred, labels={'x': 'Actual values (log scale)', 'y': 'Predicted values (log scale)'})

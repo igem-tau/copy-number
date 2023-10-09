@@ -362,12 +362,15 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
             print('Running: Random Forest for feature selection using eboruta')
         elif model == 'LGBMRegressor':
             estimator = LGBMRegressor(**param_dict[model], random_state=RANDOM_STATE)
+        elif model == 'NN':
+            estimator = MLPRegressor(**param_dict[model], random_state=RANDOM_STATE)
         else:
             raise ValueError(
-                'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
+                'feature_selection: models accepts only the following values: "NN", "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
 
+        shap_approximate = False if model == 'NN' else True
         importance_getter = get_features_importance if model in ['CatBoostRegressor', 'LGBMRegressor'] else None
-        eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=True,
+        eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=shap_approximate,
                           importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
         # Return Values :
@@ -388,3 +391,6 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
 def get_features_importance(model):
     if isinstance(model, CatBoostRegressor) or isinstance(model, LGBMRegressor):
         return model.feature_importances_
+
+def scoring_function(y_true, y_predict):
+    return r2_score(y_true, y_predict)

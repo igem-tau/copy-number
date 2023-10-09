@@ -11,6 +11,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LassoCV
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
+
+from src.models.Features_Models_Selection import get_hyper_parameters, scoring_function
 from src.models.models_functions import prepare_model_data
 from src.data_prep.pre_process import train_validation_split
 import warnings
@@ -29,10 +31,6 @@ CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', '..', 'data')
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
-
-def scoring_function(y_true, y_predict):
-    return r2_score(y_true, y_predict)
 
 
 def write_to_xl(dic, model_name):
@@ -149,6 +147,8 @@ def find_optimal_alpha_Lasso(X, y, model_name):
 
 
 def objective(trial, X_train, X_val, y_train, y_val, model_name):
+    regressor_obj, param = get_hyper_parameters(trial=None, regressor_name=model_name)
+
     if model_name == 'XGBoost':
         es = EarlyStopping(
             rounds=30,
@@ -159,67 +159,31 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
             min_delta=0
         )
 
-        param = {'max_depth': trial.suggest_int('max_depth', 1, 15),
-                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 1.0),
-                 'n_estimators': trial.suggest_categorical('n_estimators', [1000]),
-                 'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-                 'gamma': trial.suggest_float('gamma', 0.01, 1.0),
-                 'subsample': trial.suggest_float('subsample', 0.01, 1.0),
-                 'colsample_bytree': trial.suggest_float('colsample_bytree', 0.01, 1.0),
-                 'reg_alpha': trial.suggest_float('reg_alpha', 0.01, 1.0),
-                 'reg_lambda': trial.suggest_float('reg_lambda', 0.01, 1.0), 'callbacks': [es],
-                 'eval_metric': scoring_function}
+        param['eval_metric'] = scoring_function
+        param['callbacks'] = [es]
 
-        model = xgb.XGBRegressor(**param, random_state=RANDOM_STATE)
-        model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
-        trial.set_user_attr('callbacks', model.best_iteration + 1)
-        y_pred = model.predict(X_val)
+        regressor_obj = xgb.XGBRegressor(**param, random_state=RANDOM_STATE)
+        regressor_obj.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
+        trial.set_user_attr('callbacks', regressor_obj.best_iteration + 1)
+        y_pred = regressor_obj.predict(X_val)
+
     elif model_name == 'CatBoostRegressor':
-        param = dict(
-            silent=trial.suggest_categorical('silent', [True]),
-            loss_function=trial.suggest_categorical('loss_function', ['RMSE', 'MAE']),
-            learning_rate=trial.suggest_float("learning_rate", 5e-3, 0.1, log=True),
-            depth=trial.suggest_int('depth', 5, 16),
-            l2_leaf_reg=trial.suggest_float('l2_leaf_reg', 0.01, 5.0),
-            subsample=trial.suggest_float("subsample", 0.05, 1.0),
-            colsample_bylevel=trial.suggest_float("colsample_bylevel", 0.05, 0.8),
-            min_child_samples=trial.suggest_categorical('min_child_samples', [1, 4, 8, 16]),
-            grow_policy=trial.suggest_categorical('grow_policy', ['Depthwise', 'SymmetricTree', 'Lossguide']),
-        )
-        model = CatBoostRegressor(**param, allow_writing_files=False, random_state=RANDOM_STATE)
-        model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
-        y_pred = model.predict(X_val)
+        regressor_obj.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
+        y_pred = regressor_obj.predict(X_val)
 
     elif model_name == 'RandomForest':
-        param = dict(
-            n_estimators=trial.suggest_int("n_estimators", 200, 500),
-            max_depth=trial.suggest_int("max_depth", 10, 40),
-            min_samples_split=trial.suggest_int("min_samples_split", 2, 10),
-            min_samples_leaf=trial.suggest_int("min_samples_leaf", 1, 5),
-            criterion=trial.suggest_categorical('criterion', ["friedman_mse"]),
-            max_features=trial.suggest_categorical('max_features', ["sqrt", "log2", None]),
-            warm_start=trial.suggest_categorical('warm_start', [True, False]))
-        model = RandomForestRegressor(**param, random_state=RANDOM_STATE)
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_val)
+        regressor_obj.fit(X_train, y_train)
+        y_pred = regressor_obj.predict(X_val)
 
     elif model_name == 'LGBMRegressor':
         X_train = X_train.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
         X_val = X_val.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
-        param = dict(verbose=-1,
-                      boosting_type=trial.suggest_categorical('boosting_type', ['gbdt', 'dart', 'rf']),
-                      num_leaves=trial.suggest_int('num_leaves', 15, 30),
-                      max_depth=trial.suggest_categorical('max_depth', [-1, 5, 10, 20]),
-                      learning_rate=trial.suggest_float('learning_rate', 0.001, 0.1, log=True),
-                      reg_alpha=trial.suggest_float('reg_alpha', 0.01, 1.0),
-                      reg_lambda=trial.suggest_float('reg_lambda', 0.01, 1.0),
-                      min_split_gain=trial.suggest_float('min_split_gain', 0, 0.5),
-                      min_child_samples=trial.suggest_int('min_child_samples', 10, 30),
-                      subsample=trial.suggest_float('subsample', 0.5, 1),
-                      colsample_bytree=trial.suggest_float('colsample_bytree', 0.01, 1.0))
-        model = LGBMRegressor(**param, random_state=RANDOM_STATE)
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_val)
+        regressor_obj.fit(X_train, y_train)
+        y_pred = regressor_obj.predict(X_val)
+
+    elif model_name == 'NN':
+        regressor_obj.fit(X_train, y_train)
+        y_pred = regressor_obj.predict(X_val)
 
     else:
         raise ValueError(
