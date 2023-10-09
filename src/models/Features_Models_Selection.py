@@ -1,5 +1,8 @@
 import re
-from src.consts import *
+
+from sklearn.inspection import permutation_importance
+
+from src.consts import RANDOM_STATE
 from functools import partial
 from tqdm import tqdm
 import optuna
@@ -200,9 +203,12 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
         for model_name in tqdm(model_names):
             study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
-            trials = {'Ridge': 200, 'Lasso': 200, 'ElasticNet': 200, 'LGBMRegressor': 200,
-                      'XGBoost': 200,
-                      'CatBoostRegressor': 100, 'NN': 100, 'RandomForest': 200}
+            # trials = {'Ridge': 200, 'Lasso': 200, 'ElasticNet': 200, 'LGBMRegressor': 200,
+            #           'XGBoost': 200,
+            #           'CatBoostRegressor': 100, 'NN': 100, 'RandomForest': 200}
+            trials = {'Ridge': 1, 'Lasso': 1, 'ElasticNet': 1, 'LGBMRegressor': 1,
+                      'XGBoost': 1,
+                      'CatBoostRegressor': 1, 'NN': 1, 'RandomForest': 1}
 
             study = optuna.create_study(direction='maximize')
             if Path(DATA_PATH, study_file_name).exists():
@@ -372,9 +378,8 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
             raise ValueError(
                 'feature_selection: models accepts only the following values: "NN", "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
 
-        shap_approximate = False if model == 'NN' else True
-        importance_getter = get_features_importance if model in ['CatBoostRegressor', 'LGBMRegressor'] else None
-        eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=shap_approximate,
+        importance_getter = get_features_importance_wrapper(rna_type) if model in ['NN', 'CatBoostRegressor', 'LGBMRegressor'] else None
+        eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=False,
                           importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
         # Return Values :
@@ -392,9 +397,21 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
     return features_to_accept
 
 
-def get_features_importance(model):
-    if isinstance(model, CatBoostRegressor) or isinstance(model, LGBMRegressor):
-        return model.feature_importances_
+def get_features_importance_wrapper(rna_type):
+    def get_features_importance(model):
+        if isinstance(model, CatBoostRegressor) or isinstance(model, LGBMRegressor):
+            feature_importance = model.feature_importances_
+        elif isinstance(model, MLPRegressor):
+            filename = f'RNA{rna_type}_DataFrame_with_features.joblib'
+            data = load(filename)
+            X_val = data[f'RNA{rna_type}_X_val']
+            y_val = data[f'RNA{rna_type}_y_val']
+            r = permutation_importance(model, X_val, y_val, n_repeats=50, random_state=RANDOM_STATE)
+            feature_importance = r.importances_mean
+        else:
+            raise ValueError('wrong model instance')
+        return feature_importance
+    return get_features_importance
 
-def scoring_function(y_true, y_predict):
-    return r2_score(y_true, y_predict)
+
+

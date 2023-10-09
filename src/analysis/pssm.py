@@ -1,5 +1,5 @@
 import logomaker
-from src.consts import *
+from src.consts import TARGET_COLUMN
 import pandas as pd
 from pathlib import Path
 from src.data_prep.pre_process import get_RNAp_data, get_RNAi_data

@@ -2,7 +2,7 @@ from joblib import load
 import pandas as pd
 from pathlib import Path
 import shap
-from src.consts import *
+from src.consts import RANDOM_STATE
 from src.utils import get_current_file_parent_path
 from xgboost import XGBRegressor
 

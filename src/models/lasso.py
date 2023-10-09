@@ -5,7 +5,7 @@ from scipy.stats import spearmanr
 from sklearn.linear_model import Lasso
 from sklearn.metrics import r2_score, mean_squared_error
 from src.utils import get_current_file_parent_path
-from src.consts import *
+from src.consts import RANDOM_STATE
 
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)

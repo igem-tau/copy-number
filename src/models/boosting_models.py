@@ -5,6 +5,7 @@ from pathlib import Path
 from lightgbm import LGBMRegressor, plot_importance
 from scipy.stats import spearmanr
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.inspection import permutation_importance
 from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.neural_network import MLPRegressor
 
@@ -15,7 +16,7 @@ import xgboost as xgb
 import numpy as np
 from catboost import CatBoostRegressor
 from scipy.stats import pearsonr
-from src.consts import *
+from src.consts import RANDOM_STATE
 
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -74,24 +75,26 @@ def run_model(model_name, X_train, X_test, y_train, y_test, data_title: str = No
     print(f'spearman correlation value for {model_name}: {spearman}')
 
     if save_plots:
+        # feature importance
         if model_name == 'NN':
-            pass
+            r = permutation_importance(model, X_test, y_test, n_repeats=50, random_state=RANDOM_STATE)
+            feature_importance = r.importances_mean
         else:
-            # feature importance
             feature_importance = model.feature_importances_
-            sorted_idx = np.flip(np.argsort(feature_importance))
-            sorted_features = np.array(X_test.columns)[sorted_idx]
-            sorted_importance = feature_importance[sorted_idx]
-            fig = px.bar(
-                x=sorted_importance,
-                y=sorted_features,
-                orientation='h',
-                labels={'x': 'Feature Importance', 'y': 'Feature'},
-                title=f'{model_name} Feature Importance {data_title}',
-            )
-            fig.update_layout(width=800, height=400)
-            with open(Path(FIGURES_PATH, f'{model_name} Feature Importance {data_title}.html'), 'w') as f:
-                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+
+        sorted_idx = np.flip(np.argsort(feature_importance))
+        sorted_features = np.array(X_test.columns)[sorted_idx]
+        sorted_importance = feature_importance[sorted_idx]
+        fig = px.bar(
+            x=sorted_importance,
+            y=sorted_features,
+            orientation='h',
+            labels={'x': 'Feature Importance', 'y': 'Feature'},
+            title=f'{model_name} Feature Importance {data_title}',
+        )
+        fig.update_layout(width=800, height=400)
+        with open(Path(FIGURES_PATH, f'{model_name} Feature Importance {data_title}.html'), 'w') as f:
+            f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
         # evaluation plot
         fig = px.scatter(x=y_test, y=y_pred, labels={'x': 'Actual values (log scale)', 'y': 'Predicted values (log scale)'})

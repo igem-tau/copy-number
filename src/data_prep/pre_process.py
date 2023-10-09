@@ -123,7 +123,9 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     RNA_features.append(
         calculate_dG_and_Tx(RNA_seq, selected_features))  # 3 features based ution biophysical properties (deltaG)
     RNA_features.append(score_denovo_motifs(RNA_seq, selected_features))
-    RNA_features.append(make_rna_features_in_pipeline(RNA_seq, selected_features))
+
+    if rna_type == 'i_w_folding':
+        RNA_features.append(make_rna_features_in_pipeline(RNA_seq, selected_features))
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)

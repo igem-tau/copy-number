@@ -1,5 +1,5 @@
 from Bio import motifs
-from src.consts import *
+from src.consts import TARGET_COLUMN
 from functools import partial
 from joblib import load
 import numpy as np

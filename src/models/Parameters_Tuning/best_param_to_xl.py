@@ -12,7 +12,7 @@ from sklearn.linear_model import LassoCV
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
 
-from src.models.Features_Models_Selection import get_hyper_parameters, scoring_function
+from src.models.Features_Models_Selection import get_hyper_parameters
 from src.models.models_functions import prepare_model_data
 from src.data_prep.pre_process import train_validation_split
 import warnings
@@ -21,7 +21,7 @@ from catboost import CatBoostRegressor
 from xgboost.callback import EarlyStopping
 import optuna
 from optuna.visualization import *
-from src.consts import *
+from src.consts import RANDOM_STATE
 from src.utils import get_current_file_parent_path, get_current_date
 from joblib import dump, load
 from scipy.stats import pearsonr
@@ -192,12 +192,17 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
     return r2_score(y_val, y_pred)
 
 
+def scoring_function(y_true, y_predict):
+    return r2_score(y_true, y_predict)
+
+
 def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, save_plots=True):
     best_params_file_name = f'RNA{rna_type}_best_params_{model_name}.joblib'
     best_params_file_path = Path(DATA_PATH, best_params_file_name)
     best_params_study_file_name = f'RNA{rna_type}_best_params_study_{model_name}.joblib'
     best_params_study_file_path = Path(DATA_PATH, best_params_study_file_name)
-    num_trials = 200
+    # num_trials = 200
+    num_trials = 1
     max_trials_per_optimization_cycle = 10
 
     if best_params_file_path.exists():

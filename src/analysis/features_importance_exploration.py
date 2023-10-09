@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import seaborn as sns
-from src.consts import *
+from src.consts import RANDOM_STATE
 from src.data_prep.pre_process import get_features_df
 from src.models.models_functions import prepare_model_data
 from src.utils import get_current_file_parent_path
