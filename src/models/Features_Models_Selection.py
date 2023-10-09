@@ -24,6 +24,10 @@ from src.models.models_functions import scale
 from src.utils import get_current_file_parent_path, get_current_date
 from joblib import dump, load, Parallel, delayed
 
+import warnings
+
+warnings.filterwarnings('ignore', category=FutureWarning)
+
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 model_names = ['NN', 'Ridge', 'Lasso', 'ElasticNet', 'XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
@@ -267,7 +271,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
     filename = f'RNA{rna_type}_{model}_Selected_Features.joblib'
 
     if Path(DATA_PATH, filename).exists():
-        data = load(Path(DATA_PATH, filename))
+        features_to_accept = load(Path(DATA_PATH, filename))
     else:
         print('Running: features selection - features and copy number')
         # feature vetting: select features based on correlations only
@@ -341,12 +345,12 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
 
         if model == 'XGBoost':
             print('Running: XGBoost for feature selection using eboruta')
-            estimator = XGBRegressor(**param_dict[model])
+            estimator = XGBRegressor()
         elif model == 'CatBoostRegressor':
-            estimator = CatBoostRegressor(**param_dict[model], allow_writing_files=False)
+            estimator = CatBoostRegressor(allow_writing_files=False)
             print('Running: CatBoost for feature selection using eboruta')
         elif model == 'RandomForest':
-            estimator = RandomForestRegressor(**param_dict[model])
+            estimator = RandomForestRegressor()
             print('Running: Random Forest for feature selection using eboruta')
         elif model =='LGBMRegressor':
             RNA_X_new = RNA_X_new.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
@@ -355,22 +359,23 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
             raise ValueError(
                 'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
 
-
         importance_getter = get_features_importance if model in ['CatBoostRegressor', 'LGBMRegressor'] else None
-        eboruta = eBoruta(n_iter=100, classification=False, shap_check_additivity=False, shap_approximate=True, importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
+        eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=True, importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
         # Return Values :
+        # Return Values :
         features = eboruta.features_
-        features_to_remove = features.rejected
         features_to_accept = features.accepted
-        subset_of_data = RNA_X[features_to_accept]
 
-        data = {f'RNA{rna_type}_train_FS': subset_of_data, 'selected_features': features_to_accept,
-                'removed_features': features_to_remove}
+        if model == 'LGBMRegressor':
+            original_columns = pd.Series(RNA_X.columns)
+            lgbm_columns = original_columns.apply(lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
+            features_to_accept = pd.DataFrame(zip(original_columns, lgbm_columns), columns=['before', 'after']).query(
+                f'after.isin({list(features_to_accept)})')['before']
 
-    dump(data, Path(DATA_PATH, filename), compress=True)
+        dump(features_to_accept, Path(DATA_PATH, filename), compress=True)
 
-    return data
+    return features_to_accept
 
 def get_features_importance(model):
     if isinstance(model, CatBoostRegressor) or isinstance(model, LGBMRegressor):
