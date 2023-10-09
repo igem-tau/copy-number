@@ -35,7 +35,7 @@ def run_pipeline(rna_type: str):
     RNA_y_test = data[f'RNA{rna_type}_y_test']
 
     # Feature and model selection
-    # param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
+    param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
     models = ['XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
 
     # Generate sequences and calculate features

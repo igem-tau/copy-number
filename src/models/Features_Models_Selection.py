@@ -370,7 +370,6 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
                           importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
         # Return Values :
-        # Return Values :
         features = eboruta.features_
         features_to_accept = list(features.accepted)
 
