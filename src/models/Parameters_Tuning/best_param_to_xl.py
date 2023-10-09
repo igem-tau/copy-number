@@ -139,7 +139,7 @@ def find_optimal_alpha_Lasso(X, y, model_name):
 
 
 def objective(trial, X_train, X_val, y_train, y_val, model_name):
-    regressor_obj, param = get_hyper_parameters(trial=None, regressor_name=model_name)
+    regressor_obj, param = get_hyper_parameters(trial=trial, regressor_name=model_name)
 
     if model_name == 'XGBoost':
         es = EarlyStopping(

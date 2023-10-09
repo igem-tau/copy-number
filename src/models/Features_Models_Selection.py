@@ -74,7 +74,7 @@ def make_model(X_tr, X_va, y_tr, y_va, regressor_name: str, params):
     return regressor_name, pearson_train, pearson_val, mae_train, mae_val, mse_train, mse_val, r2_train, r2_val
 
 
-def get_hyper_parameters(trial=None, regressor_name=None):
+def get_hyper_parameters(trial, regressor_name):
     if regressor_name == 'Ridge':
         params = dict(alpha=trial.suggest_float("alpha", 0, 20),
                       fit_intercept=trial.suggest_categorical("fit_intercept", [True, False]),
