@@ -5,6 +5,7 @@ from scipy.stats import spearmanr
 from sklearn.linear_model import Lasso
 from sklearn.metrics import r2_score, mean_squared_error
 from src.utils import get_current_file_parent_path
+from src.consts import *
 
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
@@ -13,7 +14,7 @@ FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 
 def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_param=None, save_plots=False):
     if Best_param is not None:
-        lasso_model = Lasso(**Best_param)
+        lasso_model = Lasso(**Best_param, random_state=RANDOM_STATE)
     else:
         lasso_model = Lasso(alpha=0.3, max_iter=5000)
     # training the model

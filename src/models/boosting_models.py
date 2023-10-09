@@ -13,6 +13,7 @@ import xgboost as xgb
 import numpy as np
 from catboost import CatBoostRegressor
 from scipy.stats import pearsonr
+from src.consts import *
 
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -26,27 +27,27 @@ def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: st
         Best_param.pop('callbacks', None)
         Best_param['n_estimators'] = 1000
         if Best_param is not None:
-            model = xgb.XGBRegressor(**Best_param)
+            model = xgb.XGBRegressor(**Best_param, random_state=RANDOM_STATE)
         else:
-            model = xgb.XGBRegressor()
+            model = xgb.XGBRegressor(random_state=RANDOM_STATE)
 
     elif model_name == 'CatBoostRegressor':
         if Best_param is not None:
-            model = CatBoostRegressor(**Best_param, allow_writing_files=False)
+            model = CatBoostRegressor(**Best_param, allow_writing_files=False, random_state=RANDOM_STATE)
         else:
-            model = CatBoostRegressor(allow_writing_files=False)
+            model = CatBoostRegressor(allow_writing_files=False, random_state=RANDOM_STATE)
 
     elif model_name == 'RandomForest':
         if Best_param is not None:
-            model = RandomForestRegressor(**Best_param)
+            model = RandomForestRegressor(**Best_param, random_state=RANDOM_STATE)
         else:
-            model = RandomForestRegressor()\
+            model = RandomForestRegressor(random_state=RANDOM_STATE)
 
     elif model_name == 'LGBMRegressor':
         if Best_param is not None:
-            model = LGBMRegressor(**Best_param)
+            model = LGBMRegressor(**Best_param, random_state=RANDOM_STATE)
         else:
-            model = LGBMRegressor()
+            model = LGBMRegressor(random_state=RANDOM_STATE)
 
     else:
         raise ValueError(

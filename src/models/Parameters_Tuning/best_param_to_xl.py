@@ -19,6 +19,7 @@ from catboost import CatBoostRegressor
 from xgboost.callback import EarlyStopping
 import optuna
 from optuna.visualization import *
+from src.consts import *
 from src.utils import get_current_file_parent_path, get_current_date
 from joblib import dump, load
 from scipy.stats import pearsonr
@@ -169,7 +170,7 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
                  'reg_lambda': trial.suggest_float('reg_lambda', 0.01, 1.0), 'callbacks': [es],
                  'eval_metric': scoring_function}
 
-        model = xgb.XGBRegressor(**param)
+        model = xgb.XGBRegressor(**param, random_state=RANDOM_STATE)
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
         trial.set_user_attr('callbacks', model.best_iteration + 1)
         y_pred = model.predict(X_val)
@@ -185,7 +186,7 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
             min_child_samples=trial.suggest_categorical('min_child_samples', [1, 4, 8, 16]),
             grow_policy=trial.suggest_categorical('grow_policy', ['Depthwise', 'SymmetricTree', 'Lossguide']),
         )
-        model = CatBoostRegressor(**param, allow_writing_files=False)
+        model = CatBoostRegressor(**param, allow_writing_files=False, random_state=RANDOM_STATE)
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
         y_pred = model.predict(X_val)
 
@@ -198,7 +199,7 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
             criterion=trial.suggest_categorical('criterion', ["friedman_mse"]),
             max_features=trial.suggest_categorical('max_features', ["sqrt", "log2", None]),
             warm_start=trial.suggest_categorical('warm_start', [True, False]))
-        model = RandomForestRegressor(**param)
+        model = RandomForestRegressor(**param, random_state=RANDOM_STATE)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_val)
 
@@ -216,7 +217,7 @@ def objective(trial, X_train, X_val, y_train, y_val, model_name):
                       min_child_samples=trial.suggest_int('min_child_samples', 10, 30),
                       subsample=trial.suggest_float('subsample', 0.5, 1),
                       colsample_bytree=trial.suggest_float('colsample_bytree', 0.01, 1.0))
-        model = LGBMRegressor(**param)
+        model = LGBMRegressor(**param, random_state=RANDOM_STATE)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_val)
 
