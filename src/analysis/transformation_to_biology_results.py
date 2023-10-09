@@ -34,16 +34,15 @@ def scatter_plot_raw_target(raw_traget_pcn_df):
     fig = px.scatter(raw_traget_pcn_df, x='x', y='y', color='type',
                      labels={'x': 'log raw copy number', 'y': 'log ddPCR/qPCR'})
     fig.update_traces(marker_size=5)
-    fig.show()
     return fig
 
 
 if __name__ == '__main__':
     article_data = pd.read_csv(DATA_FILE_PATH, index_col=0)
     article_ddpcr_data = pd.read_excel(ADDITIONAL_DATA_FILE_PATH, sheet_name=f'ddPCR - RNA{RNA_TYPE}')[
-        ['promoter seq', 'ddpcr']]
+        ['promoter seq', 'use for fit', 'ddpcr']]
     our_bio_data = pd.read_excel(ADDITIONAL_DATA_FILE_PATH, sheet_name=f'Our qPCR - RNA{RNA_TYPE}')[
-        [f'RNA{RNA_TYPE} promoter', 'PCN measured in Wet lab']]
+        [f'RNA{RNA_TYPE} promoter', 'use for fit', 'PCN measured in Wet lab']]
 
     # filter invalid promoters (due to indel)
     our_bio_data = our_bio_data.loc[our_bio_data[f"RNA{RNA_TYPE} promoter"].apply(is_promoter_sequence_valid)]
@@ -53,12 +52,15 @@ if __name__ == '__main__':
 
     raw_target_pcn_df = pd.concat((
         pd.DataFrame(
-            {'x': concat_ddpcr[RAW_PCN_COLUMN_NAME], 'y': concat_ddpcr[TARGET_PCN_COLUMN_NAME], 'type': 'ddPCR'}),
+            {'x': concat_ddpcr[RAW_PCN_COLUMN_NAME], 'y': concat_ddpcr[TARGET_PCN_COLUMN_NAME],
+             'use_for_fit': concat_ddpcr['use for fit'], 'type': 'ddPCR'}),
         pd.DataFrame(
-            {'x': concat_qpcr[RAW_PCN_COLUMN_NAME], 'y': concat_qpcr[TARGET_PCN_COLUMN_NAME], 'type': 'qPCR'})), axis=0)
+            {'x': concat_qpcr[RAW_PCN_COLUMN_NAME], 'y': concat_qpcr[TARGET_PCN_COLUMN_NAME],
+             'use_for_fit': concat_qpcr['use for fit'], 'type': 'qPCR'})), axis=0)
 
     # raw_target_pcn_df = raw_target_pcn_df.query('x < 25')
 
+    raw_target_pcn_df = raw_target_pcn_df.query('use_for_fit == "V"')
     raw_target_pcn_df['x'] = raw_target_pcn_df['x'].apply(np.log)
     raw_target_pcn_df['y'] = raw_target_pcn_df['y'].apply(np.log)
 
@@ -77,7 +79,7 @@ if __name__ == '__main__':
     #                          y=(x_space.apply(lambda x: np.exp(slope * x + intercept))),
     #                          name='pcn by linear regression'))
 
-    fig.update_layout(title=dict(text=f'raw copy number power log fit'))
+    fig.update_layout(title=dict(text=f'raw copy number power log fit, y={slope:.3f}x + {intercept:.3f}'))
     fig.add_trace(go.Scatter(
         x=[raw_target_pcn_df['x'].min(), raw_target_pcn_df['x'].min()],
         y=[raw_target_pcn_df['y'].max(), raw_target_pcn_df['y'].max() - .3],
@@ -87,5 +89,5 @@ if __name__ == '__main__':
               f'pearson: {pearson_corr:.3f}, p-value: {p_value:.3f}'],
         textposition="top right"
     ))
-    fig.show()
+
     plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'raw_pcn_fit_search.html')))
