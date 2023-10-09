@@ -757,7 +757,7 @@ def worker(func_and_args, results):
     results.append(result)
 
 
-def make_rna_features_parallel(rna: pd.DataFrame, selected_features: 'Optional[List[str]]' = None) -> pd.DataFrame:
+def make_rna_features_parallel(rna: pd.Series, selected_features: 'Optional[List[str]]' = None) -> pd.DataFrame:
     # Define the list of inner functions and their corresponding arguments
     functions_and_args = [
         (get_match_rate_to_stem_loop_3, [rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features]),
@@ -875,6 +875,31 @@ def checks():
 def check_output():
     df = pd.read_csv("rna_p_new_features.csv")
     print(df.shape)
+
+
+# a function to convert the obtained pd.series of the promote DNA sequence to RNAp sequence
+def generate_RNAp_sequence(dna_seq: pd.Series, consensus_rna_seq: str = CONSENSUS_RNAp_SEQ):
+    # Define a function to convert a DNA sequence to an RNA sequence
+    def dna_to_reverse_complement_rna(dna_sequence):
+        complement = {"A": "U", "T": "A", "C": "G", "G": "C"}
+        rna_sequence = ""
+        for nucleotide in dna_sequence[::-1]:
+            rna_sequence += complement[nucleotide]
+        return rna_sequence
+
+    rna_subseq = dna_seq.apply(dna_to_reverse_complement_rna)
+
+    # Add the RNA sequence to the DataFrame
+    RNAp_seq = consensus_rna_seq[70:112] + rna_subseq + consensus_rna_seq[112+36:]
+
+    return RNAp_seq
+
+
+# in order to function as part of the main pipeline - the function should get a pd.series of the DNA sequence, convert it to the RNAp sequence and then extract the features
+def make_rna_features_in_pipeline(dna_seq: pd.Series, selected_features: 'Optional[List[str]]' = None) -> pd.DataFrame:
+    rna_p_sequences = generate_RNAp_sequence(dna_seq)
+    featues_df = make_rna_features_parallel(rna_p_sequences, selected_features)
+    return featues_df
 
 
 if __name__ == '__main__':

@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 from pathlib import Path
 from joblib import load, dump
@@ -15,6 +14,9 @@ import numpy as np
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 
+import warnings
+
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 def run_pipeline(rna_type: str):
     # Load the data features if exists, write if it doesn't
@@ -136,7 +138,8 @@ def run_pipeline(rna_type: str):
 
 
 if __name__ == '__main__':
+    pass
     # run_pipeline(rna_type='p')
-    run_pipeline(rna_type='p_fitted')
+    # run_pipeline(rna_type='p_fitted')
     # run_pipeline(rna_type='i')
     # run_pipeline(rna_type='i_w_folding')

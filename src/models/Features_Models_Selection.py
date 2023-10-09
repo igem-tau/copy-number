@@ -24,6 +24,10 @@ from src.models.models_functions import scale
 from src.utils import get_current_file_parent_path, get_current_date
 from joblib import dump, load, Parallel, delayed
 
+import warnings
+
+warnings.filterwarnings('ignore', category=FutureWarning)
+
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 model_names = ['NN', 'Ridge', 'Lasso', 'ElasticNet', 'XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']

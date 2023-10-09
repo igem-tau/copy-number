@@ -11,6 +11,7 @@ from src.features.nucleotide_features import generate_one_hot_encoding, entropy,
 from src.features.promotor_strength import calc_promoter_zones_strength, calc_predicted_promoter_strength
 from src.features.pssm_feature import calc_series_pssm_score
 from src.features.delta_G.TX_prediction import calculate_dG_and_Tx
+from src.features.rna_structure import make_rna_features_in_pipeline
 from src.utils import get_current_file_parent_path, is_feature_selected, get_current_date
 import sys
 from typing import Optional, Tuple, Union, List
@@ -122,6 +123,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     RNA_features.append(
         calculate_dG_and_Tx(RNA_seq, selected_features))  # 3 features based ution biophysical properties (deltaG)
     RNA_features.append(score_denovo_motifs(RNA_seq, selected_features))
+    RNA_features.append(make_rna_features_in_pipeline(RNA_seq, selected_features))
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)
