@@ -168,6 +168,10 @@ def get_hyper_parameters(trial=None, regressor_name=None):
                       epsilon=trial.suggest_float("epsilon", 1e-8, 1e-4, log=True)
                       )
         regressor_obj = MLPRegressor(**params, random_state=RANDOM_STATE)
+    else:
+        raise ValueError(
+            'hyperparametes: models accepts only the following values: "NN", "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
+
     return regressor_obj, params
 
 
