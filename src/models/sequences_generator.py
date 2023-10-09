@@ -16,12 +16,12 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 
 
 def sequence_generator(mutation_locations: List[Tuple[int, int]], rna_type: str) -> 'pd.Series[str]':
-    if rna_type == 'p':
+    if rna_type[0] == 'p':
         template = RNAp_SEQ_ORIGINAL
-    elif rna_type == 'i' or rna_type == 'i_w_folding':
+    elif rna_type[0] == 'i':
         template = RNAi_SEQ_ORIGINAL
     else:
-        raise 'Choose a valid rna_type (i or p)'
+        raise 'Choose a valid rna_type, must start with "i" or "p"'
 
     def combine_sequence(template: str, mutations: str, mutation_locations: List[Tuple[int, int]]) -> str:
 
@@ -92,12 +92,14 @@ def calc_predicted_promoter_strength(seq: Union[str, 'pd.Series[str]']) -> Union
 
 
 def sequence_df_generator(rna_type='p'):
-    if rna_type == 'p':
+    if rna_type[0] == 'p':
         filename = 'RNAp_Generated_Sequences.joblib'
         generated_RNA_seq = sequence_generator([(-33, -30), (-11, -8), (0, 0)], rna_type)
-    elif rna_type == 'i' or rna_type == 'i_w_folding':
+    elif rna_type[0] == 'i':
         filename = 'RNAi_Generated_Sequences.joblib'
         generated_RNA_seq = sequence_generator([(-33, -30), (-10, -7), (0, 0)], rna_type)
+    else:
+        raise ValueError('sequences_generator.sequence_df_generator: rna_type must start with: "p" or "i"')
 
     if Path(DATA_PATH, filename).exists():
         data = load(Path(DATA_PATH, filename))
