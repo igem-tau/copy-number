@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 from sklearn.model_selection import train_test_split
 from src.consts import *
+from src.data_prep.raw_pcn_fitting import custom_fit_and_transform_raw_pcn
 from src.features.denovo_motifs import score_denovo_motifs
 from src.features.motifs import calc_motifs_pv
 from src.features.nucleotide_features import generate_one_hot_encoding, entropy, extract_nucli_features
@@ -27,23 +28,28 @@ RNAi_high_filename = 'iRNA high copy number.fasta'
 RNAi_low_filename = 'iRNA high copy number.fasta'
 
 
-def get_RNAp_data():
+def get_RNAp_data(rna_type):
     """
     get RNA_P df, with additional columns
     :return:
     """
-    if TARGET_COLUMN == 'Copy Numer':
+    if TARGET_COLUMN == 'Copy Number':
         RNAp_df = pd.read_excel(Path(DATA_PATH, 'sup_data_1_p_rna.xlsx'),
                                 names=RNA_DATA_COLUMNS)  # priming RNA
         RNAp_df['cnt_grw'] = RNAp_df['Final Counts'] / RNAp_df['Initial Counts']
         shift = abs(RNAp_df[TARGET_COLUMN].min()) + 1e-10
         RNAp_df['copy_num_log'] = np.log(RNAp_df[TARGET_COLUMN] + shift)
-    else:
+    elif TARGET_COLUMN == 'Raw Copy Number':
         RNAp_df = pd.read_csv(Path(DATA_PATH, 'RNAp_with_Raw_PCN.csv'), index_col=0)
-        shift = 0
         RNAp_df['cnt_grw'] = RNAp_df['Final Counts'] / RNAp_df['Initial Counts']
         # RNAp_df['Raw Copy Number Original'] = RNAp_df[TARGET_COLUMN]
-        RNAp_df[TARGET_COLUMN] = np.log(RNAp_df[TARGET_COLUMN] + shift)
+        if rna_type == 'p_fitted':
+            RNAp_df[TARGET_COLUMN] = custom_fit_and_transform_raw_pcn(RNAp_df[TARGET_COLUMN])
+        else:
+            shift = 0
+            RNAp_df[TARGET_COLUMN] = np.log(RNAp_df[TARGET_COLUMN] + shift)
+    else:
+        raise ValueError('pre_process: TARGET_COLUMN must be one of the following values: Copy Number, Raw Copy Number')
     return RNAp_df
 
 
@@ -110,7 +116,7 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     RNA_features.append(generate_one_hot_encoding(RNA_seq, selected_features))
     RNA_features.append(extract_nucli_features(RNA_seq, selected_features))
     RNA_features.append(
-        calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type == 'p' else RNAi_EDITED_ZONES,
+        calc_promoter_zones_strength(RNA_seq, RNAp_EDITED_ZONES if rna_type[0] == 'p' else RNAi_EDITED_ZONES,
                                      selected_features))
     if is_feature_selected('entropy', selected_features):
         RNA_features.append(entropy(RNA_seq))
@@ -210,9 +216,9 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
     print(f'start generating RNA{rna_type} features')
 
     data = {}
-    if rna_type == 'p':
-        RNA_data = get_RNAp_data()
-    elif rna_type == 'i' or rna_type == 'i_w_folding':
+    if rna_type[0] == 'p':
+        RNA_data = get_RNAp_data(rna_type)
+    elif rna_type[0] == 'i':
         RNA_data = get_RNAi_data()
     else:
         raise ValueError('save_features_df: rna_type must be one of the following values: "p" or "i"')
@@ -324,12 +330,15 @@ def create_fasta_file(RNA_df, rna_type):
     n = int(len(RNA_df) * percentage)
     high_cp = RNA_df.nlargest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
     low_cp = RNA_df.nsmallest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
-    if rna_type == 'p':
+    if rna_type[0] == 'p':
         output_file_high = Path(DATA_PATH, RNAp_high_filename)
         output_file_low = Path(DATA_PATH, RNAp_low_filename)
-    elif rna_type == 'i' or rna_type == 'i_w_folding':
+    elif rna_type[0] == 'i':
         output_file_high = Path(DATA_PATH, RNAi_high_filename)
         output_file_low = Path(DATA_PATH, RNAi_low_filename)
+    else:
+        raise ValueError('pre_process.create_fasta_file: rna_type must start with: "p" or "i"')
+
     with open(output_file_high, 'w') as file:
         for idx, sequence in high_cp.items():
             file.write(f'>{idx}\n{sequence}\n')

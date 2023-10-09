@@ -153,19 +153,19 @@ def get_hyper_parameters(trial=None, regressor_name=None):
         regressor_obj = CatBoostRegressor(**params, allow_writing_files=False)
 
     elif regressor_name == 'NN':
-        params = dict(max_iter = 10000,
-            hidden_layer_sizes=trial.suggest_int('hidden_layer_sizes', 100, 400),
-            solver=trial.suggest_categorical('solver', ["lbfgs", "sgd", "adam"]),
-            activation=trial.suggest_categorical('activation', ["logistic", "tanh", "relu"]),
-            alpha=trial.suggest_float("alpha", 1e-5, 0.001, log=True),
-            learning_rate=trial.suggest_categorical('learning_rate', ["constant", "invscaling", "adaptive"]),
-            learning_rate_init=trial.suggest_float("learning_rate_init", 1e-6, 0.001, log=True),
-            tol=trial.suggest_float("tol", 1e-5, 0.001, log=True),
-            momentum=trial.suggest_float("momentum", 0.1, 0.9),
-            beta_1=trial.suggest_float("beta_1", 0.5, 0.999),
-            beta_2=trial.suggest_float("beta_2", 0.3, 0.9),
-            epsilon=trial.suggest_float("epsilon", 1e-8, 1e-4, log=True)
-        )
+        params = dict(max_iter=10000,
+                      hidden_layer_sizes=trial.suggest_int('hidden_layer_sizes', 100, 400),
+                      solver=trial.suggest_categorical('solver', ["lbfgs", "sgd", "adam"]),
+                      activation=trial.suggest_categorical('activation', ["logistic", "tanh", "relu"]),
+                      alpha=trial.suggest_float("alpha", 1e-5, 0.001, log=True),
+                      learning_rate=trial.suggest_categorical('learning_rate', ["constant", "invscaling", "adaptive"]),
+                      learning_rate_init=trial.suggest_float("learning_rate_init", 1e-6, 0.001, log=True),
+                      tol=trial.suggest_float("tol", 1e-5, 0.001, log=True),
+                      momentum=trial.suggest_float("momentum", 0.1, 0.9),
+                      beta_1=trial.suggest_float("beta_1", 0.5, 0.999),
+                      beta_2=trial.suggest_float("beta_2", 0.3, 0.9),
+                      epsilon=trial.suggest_float("epsilon", 1e-8, 1e-4, log=True)
+                      )
         regressor_obj = MLPRegressor(**params)
     return regressor_obj, params
 
@@ -191,23 +191,31 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
                                  columns=['Algorithm', 'pearson_train', 'pearson_val', 'mae_train', 'mae_val'])
         X_train_scaled, X_val_scaled = scale(X_train, X_val)
         params_dict = {}
+        max_trials_per_optimization_cycle = 10
         for model_name in tqdm(model_names):
             study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
-            trails = {'Ridge': 200, 'Lasso': 200, 'ElasticNet': 200, 'LGBMRegressor': 200,
+            trials = {'Ridge': 200, 'Lasso': 200, 'ElasticNet': 200, 'LGBMRegressor': 200,
                       'XGBoost': 200,
-                      'CatBoostRegressor': 100, 'NN': 100, 'RandomForest':200}
+                      'CatBoostRegressor': 100, 'NN': 100, 'RandomForest': 200}
+
             study = optuna.create_study(direction='maximize')
             if Path(DATA_PATH, study_file_name).exists():
                 last_study = load(Path(DATA_PATH, study_file_name))
                 study.add_trials(last_study.trials)
-            study.optimize(partial(objective, X_train=X_train_scaled, y_train=y_train, X_val=X_val_scaled, y_val=y_val,
-                                   regressor=model_name),
-                           n_trials=trails[model_name])
+
+            num_trials_left = max(0, trials[model_name] - len(study.trials))
+            while num_trials_left > 0:
+                current_num_trials = min(num_trials_left, max_trials_per_optimization_cycle)
+                study.optimize(
+                    partial(objective, X_train=X_train_scaled, y_train=y_train, X_val=X_val_scaled, y_val=y_val,
+                            regressor=model_name),
+                    n_trials=current_num_trials)
+                dump(study, Path(DATA_PATH, study_file_name), compress=True)
+                num_trials_left -= current_num_trials
 
             params = study.best_trial.params
             params_dict[model_name] = params
-            dump(study, Path(DATA_PATH, study_file_name), compress=True)
 
             model_name, pearson_train, pearson_val, mae_train, mae_val, _, _, _, _ = make_model(X_train, X_val, y_train,
                                                                                                 y_val, model_name,
@@ -328,7 +336,6 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
         row, col = (corr_matrix > np.nanquantile(corr_matrix, 0.99)).nonzero()  # TODO: think of different condition
 
         while len(row) > 0:
-
             values = np.array([row[0], col[0]])  # first pair
             inx = new_mi[values].argmin()  # find the feature with less correlation to the copy number
             new_features.drop(values[inx], inplace=True)  # erase from features Series
@@ -345,27 +352,27 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
 
         if model == 'XGBoost':
             print('Running: XGBoost for feature selection using eboruta')
-            estimator = XGBRegressor()
+            estimator = XGBRegressor(**param_dict[model], random_state=0)
         elif model == 'CatBoostRegressor':
-            estimator = CatBoostRegressor(allow_writing_files=False)
+            estimator = CatBoostRegressor(**param_dict[model], allow_writing_files=False, random_state=0)
             print('Running: CatBoost for feature selection using eboruta')
         elif model == 'RandomForest':
-            estimator = RandomForestRegressor()
+            estimator = RandomForestRegressor(**param_dict[model], random_state=0)
             print('Running: Random Forest for feature selection using eboruta')
-        elif model =='LGBMRegressor':
-            RNA_X_new = RNA_X_new.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
-            estimator = LGBMRegressor(**param_dict[model])
+        elif model == 'LGBMRegressor':
+            estimator = LGBMRegressor(**param_dict[model], random_state=0)
         else:
             raise ValueError(
                 'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
 
         importance_getter = get_features_importance if model in ['CatBoostRegressor', 'LGBMRegressor'] else None
-        eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=True, importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
+        eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=True,
+                          importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
         # Return Values :
         # Return Values :
         features = eboruta.features_
-        features_to_accept = features.accepted
+        features_to_accept = list(features.accepted)
 
         if model == 'LGBMRegressor':
             original_columns = pd.Series(RNA_X.columns)
@@ -376,6 +383,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
         dump(features_to_accept, Path(DATA_PATH, filename), compress=True)
 
     return features_to_accept
+
 
 def get_features_importance(model):
     if isinstance(model, CatBoostRegressor) or isinstance(model, LGBMRegressor):
