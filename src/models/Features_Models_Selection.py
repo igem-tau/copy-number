@@ -1,4 +1,5 @@
 import re
+from src.consts import RANDOM_STATE
 from functools import partial
 from tqdm import tqdm
 import optuna
@@ -6,7 +7,7 @@ from eBoruta import eBoruta
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_selection import mutual_info_regression, mutual_info_classif, SelectFromModel
+from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
 from sklearn.linear_model import Ridge, Lasso, ElasticNet
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from scipy.stats import pearsonr
@@ -15,7 +16,6 @@ from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from sklearn.neural_network import MLPRegressor
 from pathlib import Path
-from sklearn.svm import SVR
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from typing import Dict
@@ -35,30 +35,30 @@ model_names = ['NN', 'Ridge', 'Lasso', 'ElasticNet', 'XGBoost', 'CatBoostRegress
 
 def make_model(X_tr, X_va, y_tr, y_va, regressor_name: str, params):
     if regressor_name == 'Ridge':
-        model = Ridge(**params)
+        model = Ridge(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'Lasso':
-        model = Lasso(**params)
+        model = Lasso(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'ElasticNet':
-        model = ElasticNet(**params)
+        model = ElasticNet(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'LGBMRegressor':
         X_tr = X_tr.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
         X_va = X_va.rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
-        model = LGBMRegressor(**params)
+        model = LGBMRegressor(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'RandomForest':
-        model = RandomForestRegressor(**params)
+        model = RandomForestRegressor(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'XGBoost':
-        model = XGBRegressor(**params)
+        model = XGBRegressor(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'CatBoostRegressor':
-        model = CatBoostRegressor(**params, allow_writing_files=False)
+        model = CatBoostRegressor(**params, allow_writing_files=False, random_state=RANDOM_STATE)
 
     elif regressor_name == 'NN':
-        model = MLPRegressor(**params)
+        model = MLPRegressor(**params, random_state=RANDOM_STATE)
 
     model.fit(X_tr, y_tr)
     y_pred_train = model.predict(X_tr)
@@ -74,13 +74,13 @@ def make_model(X_tr, X_va, y_tr, y_va, regressor_name: str, params):
     return regressor_name, pearson_train, pearson_val, mae_train, mae_val, mse_train, mse_val, r2_train, r2_val
 
 
-def get_hyper_parameters(trial=None, regressor_name=None):
+def get_hyper_parameters(trial, regressor_name):
     if regressor_name == 'Ridge':
         params = dict(alpha=trial.suggest_float("alpha", 0, 20),
                       fit_intercept=trial.suggest_categorical("fit_intercept", [True, False]),
                       tol=trial.suggest_float("tol", 1e-6, 0.001, log=True),
                       solver=trial.suggest_categorical("solver", ["auto", "svd", "cholesky", "lsqr"]))
-        regressor_obj = Ridge(**params)
+        regressor_obj = Ridge(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'Lasso':
         params = dict(alpha=trial.suggest_float("alpha", 0, 5),
@@ -88,7 +88,7 @@ def get_hyper_parameters(trial=None, regressor_name=None):
                       tol=trial.suggest_float("tol", 1e-4, 0.01, log=True),
                       selection=trial.suggest_categorical("selection", ["cyclic", "random"]),
                       warm_start=trial.suggest_categorical('warm_start', [True, False]))
-        regressor_obj = Lasso(**params)
+        regressor_obj = Lasso(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'ElasticNet':
         params = dict(alpha=trial.suggest_float("alpha", 0, 5),
@@ -97,7 +97,7 @@ def get_hyper_parameters(trial=None, regressor_name=None):
                       tol=trial.suggest_float("tol", 1e-5, 0.001, log=True),
                       selection=trial.suggest_categorical("selection", ["cyclic", "random"]),
                       warm_start=trial.suggest_categorical('warm_start', [True, False]))
-        regressor_obj = ElasticNet(**params)
+        regressor_obj = ElasticNet(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'LGBMRegressor':
         params = dict(verbose=-1,
@@ -111,7 +111,7 @@ def get_hyper_parameters(trial=None, regressor_name=None):
                       min_child_samples=trial.suggest_int('min_child_samples', 10, 30),
                       subsample=trial.suggest_float('subsample', 0.5, 1),
                       colsample_bytree=trial.suggest_float('colsample_bytree', 0.01, 1.0))
-        regressor_obj = LGBMRegressor(**params)
+        regressor_obj = LGBMRegressor(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'RandomForest':
         params = dict(
@@ -122,7 +122,7 @@ def get_hyper_parameters(trial=None, regressor_name=None):
             criterion=trial.suggest_categorical('criterion', ["friedman_mse"]),
             max_features=trial.suggest_categorical('max_features', ["sqrt", "log2", None]),
             warm_start=trial.suggest_categorical('warm_start', [True, False]))
-        regressor_obj = RandomForestRegressor(**params)
+        regressor_obj = RandomForestRegressor(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'XGBoost':
         params = dict(
@@ -136,7 +136,7 @@ def get_hyper_parameters(trial=None, regressor_name=None):
             reg_alpha=trial.suggest_float('reg_alpha', 0.01, 1.0),
             reg_lambda=trial.suggest_float('reg_lambda', 0.01, 1.0)
         )
-        regressor_obj = XGBRegressor(**params)
+        regressor_obj = XGBRegressor(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'CatBoostRegressor':
         params = dict(
@@ -150,7 +150,7 @@ def get_hyper_parameters(trial=None, regressor_name=None):
             min_child_samples=trial.suggest_categorical('min_child_samples', [1, 4, 8, 16]),
             grow_policy=trial.suggest_categorical('grow_policy', ['Depthwise', 'SymmetricTree', 'Lossguide']),
         )
-        regressor_obj = CatBoostRegressor(**params, allow_writing_files=False)
+        regressor_obj = CatBoostRegressor(**params, allow_writing_files=False, random_state=RANDOM_STATE)
 
     elif regressor_name == 'NN':
         params = dict(max_iter=10000,
@@ -166,7 +166,11 @@ def get_hyper_parameters(trial=None, regressor_name=None):
                       beta_2=trial.suggest_float("beta_2", 0.3, 0.9),
                       epsilon=trial.suggest_float("epsilon", 1e-8, 1e-4, log=True)
                       )
-        regressor_obj = MLPRegressor(**params)
+        regressor_obj = MLPRegressor(**params, random_state=RANDOM_STATE)
+    else:
+        raise ValueError(
+            'hyperparametes: models accepts only the following values: "NN", "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
+
     return regressor_obj, params
 
 
@@ -195,7 +199,7 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
         for model_name in tqdm(model_names):
             study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
-            trials = {'Ridge': 200, 'Lasso': 200, 'ElasticNet': 200, 'LGBMRegressor': 200,
+            trials = {'Ridge': 150, 'Lasso': 150, 'ElasticNet': 150, 'LGBMRegressor': 200,
                       'XGBoost': 200,
                       'CatBoostRegressor': 100, 'NN': 100, 'RandomForest': 200}
 
@@ -299,7 +303,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
                                                    discrete_features=discrete_features_bool, random_state=0)
             return paired_mi
 
-        def parallel_calculate_mi(i, j, rna_type):
+        def parallel_calculate_mi(i, j):
             feature1 = RNA_X_new[new_features[i]]
             feature2 = RNA_X_new[new_features[j]]
             discrete_features_bool = feature1.dtype == 'int64'
@@ -352,15 +356,15 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
 
         if model == 'XGBoost':
             print('Running: XGBoost for feature selection using eboruta')
-            estimator = XGBRegressor(**param_dict[model], random_state=0)
+            estimator = XGBRegressor(**param_dict[model], random_state=RANDOM_STATE)
         elif model == 'CatBoostRegressor':
-            estimator = CatBoostRegressor(**param_dict[model], allow_writing_files=False, random_state=0)
+            estimator = CatBoostRegressor(**param_dict[model], allow_writing_files=False, random_state=RANDOM_STATE)
             print('Running: CatBoost for feature selection using eboruta')
         elif model == 'RandomForest':
-            estimator = RandomForestRegressor(**param_dict[model], random_state=0)
+            estimator = RandomForestRegressor(**param_dict[model], random_state=RANDOM_STATE)
             print('Running: Random Forest for feature selection using eboruta')
         elif model == 'LGBMRegressor':
-            estimator = LGBMRegressor(**param_dict[model], random_state=0)
+            estimator = LGBMRegressor(**param_dict[model], random_state=RANDOM_STATE)
         else:
             raise ValueError(
                 'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')

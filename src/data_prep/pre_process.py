@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from sklearn.model_selection import train_test_split
-from src.consts import *
+from src.consts import TARGET_COLUMN, RNA_DATA_COLUMNS, RNAi_PROM_RNAp_COLUMNS, RNAp_EDITED_ZONES, RNAi_EDITED_ZONES, \
+    RNAp_SEQ_ORIGINAL, RNAi_SEQ_ORIGINAL
 from src.data_prep.raw_pcn_fitting import custom_fit_and_transform_raw_pcn
 from src.features.denovo_motifs import score_denovo_motifs
 from src.features.motifs import calc_motifs_pv
@@ -28,7 +29,7 @@ RNAi_high_filename = 'iRNA high copy number.fasta'
 RNAi_low_filename = 'iRNA high copy number.fasta'
 
 
-def get_RNAp_data(rna_type):
+def get_RNAp_data(rna_type='p'):
     """
     get RNA_P df, with additional columns
     :return:
@@ -123,7 +124,9 @@ def generate_features(RNA_data: pd.DataFrame, rna_type: str = 'p',
     RNA_features.append(
         calculate_dG_and_Tx(RNA_seq, selected_features))  # 3 features based ution biophysical properties (deltaG)
     RNA_features.append(score_denovo_motifs(RNA_seq, selected_features))
-    RNA_features.append(make_rna_features_in_pipeline(RNA_seq, selected_features))
+
+    if rna_type == 'i_w_folding':
+        RNA_features.append(make_rna_features_in_pipeline(RNA_seq, selected_features))
 
     RNA_X = pd.concat(RNA_features, axis=1)
     RNA_X.replace(-np.inf, -sys.maxsize, inplace=True)
@@ -239,7 +242,6 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
         RNA_data_train_val.drop(row.index, inplace=True)
         RNA_stratify_test = RNA_stratify_test.append(row_statify, ignore_index=True)
         RNA_stratify_train_val.drop(row_statify.index, inplace=True)
-
 
     RNA_stratify_train_val = RNA_stratify_train_val['stratify']
     RNA_X_train_val = RNA_data_train_val.drop(TARGET_COLUMN, axis=1)

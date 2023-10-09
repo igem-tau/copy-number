@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import seaborn as sns
+from src.consts import RANDOM_STATE
 from src.data_prep.pre_process import get_features_df
 from src.models.models_functions import prepare_model_data
 from src.utils import get_current_file_parent_path
@@ -55,9 +56,9 @@ def get_features_exploration_data(X: pd.DataFrame, y: 'pd.Series[int]', model_ty
         X_train, X_test, y_train, y_test = prepare_model_data(X, y, random_state=seed)
 
         if model_type == 'lasso':
-            model = Lasso(alpha=0.3, max_iter=5000)
+            model = Lasso(alpha=0.3, max_iter=5000, random_state=RANDOM_STATE)
         elif model_type == 'xgboost':
-            model = XGBRegressor()
+            model = XGBRegressor(random_state=RANDOM_STATE)
 
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)

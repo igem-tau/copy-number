@@ -8,7 +8,7 @@ from src.consts import *
 import subprocess
 import re  # for the base-pairing energy function
 from tqdm import tqdm
-from typing import List
+from typing import List, Optional
 from time import time
 
 from src.utils import is_feature_selected
@@ -204,7 +204,7 @@ def rna_features_in_window(rna_seq: str):
 
 def rna_features_by_windows(seqs: 'pd.Series[List[str]]', selected_features: 'Optional[List[str]]', window_start: int = 0, window_end: int = 60, window_size: int = 70, window_jump: int = 10) -> pd.DataFrame:
     d = {}
-    while tqdm(window_start <= window_end):
+    while window_start <= window_end:
         mfe = f"mfe_window_{window_start}_{window_start + window_size}"
         unpaired_cnt = f"unpaired_cnt_window_{window_start}_{window_start + window_size}"
         bow_cnt = f"bow_cnt_window_{window_start}_{window_start + window_size}"

@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
@@ -13,40 +12,41 @@ import xgboost as xgb
 import numpy as np
 from catboost import CatBoostRegressor
 from scipy.stats import pearsonr
-
+from src.consts import RANDOM_STATE
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 FIGURES_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data', 'figures')
 
-def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: str = None, Best_param: Optional[dict] = None,
-                save_plots: bool = False):
+
+def run_model(model_name, X_train, X_test, y_train, y_test, data_title: str = None, Best_param: Optional[dict] = None,
+              save_plots: bool = False):
     if model_name == 'XGBoost':
         Best_param.pop('callbacks', None)
         Best_param['n_estimators'] = 1000
         if Best_param is not None:
-            model = xgb.XGBRegressor(**Best_param)
+            model = xgb.XGBRegressor(**Best_param, random_state=RANDOM_STATE)
         else:
-            model = xgb.XGBRegressor()
+            model = xgb.XGBRegressor(random_state=RANDOM_STATE)
 
     elif model_name == 'CatBoostRegressor':
         if Best_param is not None:
-            model = CatBoostRegressor(**Best_param, allow_writing_files=False)
+            model = CatBoostRegressor(**Best_param, allow_writing_files=False, random_state=RANDOM_STATE)
         else:
-            model = CatBoostRegressor(allow_writing_files=False)
+            model = CatBoostRegressor(allow_writing_files=False, random_state=RANDOM_STATE)
 
     elif model_name == 'RandomForest':
         if Best_param is not None:
-            model = RandomForestRegressor(**Best_param)
+            model = RandomForestRegressor(**Best_param, random_state=RANDOM_STATE)
         else:
-            model = RandomForestRegressor()\
+            model = RandomForestRegressor(random_state=RANDOM_STATE)
 
     elif model_name == 'LGBMRegressor':
         if Best_param is not None:
-            model = LGBMRegressor(**Best_param)
+            model = LGBMRegressor(**Best_param, random_state=RANDOM_STATE)
         else:
-            model = LGBMRegressor()
+            model = LGBMRegressor(random_state=RANDOM_STATE)
 
     else:
         raise ValueError(
@@ -82,14 +82,17 @@ def run_trees_model(model_name, X_train, X_test, y_train, y_test, data_title: st
             f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
         # evaluation plot
-        fig = px.scatter(x=y_test, y=y_pred, labels={'x': 'Actual values (log scale)', 'y': 'Predicted values (log scale)'})
+        fig = px.scatter(x=y_test, y=y_pred,
+                         labels={'x': 'Actual values (log scale)', 'y': 'Predicted values (log scale)'})
         fig.add_trace(
-            go.Scatter(x=[min(y_test), max(y_test)], y=[min(y_test), max(y_test)], mode='lines', name='', showlegend=False))
+            go.Scatter(x=[min(y_test), max(y_test)], y=[min(y_test), max(y_test)], mode='lines', name='',
+                       showlegend=False))
         fig.add_annotation(x=1, y=0.01, text=f'spearman correlation={spearman:.4f}', showarrow=False, xref='paper',
                            yref='paper', font=dict(size=15))
         fig.add_annotation(x=1, y=0.1, text=f'pearson correlation={pearson:.4f}', showarrow=False, xref='paper',
-                           yref='paper' ,font=dict(size=15))
-        fig.add_annotation(x=1, y=0.2, text=f'MAE={mae_score:.4f}', showarrow=False, xref='paper', yref='paper',font=dict(size=15))
+                           yref='paper', font=dict(size=15))
+        fig.add_annotation(x=1, y=0.2, text=f'MAE={mae_score:.4f}', showarrow=False, xref='paper', yref='paper',
+                           font=dict(size=15))
         fig.update_layout(title=f'{model_name} - {data_title}')
         with open(Path(FIGURES_PATH, f'{model_name} evaluation {data_title}.html'), 'w') as f:
             f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))

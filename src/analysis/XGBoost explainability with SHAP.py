@@ -2,6 +2,7 @@ from joblib import load
 import pandas as pd
 from pathlib import Path
 import shap
+from src.consts import RANDOM_STATE
 from src.utils import get_current_file_parent_path
 from xgboost import XGBRegressor
 
@@ -18,7 +19,7 @@ CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 data = load(Path(DATA_PATH, 'DataFrames_with_features.joblib'))
 
-model = XGBRegressor()  # TODO: import the trained model + X_train
+model = XGBRegressor(random_state=RANDOM_STATE)  # TODO: import the trained model + X_train
 X_train = pd.DataFrame(None)
 X_test = pd.DataFrame(None)
 
