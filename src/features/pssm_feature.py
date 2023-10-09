@@ -7,7 +7,6 @@ import pandas as pd
 from pathlib import Path
 from src.utils import get_current_file_parent_path
 
-
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 PSSM_THRESHOLD_PATH_p = Path(DATA_PATH, 'pssm_threshold_pRNA.pkl')
@@ -31,8 +30,7 @@ def is_high_copy_number(copy_number: 'pd.Series[int]', rna_type: str = 'p') -> '
 def calc_pssm_matrix(data: 'pd.Series[str]') -> pd.DataFrame:
     cp_motifs = motifs.create(data.tolist())
     pwm = pd.DataFrame(cp_motifs.pwm)
-    return (np.log2(pwm/0.25)).fillna(0)
-
+    return (np.log2(pwm / 0.25)).fillna(0)
 
 
 def calc_pssm_score(seq: str, pssm: pd.DataFrame) -> float:
@@ -50,7 +48,8 @@ def calc_series_pssm_score(seq: 'pd.Series[str]', ref_seq: 'pd.Series[str]', pss
     pssm_scores = seq['Promoter Sequence (-35 to +1)'].apply(partial(calc_pssm_score, pssm=pssm))
     return pssm_scores.rename('pssm_score')
 
-def set_pssm_thresholds(RNA_df: pd.DataFrame, rna_type:str = 'p') -> None:
+
+def set_pssm_thresholds(RNA_df: pd.DataFrame, rna_type: str = 'p') -> None:
     percentage = 0.2
     n = int(len(RNA_df) * percentage)
     high_cp = RNA_df.nlargest(n, TARGET_COLUMN)['Promoter Sequence (-35 to +1)']
@@ -67,6 +66,7 @@ def set_pssm_thresholds(RNA_df: pd.DataFrame, rna_type:str = 'p') -> None:
 
 if __name__ == '__main__':
     from src.data_prep.pre_process import get_RNAp_data, get_RNAi_data
+
     RNA_type = 'p'
     RNAp_df = get_RNAp_data()
     set_pssm_thresholds(RNAp_df, RNA_type)

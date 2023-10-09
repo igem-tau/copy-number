@@ -16,7 +16,7 @@ def run_lasso(X_train, X_test, y_train, y_test, data_title: str = None, Best_par
     if Best_param is not None:
         lasso_model = Lasso(**Best_param, random_state=RANDOM_STATE)
     else:
-        lasso_model = Lasso(alpha=0.3, max_iter=5000)
+        lasso_model = Lasso(alpha=0.3, max_iter=5000, random_state=RANDOM_STATE)
     # training the model
     lasso_model.fit(X_train, y_train)
     # Predict

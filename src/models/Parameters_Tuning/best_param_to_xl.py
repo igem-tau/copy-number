@@ -1,31 +1,23 @@
 import re
 from functools import partial
 from pathlib import Path
-import matplotlib.pyplot as plt
 import numpy as np
 import openpyxl
 import pandas as pd
-from lightgbm import LGBMRegressor
 from sklearn import metrics
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LassoCV
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import r2_score
 from sklearn.model_selection import RandomizedSearchCV
-
 from src.models.Features_Models_Selection import get_hyper_parameters
 from src.models.models_functions import prepare_model_data
-from src.data_prep.pre_process import train_validation_split
 import warnings
 import xgboost as xgb
-from catboost import CatBoostRegressor
 from xgboost.callback import EarlyStopping
 import optuna
 from optuna.visualization import *
 from src.consts import RANDOM_STATE
 from src.utils import get_current_file_parent_path, get_current_date
 from joblib import dump, load
-from scipy.stats import pearsonr
-import plotly as py
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', '..', 'data')
@@ -50,11 +42,11 @@ def write_to_xl(dic, model_name):
 
 
 def converge_randomsearch(X_train, X_test, y_train, y_test, dataset_name, num_of_steps=5, nun_iter=7):
-    xgb_tuned = xgb.XGBRegressor(random_state=1)
+    xgb_tuned = xgb.XGBRegressor(random_state=RANDOM_STATE)
     parameters_base = {'learning_rate': [0.5 / 2], 'n_estimators': [int(2000 / 2)], 'max_depth': [int(20 / 2)],
                        'gamma': [0.8 / 2], 'subsample': [0.99 / 2], 'colsample_bytree': [0.99 / 2]}
 
-    def calc_range(key, min_val, max_val, t, parameters_base=parameters_base, ):
+    def calc_range(key, min_val, max_val, t, parameters_base=parameters_base):
         [lower_n, upper_num] = [max(min_val, parameters_base[key][0] - (parameters_base[key][0] / (t + 0.5))),
                                 min(max_val, parameters_base[key][0] + (parameters_base[key][0] / (t + 0.5)))]
         return ([lower_n, upper_num])
@@ -197,8 +189,7 @@ def get_best_param_optuna(X_train, X_val, y_train, y_val, model_name, rna_type, 
     best_params_file_path = Path(DATA_PATH, best_params_file_name)
     best_params_study_file_name = f'RNA{rna_type}_best_params_study_{model_name}.joblib'
     best_params_study_file_path = Path(DATA_PATH, best_params_study_file_name)
-    # num_trials = 200
-    num_trials = 1
+    num_trials = 200
     max_trials_per_optimization_cycle = 10
 
     if best_params_file_path.exists():

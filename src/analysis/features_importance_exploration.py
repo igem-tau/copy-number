@@ -56,7 +56,7 @@ def get_features_exploration_data(X: pd.DataFrame, y: 'pd.Series[int]', model_ty
         X_train, X_test, y_train, y_test = prepare_model_data(X, y, random_state=seed)
 
         if model_type == 'lasso':
-            model = Lasso(alpha=0.3, max_iter=5000)
+            model = Lasso(alpha=0.3, max_iter=5000, random_state=RANDOM_STATE)
         elif model_type == 'xgboost':
             model = XGBRegressor(random_state=RANDOM_STATE)
 

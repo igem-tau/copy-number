@@ -7,7 +7,7 @@ from eBoruta import eBoruta
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.feature_selection import mutual_info_regression, mutual_info_classif, SelectFromModel
+from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
 from sklearn.linear_model import Ridge, Lasso, ElasticNet
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from scipy.stats import pearsonr
@@ -16,7 +16,6 @@ from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from sklearn.neural_network import MLPRegressor
 from pathlib import Path
-from sklearn.svm import SVR
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from typing import Dict
@@ -200,12 +199,9 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
         for model_name in tqdm(model_names):
             study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
-            # trials = {'Ridge': 200, 'Lasso': 200, 'ElasticNet': 200, 'LGBMRegressor': 200,
-            #           'XGBoost': 200,
-            #           'CatBoostRegressor': 100, 'NN': 100, 'RandomForest': 200}
-            trials = {'Ridge': 1, 'Lasso': 1, 'ElasticNet': 1, 'LGBMRegressor': 1,
-                      'XGBoost': 1,
-                      'CatBoostRegressor': 1, 'NN': 1, 'RandomForest': 1}
+            trials = {'Ridge': 150, 'Lasso': 150, 'ElasticNet': 150, 'LGBMRegressor': 200,
+                      'XGBoost': 200,
+                      'CatBoostRegressor': 100, 'NN': 100, 'RandomForest': 200}
 
             study = optuna.create_study(direction='maximize')
             if Path(DATA_PATH, study_file_name).exists():
@@ -307,7 +303,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
                                                    discrete_features=discrete_features_bool, random_state=0)
             return paired_mi
 
-        def parallel_calculate_mi(i, j, rna_type):
+        def parallel_calculate_mi(i, j):
             feature1 = RNA_X_new[new_features[i]]
             feature2 = RNA_X_new[new_features[j]]
             discrete_features_bool = feature1.dtype == 'int64'
@@ -373,7 +369,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
             raise ValueError(
                 'feature_selection: models accepts only the following values: "XGBoost", "CatBoostRegressor", "LGBMRegressor" or "RandomForest"')
 
-        importance_getter = get_features_importance(rna_type) if model in ['CatBoostRegressor', 'LGBMRegressor'] else None
+        importance_getter = get_features_importance if model in ['CatBoostRegressor', 'LGBMRegressor'] else None
         eboruta = eBoruta(n_iter=300, classification=False, shap_check_additivity=False, shap_approximate=True,
                           importance_getter=importance_getter, verbose=1).fit(RNA_X_new, RNA_y, model=estimator)
 
@@ -395,6 +391,3 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
 def get_features_importance(model):
     if isinstance(model, CatBoostRegressor) or isinstance(model, LGBMRegressor):
         return model.feature_importances_
-
-
-

@@ -6,7 +6,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from src.models.lasso import run_lasso
 from src.models.boosting_models import run_model
-import matplotlib.pyplot as plt
 from pathlib import Path
 from src.utils import get_current_file_parent_path
 import plotly.graph_objects as go
