@@ -259,7 +259,7 @@ def base_pair_probabilities(file_path: str, end_idx: int, selected_features: 'Op
                     key = f"seq_end_{end_idx}_{parts[0]}_{parts[1]}"  # name the feature "1st_index 2nd_index"
                     value = parts[2]  # and assign to it the value 'probability'
                     if is_feature_selected(key, selected_features):
-                        probabilities_dict[key] = value
+                        probabilities_dict[key] = float(value)
                 except Exception as ex:
                     print(ex)
 
