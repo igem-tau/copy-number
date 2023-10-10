@@ -267,27 +267,6 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
     RNA_X_test, RNA_y_test = generate_features(RNA_data_test, reference_RNA_data=RNA_data_train_val, rna_type=rna_type,
                                                selected_features=temp_RNA_X_train_features)
 
-    # TODO - move into generate_features
-    if rna_type == 'i_w_folding':
-        RNAi_from_RNAp_feats = pd.read_csv(Path(CURRENT_FOLDER_PATH, '..', 'features', 'rna_p_new_features.csv'))
-
-        RNAi_from_RNAp_feats_train_val, RNAi_from_RNAp_feats_test = split_for_testing(RNAi_from_RNAp_feats, RNA_y,
-                                                                                      stratify_by=RNA_stratify_col)
-        RNAi_from_RNAp_feats_stratify_train_val, _ = split_for_testing(RNA_stratify_col, RNA_y,
-                                                                       stratify_by=RNA_stratify_col)
-        RNAi_from_RNAp_feats_stratify_train_val = RNA_stratify_train_val
-        RNAi_from_RNAp_feats_X_train_val = RNAi_from_RNAp_feats_train_val.drop(TARGET_COLUMN, axis=1)
-        RNAi_from_RNAp_feats_y_train_val = RNAi_from_RNAp_feats_train_val[TARGET_COLUMN]
-        RNAi_from_RNAp_feats_X_train, RNAi_from_RNAp_feats_X_val, _, _ = train_validation_split(
-            RNAi_from_RNAp_feats_X_train_val,
-            RNAi_from_RNAp_feats_y_train_val,
-            stratify_by=RNAi_from_RNAp_feats_stratify_train_val
-        )
-
-        RNA_X_train = pd.concat([RNA_X_train, RNAi_from_RNAp_feats_X_train], axis=1)
-        RNA_X_val = pd.concat([RNA_X_val, RNAi_from_RNAp_feats_X_val], axis=1)
-        RNA_X_test = pd.concat([RNA_X_test, RNAi_from_RNAp_feats_test], axis=1)
-
     # TODO - once the code above has been moved into generate_features, this part can be deleted
     final_RNA_X_train = remove_zero_variance_features(RNA_X_train)
     final_RNA_X_val = RNA_X_val[final_RNA_X_train.columns]

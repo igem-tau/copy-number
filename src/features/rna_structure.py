@@ -727,29 +727,23 @@ def dna_topology_dist_diff(df: pd.DataFrame, seq_col: str, wildtype_seq: str):
         'smooth_n_x', 'smooth_n_y', 'smooth_n_z']] = df[seq_col].apply(curved_dna_diff, base_seq=wildtype_seq, result_type='expand')
 
 
-# def make_rna_features(rna: pd.DataFrame) -> pd.DataFrame:
-#     sl_match = get_match_rate_to_stem_loop_3(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483])
-#     alpha_beta_match = get_match_rate_to_alpha_beta(rna, [130, 180, 230, 300, 400, 483])
-#     alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, [130, 180, 230, 300, 400, 483])
-#     # c_rich_area_match = get_match_rate_to_c_rich_area(rna, [230, 300, 400, 483])  # there is no consensus stem loop VI
-#     bases_probabilities = get_prob_df(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483])  # check only specific "interesting locations"
-#     mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483])
-#     stem_loops_mfe = get_stem_loops_mfe(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483])
-#     base_pairing_ranges = get_base_pairing_ranges(rna)
-#     rna_forms = get_rna_form(rna, range(12, 133, 10))
-#     features_by_windows = rna_features_by_windows(rna)
-#
-#     features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, bases_probabilities, mfe_centroid_comparison, stem_loops_mfe, base_pairing_ranges, rna_forms, features_by_windows]
-#     # excluded c_rich_area_match
-#     result_df = pd.concat(features_dfs, axis=1)
-#     return result_df
+def make_rna_features(rna: pd.DataFrame, selected_features: 'Optional[List[str]]' = None) -> pd.DataFrame:
+    sl_match = get_match_rate_to_stem_loop_3(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features)
+    alpha_beta_match = get_match_rate_to_alpha_beta(rna, [130, 180, 230, 300, 400, 483], selected_features)
+    alpha_beta_extended_match = get_match_rate_to_extended_alpha_beta(rna, [130, 180, 230, 300, 400, 483], selected_features)
+    # c_rich_area_match = get_match_rate_to_c_rich_area(rna, [230, 300, 400, 483], selected_features)  # there is no consensus stem loop VI
+    bases_probabilities = get_prob_df(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features)  # check only specific "interesting locations"
+    mfe_centroid_comparison = get_mfe_centroid_comparison_df(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features)
+    stem_loops_mfe = get_stem_loops_mfe(rna, [50, 60, 70, 80, 130, 180, 230, 300, 400, 483], selected_features)
+    base_pairing_ranges = get_base_pairing_ranges(rna, selected_features)
+    rna_forms = get_rna_form(rna, range(12, 133, 10), selected_features)
+    features_by_windows = rna_features_by_windows(rna, selected_features)
 
-#
-# def make_rna_features_parallel(rna: pd.DataFrame) -> pd.DataFrame:
-#     pool = multiprocessing.Pool(processes=2)
-#
-#     result_a = pool.apply_async(a, (p1, p2))
-#
+    features_dfs = [sl_match, alpha_beta_match, alpha_beta_extended_match, bases_probabilities, mfe_centroid_comparison, stem_loops_mfe, base_pairing_ranges, rna_forms, features_by_windows]
+    # excluded c_rich_area_match
+    result_df = pd.concat(features_dfs, axis=1)
+    return result_df
+
 
 def worker(func_and_args, results):
     func, args = func_and_args
@@ -898,7 +892,8 @@ def generate_RNAp_sequence(dna_seq: pd.Series, consensus_rna_seq: str = CONSENSU
 # in order to function as part of the main pipeline - the function should get a pd.series of the DNA sequence, convert it to the RNAp sequence and then extract the features
 def make_rna_features_in_pipeline(dna_seq: pd.Series, selected_features: 'Optional[List[str]]' = None) -> pd.DataFrame:
     rna_p_sequences = generate_RNAp_sequence(dna_seq)
-    featues_df = make_rna_features_parallel(rna_p_sequences, selected_features)
+    # featues_df = make_rna_features_parallel(rna_p_sequences, selected_features)
+    featues_df = make_rna_features(rna_p_sequences, selected_features)
     return featues_df
 
 
