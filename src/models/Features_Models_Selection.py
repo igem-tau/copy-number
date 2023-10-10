@@ -375,13 +375,25 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
 
         # Return Values :
         features = eboruta.features_
-        features_to_accept = list(features.accepted)
+        features_to_accept = features.accepted
+
+        if len(features_to_accept) == 0:
+            try:
+                features_importance = pd.DataFrame(
+                    {'feature': estimator.feature_name_ if isinstance(estimator,
+                                                                      LGBMRegressor) else estimator.feature_names_,
+                     'importance': estimator.feature_importances_})
+                features_importance = features_importance.sort_values(by='importance', ascending=False)
+                features_to_accept = features_importance.head(10)['feature']
+            except AttributeError:
+                features_to_accept = ['pssm_score', 'dG_total', 'rpoD16_score', 'C__T_count', 'GTA_GC_count']
 
         if model == 'LGBMRegressor':
             original_columns = pd.Series(RNA_X.columns)
             lgbm_columns = original_columns.apply(lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
             features_to_accept = pd.DataFrame(zip(original_columns, lgbm_columns), columns=['before', 'after']).query(
                 f'after.isin({list(features_to_accept)})')['before']
+        features_to_accept = list(features_to_accept)
 
         dump(features_to_accept, Path(DATA_PATH, filename), compress=True)
 
