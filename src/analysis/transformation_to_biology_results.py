@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from src.consts import PROMOTER_LENGTH, RNA_DATA_COLUMNS
+from src.data_prep.raw_pcn_fitting import get_measured_pcn, get_log_log_linear_regression
 from src.utils import get_current_file_parent_path
 from pathlib import Path
 import plotly
@@ -16,13 +18,13 @@ ADDITIONAL_DATA_FILE_PATH = Path(DATA_PATH, 'biology_results', f'PCN RNA{RNA_TYP
 
 
 def is_promoter_sequence_valid(sequence):
-    return '-' not in sequence and len(sequence) == 36
+    return '-' not in sequence and len(sequence) == PROMOTER_LENGTH
 
 
-def join_data_with_article_sequences(article_data, additional_data, additional_promoter_col='promoter seq'):
-    merged_data = pd.merge(article_data, additional_data, how='inner', left_on='Promoter Sequence (-35 to +1)',
-                           right_on=additional_promoter_col)
-    merged_data.rename(columns={additional_data.columns.values[-1]: TARGET_PCN_COLUMN_NAME}, inplace=True)
+def join_data_with_predicted_sequences(predicted_data, measurement_data, measurement_promoter_col='promoter seq'):
+    merged_data = pd.merge(predicted_data, measurement_data, how='inner', left_on='Promoter Sequence (-35 to +1)',
+                           right_on=measurement_promoter_col)
+    merged_data.rename(columns={measurement_data.columns.values[-1]: TARGET_PCN_COLUMN_NAME}, inplace=True)
     return merged_data
 
 
@@ -31,47 +33,49 @@ def article_fit_func(raw_pcn):
 
 
 def scatter_plot_raw_target(raw_traget_pcn_df):
-    fig = px.scatter(raw_traget_pcn_df, x='x', y='y', color='type',
-                     labels={'x': 'log raw copy number', 'y': 'log ddPCR/qPCR'})
+    fig = px.scatter(raw_traget_pcn_df, x='raw_pcn', y='target_pcn', color='type',
+                     labels={'raw_pcn': 'log raw copy number', 'target_pcn': 'log ddPCR/qPCR'})
     fig.update_traces(marker_size=5)
     return fig
 
 
-if __name__ == '__main__':
-    article_data = pd.read_csv(DATA_FILE_PATH, index_col=0)
-    article_ddpcr_data = pd.read_excel(ADDITIONAL_DATA_FILE_PATH, sheet_name=f'ddPCR - RNA{RNA_TYPE}')[
-        ['promoter seq', 'use for fit', 'ddpcr']]
-    our_bio_data = pd.read_excel(ADDITIONAL_DATA_FILE_PATH, sheet_name=f'Our qPCR - RNA{RNA_TYPE}')[
-        [f'RNA{RNA_TYPE} promoter', 'use for fit', 'PCN measured in Wet lab']]
+def permutations_p_value(prediction, target, out_of=100, corr='spearman'):
+    if corr == 'spearman':
+        corr_method = spearmanr
+    elif corr == 'pearson':
+        corr_method = pearsonr
+    else:
+        raise ValueError(
+            'transformation_to_biology_results.permutations_p_value: corr supports only: "spearman" or "pearson"')
+    base_score = corr_method(prediction, target).statistic
+    better_count = 0
+    permutations = []
+    while len(permutations) < out_of:
+        new_permutation = np.random.permutation(prediction)
+        if all([(new_permutation != p).any() for p in permutations]):
+            permutations.append(new_permutation)
+            permutation_score = corr_method(new_permutation, target).statistic
+            if permutation_score >= base_score:
+                better_count += 1
 
-    # filter invalid promoters (due to indel)
-    our_bio_data = our_bio_data.loc[our_bio_data[f"RNA{RNA_TYPE} promoter"].apply(is_promoter_sequence_valid)]
+    return max(1, better_count) / out_of
 
-    concat_ddpcr = join_data_with_article_sequences(article_data, article_ddpcr_data, 'promoter seq')
-    concat_qpcr = join_data_with_article_sequences(article_data, our_bio_data, f'RNA{RNA_TYPE} promoter')
 
-    raw_target_pcn_df = pd.concat((
-        pd.DataFrame(
-            {'x': concat_ddpcr[RAW_PCN_COLUMN_NAME], 'y': concat_ddpcr[TARGET_PCN_COLUMN_NAME],
-             'use_for_fit': concat_ddpcr['use for fit'], 'type': 'ddPCR'}),
-        pd.DataFrame(
-            {'x': concat_qpcr[RAW_PCN_COLUMN_NAME], 'y': concat_qpcr[TARGET_PCN_COLUMN_NAME],
-             'use_for_fit': concat_qpcr['use for fit'], 'type': 'qPCR'})), axis=0)
+def pre_model_prep():
+    measured_pcn_for_fit = get_measured_pcn(for_fit=True)
 
-    # raw_target_pcn_df = raw_target_pcn_df.query('x < 25')
+    measured_pcn_for_fit['raw_pcn'] = measured_pcn_for_fit['raw_pcn'].apply(np.log)
+    measured_pcn_for_fit['target_pcn'] = measured_pcn_for_fit['target_pcn'].apply(np.log)
 
-    raw_target_pcn_df = raw_target_pcn_df.query('use_for_fit == "V"')
-    raw_target_pcn_df['x'] = raw_target_pcn_df['x'].apply(np.log)
-    raw_target_pcn_df['y'] = raw_target_pcn_df['y'].apply(np.log)
+    fig = scatter_plot_raw_target(measured_pcn_for_fit)
 
-    fig = scatter_plot_raw_target(raw_target_pcn_df)
-
-    slope, intercept, pearson_corr, p_value, std_err = linregress(raw_target_pcn_df['x'], raw_target_pcn_df['y'])
+    slope, intercept, pearson_corr, p_value, std_err = linregress(measured_pcn_for_fit['raw_pcn'],
+                                                                  measured_pcn_for_fit['target_pcn'])
     print(f'{slope=} {intercept=} {pearson_corr=} {p_value=} {std_err=}')
-    spearman_corr = spearmanr(raw_target_pcn_df['y'], raw_target_pcn_df['x'])
+    spearman_corr = spearmanr(measured_pcn_for_fit['raw_pcn'], measured_pcn_for_fit['target_pcn'])
     print('spearman', spearman_corr)
 
-    x_space = pd.Series(np.linspace(raw_target_pcn_df['x'].min(), raw_target_pcn_df['x'].max(), 1000))
+    x_space = pd.Series(np.linspace(measured_pcn_for_fit['raw_pcn'].min(), measured_pcn_for_fit['raw_pcn'].max(), 1000))
     fig.add_trace(go.Scatter(x=x_space,
                              y=(x_space.apply(lambda x: slope * x + intercept)), name='linear regression'))
 
@@ -81,8 +85,8 @@ if __name__ == '__main__':
 
     fig.update_layout(title=dict(text=f'raw copy number power log fit, y={slope:.3f}x + {intercept:.3f}'))
     fig.add_trace(go.Scatter(
-        x=[raw_target_pcn_df['x'].min(), raw_target_pcn_df['x'].min()],
-        y=[raw_target_pcn_df['y'].max(), raw_target_pcn_df['y'].max() - .3],
+        x=[measured_pcn_for_fit['raw_pcn'].min(), measured_pcn_for_fit['raw_pcn'].min()],
+        y=[measured_pcn_for_fit['target_pcn'].max(), measured_pcn_for_fit['target_pcn'].max() - .3],
         mode="text",
         name='correlations metrics',
         text=[f'spearman: {spearman_corr.statistic:.3f}, p-value: {spearman_corr.pvalue:.3f}',
@@ -91,3 +95,70 @@ if __name__ == '__main__':
     ))
 
     plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'raw_pcn_fit_search.html')))
+
+
+def post_model_estimation():
+    measurements_predictions = get_measured_pcn(with_duplicates=False, matching='predictions')
+    measurements_predictions_for_val = measurements_predictions.query('use_for_fit == "X"').copy()
+
+    measurements_predictions_for_val['raw_pcn'] = measurements_predictions_for_val['raw_pcn'].apply(np.log)
+    measurements_predictions_for_val['target_pcn'] = measurements_predictions_for_val['target_pcn'].apply(np.log)
+
+    slope, intercept, pearson_corr, p_value, std_err = linregress(
+        measurements_predictions_for_val['raw_pcn'],
+        measurements_predictions_for_val['target_pcn'])
+
+    print(f'{slope=} {intercept=} {pearson_corr=} {p_value=} {std_err=}')
+    spearman_corr = spearmanr(measurements_predictions_for_val['raw_pcn'],
+                              measurements_predictions_for_val['target_pcn'])
+    print('spearman', spearman_corr)
+
+    spearman_permutations_p_value = permutations_p_value(measurements_predictions_for_val['raw_pcn'],
+                                                         measurements_predictions_for_val['target_pcn'], out_of=100)
+    print(f'{spearman_permutations_p_value=}, out of 100')
+    spearman_permutations_p_value = permutations_p_value(measurements_predictions_for_val['raw_pcn'],
+                                                         measurements_predictions_for_val['target_pcn'], out_of=1000)
+    print(f'{spearman_permutations_p_value=}, out of 1000')
+
+    pearson_permutations_p_value = permutations_p_value(measurements_predictions_for_val['raw_pcn'],
+                                                        measurements_predictions_for_val['target_pcn'], corr='pearson',
+                                                        out_of=100)
+    print(f'{pearson_permutations_p_value=}, out of 100')
+    pearson_permutations_p_value = permutations_p_value(measurements_predictions_for_val['raw_pcn'],
+                                                        measurements_predictions_for_val['target_pcn'], corr='pearson',
+                                                        out_of=1000)
+    print(f'{pearson_permutations_p_value=}, out of 1000')
+
+    fig = px.scatter(measurements_predictions_for_val, x='raw_pcn', y='target_pcn', color='type',
+                     labels={'raw_pcn': 'log predicted copy number', 'target_pcn': 'log ddPCR/qPCR'})
+    fig.update_traces(marker_size=5)
+    x_space = pd.Series(np.linspace(measurements_predictions_for_val['raw_pcn'].min(),
+                                    measurements_predictions_for_val['raw_pcn'].max(), 1000))
+    fig.add_trace(go.Scatter(x=x_space,
+                             y=(x_space.apply(lambda x: slope * x + intercept)), name='linear regression'))
+
+    # fig.add_trace(go.Scatter(x=x_space,
+    #                          y=(x_space.apply(lambda x: np.exp(slope * x + intercept))),
+    #                          name='pcn by linear regression'))
+
+    fig.update_layout(
+        title=dict(text=f'predicted copy number power log validation fit, y={slope:.3f}x + {intercept:.3f}'))
+    fig.add_trace(go.Scatter(
+        x=[measurements_predictions_for_val['raw_pcn'].min(),
+           measurements_predictions_for_val['raw_pcn'].min()],
+        y=[measurements_predictions_for_val['target_pcn'].max(),
+           measurements_predictions_for_val['target_pcn'].max() - .3],
+        mode="text",
+        name='correlations metrics',
+        text=[f'spearman: {spearman_corr.statistic:.3f}, p-value: {spearman_corr.pvalue:.3f}',
+              f'pearson: {pearson_corr:.3f}, p-value: {p_value:.3f}'],
+        textposition="top right"
+    ))
+
+    plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'predicted_pcn_fit_validation.html')))
+
+
+if __name__ == '__main__':
+    pre_model_prep()
+    print()
+    post_model_estimation()
