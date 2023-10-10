@@ -138,8 +138,7 @@ def run_pipeline(rna_type: str):
 
 
 if __name__ == '__main__':
-    pass
-    run_pipeline(rna_type='p')
-    # run_pipeline(rna_type='p_fitted')
+    # run_pipeline(rna_type='p')
+    run_pipeline(rna_type='p_fitted')
     # run_pipeline(rna_type='i')
     # run_pipeline(rna_type='i_w_folding')
