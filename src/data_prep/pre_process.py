@@ -5,7 +5,7 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from src.consts import TARGET_COLUMN, RNA_DATA_COLUMNS, RNAi_PROM_RNAp_COLUMNS, RNAp_EDITED_ZONES, RNAi_EDITED_ZONES, \
     RNAp_SEQ_ORIGINAL, RNAi_SEQ_ORIGINAL
-from src.data_prep.raw_pcn_fitting import custom_fit_and_transform_raw_pcn
+from src.data_prep.raw_pcn_fitting import custom_fit_and_transform_raw_pcn, update_pcn_by_biology_results
 from src.features.denovo_motifs import score_denovo_motifs
 from src.features.motifs import calc_motifs_pv
 from src.features.nucleotide_features import generate_one_hot_encoding, entropy, extract_nucli_features
@@ -46,6 +46,7 @@ def get_RNAp_data(rna_type='p'):
         # RNAp_df['Raw Copy Number Original'] = RNAp_df[TARGET_COLUMN]
         if rna_type == 'p_fitted':
             RNAp_df[TARGET_COLUMN] = custom_fit_and_transform_raw_pcn(RNAp_df[TARGET_COLUMN])
+            RNAp_df[TARGET_COLUMN] = update_pcn_by_biology_results(RNAp_df)
         else:
             shift = 0
             RNAp_df[TARGET_COLUMN] = np.log(RNAp_df[TARGET_COLUMN] + shift)

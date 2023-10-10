@@ -325,7 +325,7 @@ def feature_selection(RNA_X, RNA_y, param_dict, model, rna_type):
             pairs = zip(*upper_triangle_indices)
 
             # Parallelize the mutual information calculation for upper triangle
-            mi_values_upper = Parallel(n_jobs=-2)(delayed(parallel_calculate_mi)(i, j, rna_type) for i, j in
+            mi_values_upper = Parallel(n_jobs=-2)(delayed(parallel_calculate_mi)(i, j) for i, j in
                                                   tqdm(pairs, total=((num_new_features ** 2 - num_new_features) // 2)))
 
             # Fill the correlation matrix for the upper triangle
