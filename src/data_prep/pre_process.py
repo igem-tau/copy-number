@@ -60,7 +60,7 @@ def get_RNAi_data():
     get RNA_I df, with additional columns
     :return:
     """
-    if TARGET_COLUMN == 'Copy Numer':
+    if TARGET_COLUMN == 'Copy Number':
         RNAi_df = pd.read_excel(Path(DATA_PATH, 'sup_data_2_i_rna.xlsx'),
                                 names=RNA_DATA_COLUMNS)  # inhibitory RNA
         RNAi_df['cnt_grw'] = RNAi_df['Final Counts'] / RNAi_df['Initial Counts']
