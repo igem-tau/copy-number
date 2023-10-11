@@ -270,8 +270,8 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
 
     if rna_type == 'i_w_folding':
         # remove features that are missing from the validation and test sets
-        common_features = set(final_RNA_X_train_features).intersection(set(final_RNA_X_val.columns)).intersection(
-            set(final_RNA_X_test.columns))
+        common_features = list(set(final_RNA_X_train_features).intersection(set(final_RNA_X_val.columns)).intersection(
+            set(final_RNA_X_test.columns)))
         final_RNA_X_train = final_RNA_X_train[common_features]
         final_RNA_X_val = final_RNA_X_val[common_features]
         final_RNA_X_test = final_RNA_X_test[common_features]
