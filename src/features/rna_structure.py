@@ -144,7 +144,7 @@ def get_match_rate_to_extended_alpha_beta(seqs: 'pd.Series[List[str]]', seq_end_
     d = {}
     for end_idx in tqdm(seq_end_idx):
         col_desc = f"alpha_beta_extended_match_seq_end_{end_idx}"
-        if is_feature_selected(f"alpha_beta_extended_match_seq_end_{end_idx}", selected_features):
+        if is_feature_selected(col_desc, selected_features):
             partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
             d[col_desc] = partial_seqs.apply(
                 lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_EXTENDED_ALPHA_BETA_FOLD))
