@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from src.consts import PROMOTER_LENGTH, RNA_DATA_COLUMNS
-from src.data_prep.raw_pcn_fitting import get_measured_pcn, get_log_log_linear_regression
+from src.consts import PROMOTER_LENGTH
+from src.data_prep.raw_pcn_fitting import get_measured_pcn
 from src.utils import get_current_file_parent_path
 from pathlib import Path
 import plotly
@@ -34,12 +34,13 @@ def article_fit_func(raw_pcn):
 
 def scatter_plot_raw_target(raw_traget_pcn_df):
     fig = px.scatter(raw_traget_pcn_df, x='raw_pcn', y='target_pcn', color='type',
-                     labels={'raw_pcn': 'log raw copy number', 'target_pcn': 'log ddPCR/qPCR'})
+                     labels={'raw_pcn': 'Log of Relative Copy Number', 'target_pcn': 'Log of ddPCR/qPCR',
+                             'type': 'legend:'})
     fig.update_traces(marker_size=5)
     return fig
 
 
-def permutations_p_value(prediction, target, out_of=100, corr='spearman'):
+def permutations_p_value(prediction, target, out_of=100, corr='pearson'):
     if corr == 'spearman':
         corr_method = spearmanr
     elif corr == 'pearson':
@@ -71,27 +72,27 @@ def pre_model_prep():
 
     slope, intercept, pearson_corr, p_value, std_err = linregress(measured_pcn_for_fit['raw_pcn'],
                                                                   measured_pcn_for_fit['target_pcn'])
-    print(f'{slope=} {intercept=} {pearson_corr=} {p_value=} {std_err=}')
+    pearson_permutations_p_value = permutations_p_value(
+        measured_pcn_for_fit['raw_pcn'], measured_pcn_for_fit['target_pcn'],
+        1000, 'pearson')
+    print(f'{slope=} {intercept=} {pearson_corr=} {p_value=} {std_err=} {pearson_permutations_p_value=}')
+
     spearman_corr = spearmanr(measured_pcn_for_fit['raw_pcn'], measured_pcn_for_fit['target_pcn'])
     print('spearman', spearman_corr)
 
     x_space = pd.Series(np.linspace(measured_pcn_for_fit['raw_pcn'].min(), measured_pcn_for_fit['raw_pcn'].max(), 1000))
     fig.add_trace(go.Scatter(x=x_space,
-                             y=(x_space.apply(lambda x: slope * x + intercept)), name='linear regression'))
+                             y=(x_space.apply(lambda x: slope * x + intercept)), name='linear fit'))
 
-    # fig.add_trace(go.Scatter(x=x_space,
-    #                          y=(x_space.apply(lambda x: np.exp(slope * x + intercept))),
-    #                          name='pcn by linear regression'))
-
-    fig.update_layout(title=dict(text=f'raw copy number power log fit, y={slope:.3f}x + {intercept:.3f}'))
+    fig.update_layout(title=dict(text=f'Relative Copy Number Power Log Fit, y={slope:.3f}x + {intercept:.3f}'))
     fig.add_trace(go.Scatter(
-        x=[measured_pcn_for_fit['raw_pcn'].min(), measured_pcn_for_fit['raw_pcn'].min()],
-        y=[measured_pcn_for_fit['target_pcn'].max(), measured_pcn_for_fit['target_pcn'].max() - .3],
+        x=[measured_pcn_for_fit['raw_pcn'].min()],
+        y=[measured_pcn_for_fit['target_pcn'].max()],
         mode="text",
         name='correlations metrics',
-        text=[f'spearman: {spearman_corr.statistic:.3f}, p-value: {spearman_corr.pvalue:.3f}',
-              f'pearson: {pearson_corr:.3f}, p-value: {p_value:.3f}'],
-        textposition="top right"
+        text=[f'pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
+        textposition="top right",
+        showlegend=False
     ))
 
     plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'raw_pcn_fit_search.html')))
@@ -101,58 +102,45 @@ def post_model_estimation():
     measurements_predictions = get_measured_pcn(with_duplicates=False, matching='predictions')
     measurements_predictions_for_val = measurements_predictions.query('use_for_fit == "X"').copy()
 
-    measurements_predictions_for_val['raw_pcn'] = measurements_predictions_for_val['raw_pcn'].apply(np.log)
-    measurements_predictions_for_val['target_pcn'] = measurements_predictions_for_val['target_pcn'].apply(np.log)
+    model_predictions = measurements_predictions_for_val['raw_pcn']
+    biological_measurements = measurements_predictions_for_val['target_pcn']
 
-    slope, intercept, pearson_corr, p_value, std_err = linregress(
-        measurements_predictions_for_val['raw_pcn'],
-        measurements_predictions_for_val['target_pcn'])
+    log_model_predictions = np.log(measurements_predictions_for_val['raw_pcn'])
+    log_biological_measurements = np.log(measurements_predictions_for_val['target_pcn'])
 
-    print(f'{slope=} {intercept=} {pearson_corr=} {p_value=} {std_err=}')
-    spearman_corr = spearmanr(measurements_predictions_for_val['raw_pcn'],
-                              measurements_predictions_for_val['target_pcn'])
+    slope, intercept, pearson_corr, p_value, std_err = linregress(log_model_predictions, log_biological_measurements)
+
+    pearson_permutations_p_value = permutations_p_value(log_model_predictions, log_biological_measurements, 1000,
+                                                        'pearson')
+
+    print(f'{slope=} {intercept=} {pearson_corr=} {p_value=} {std_err=} {pearson_permutations_p_value=}')
+    spearman_corr = spearmanr(model_predictions, log_biological_measurements)
     print('spearman', spearman_corr)
 
-    spearman_permutations_p_value = permutations_p_value(measurements_predictions_for_val['raw_pcn'],
-                                                         measurements_predictions_for_val['target_pcn'], out_of=100)
-    print(f'{spearman_permutations_p_value=}, out of 100')
-    spearman_permutations_p_value = permutations_p_value(measurements_predictions_for_val['raw_pcn'],
-                                                         measurements_predictions_for_val['target_pcn'], out_of=1000)
-    print(f'{spearman_permutations_p_value=}, out of 1000')
-
-    pearson_permutations_p_value = permutations_p_value(measurements_predictions_for_val['raw_pcn'],
-                                                        measurements_predictions_for_val['target_pcn'], corr='pearson',
-                                                        out_of=100)
-    print(f'{pearson_permutations_p_value=}, out of 100')
-    pearson_permutations_p_value = permutations_p_value(measurements_predictions_for_val['raw_pcn'],
-                                                        measurements_predictions_for_val['target_pcn'], corr='pearson',
-                                                        out_of=1000)
-    print(f'{pearson_permutations_p_value=}, out of 1000')
-
-    fig = px.scatter(measurements_predictions_for_val, x='raw_pcn', y='target_pcn', color='type',
-                     labels={'raw_pcn': 'log predicted copy number', 'target_pcn': 'log ddPCR/qPCR'})
+    fig = px.scatter(pd.DataFrame(
+        dict(predictions=model_predictions, target_pcn=biological_measurements, type=measurements_predictions['type'])),
+        x='predictions', y='target_pcn', color='type',
+        labels={'predictions': 'Predicted Copy Number', 'target_pcn': 'ddPCR/qPCR', 'type': 'legend:'})
     fig.update_traces(marker_size=5)
-    x_space = pd.Series(np.linspace(measurements_predictions_for_val['raw_pcn'].min(),
-                                    measurements_predictions_for_val['raw_pcn'].max(), 1000))
-    fig.add_trace(go.Scatter(x=x_space,
-                             y=(x_space.apply(lambda x: slope * x + intercept)), name='linear regression'))
 
-    # fig.add_trace(go.Scatter(x=x_space,
-    #                          y=(x_space.apply(lambda x: np.exp(slope * x + intercept))),
-    #                          name='pcn by linear regression'))
+    x_space = pd.Series(np.linspace(model_predictions.min(), model_predictions.max(), 1000))
+    fig.add_trace(go.Scatter(x=x_space,
+                             y=(x_space.apply(lambda x: np.exp(slope * np.log(x) + intercept))),
+                             name='linear fit'))
 
     fig.update_layout(
-        title=dict(text=f'predicted copy number power log validation fit, y={slope:.3f}x + {intercept:.3f}'))
+        title=dict(text=f'Predicted Copy Number Power Log Validation Fit, y={slope:.3f}x + {intercept:.3f}'),
+        xaxis=dict(tickmode='linear', dtick=0.3, tickformat='.0f', type='log'),
+        yaxis=dict(tickmode='linear', dtick=0.3, tickformat='.0f', type='log')
+    )
     fig.add_trace(go.Scatter(
-        x=[measurements_predictions_for_val['raw_pcn'].min(),
-           measurements_predictions_for_val['raw_pcn'].min()],
-        y=[measurements_predictions_for_val['target_pcn'].max(),
-           measurements_predictions_for_val['target_pcn'].max() - .3],
+        x=[model_predictions.min()],
+        y=[biological_measurements.max()],
         mode="text",
         name='correlations metrics',
-        text=[f'spearman: {spearman_corr.statistic:.3f}, p-value: {spearman_corr.pvalue:.3f}',
-              f'pearson: {pearson_corr:.3f}, p-value: {p_value:.3f}'],
-        textposition="top right"
+        text=[f'pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
+        textposition="top right",
+        showlegend=False
     ))
 
     plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'predicted_pcn_fit_validation.html')))

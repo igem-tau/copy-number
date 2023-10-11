@@ -82,8 +82,6 @@ def estimate_pred(y_true, y_pred, model_name, data_title='', estimator=None, sav
         fig.update_layout(title=f'{model_name} evaluation for {data_title}')
 
         if loglog_axes:
-            # fig.update_xaxes(type='log')
-            # fig.update_yaxes(type='log')
             fig.update_layout(
                 xaxis=dict(tickmode='linear', dtick=0.1, tickformat='.0f', type='log'),
                 yaxis=dict(tickmode='linear', dtick=0.1, tickformat='.0f', type='log')
