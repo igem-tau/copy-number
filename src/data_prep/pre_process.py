@@ -46,7 +46,7 @@ def get_RNAp_data(rna_type='p'):
         # RNAp_df['Raw Copy Number Original'] = RNAp_df[TARGET_COLUMN]
         if rna_type == 'p_fitted':
             RNAp_df[TARGET_COLUMN] = custom_fit_and_transform_raw_pcn(RNAp_df[TARGET_COLUMN])
-            RNAp_df[TARGET_COLUMN] = update_pcn_by_biology_results(RNAp_df)
+            # RNAp_df[TARGET_COLUMN] = update_pcn_by_biology_results(RNAp_df)
         else:
             shift = 0
             RNAp_df[TARGET_COLUMN] = np.log(RNAp_df[TARGET_COLUMN] + shift)
