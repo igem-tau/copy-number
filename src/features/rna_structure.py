@@ -117,9 +117,9 @@ def get_match_rate_to_stem_loop_3(seqs: 'pd.Series[List[str]]', seq_end_idx: lis
     print("Running get_match_rate_to_stem_loop_3")
     d = {}
     for end_idx in tqdm(seq_end_idx):
-        if is_feature_selected(f"sl3_match_seq_end_{end_idx}", selected_features):
+        col_desc = f"sl3_match_seq_end_{end_idx}"
+        if is_feature_selected(col_desc, selected_features):
             partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
-            col_desc = f"sl3_match_seq_end_{end_idx}"
             d[col_desc] = partial_seqs.apply(lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_3_STEM_LOOPS))
     return pd.DataFrame(d)
 
@@ -128,9 +128,9 @@ def get_match_rate_to_alpha_beta(seqs: 'pd.Series[List[str]]', seq_end_idx: list
     print("Running get_match_rate_to_alpha_beta")
     d = {}
     for end_idx in tqdm(seq_end_idx):
-        if is_feature_selected(f"alpha_beta_match_seq_end_{end_idx}", selected_features):
+        col_desc = f"alpha_beta_match_seq_end_{end_idx}"
+        if is_feature_selected(col_desc, selected_features):
             partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
-            col_desc = f"alpha_beta_match_seq_end_{end_idx}"
             d[col_desc] = partial_seqs.apply(lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_ALPHA_BETA_FOLD))
     return pd.DataFrame(d)
 
@@ -139,9 +139,9 @@ def get_match_rate_to_extended_alpha_beta(seqs: 'pd.Series[List[str]]', seq_end_
     print("Running get_match_rate_to_extended_alpha_beta")
     d = {}
     for end_idx in tqdm(seq_end_idx):
+        col_desc = f"alpha_beta_extended_match_seq_end_{end_idx}"
         if is_feature_selected(f"alpha_beta_extended_match_seq_end_{end_idx}", selected_features):
             partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
-            col_desc = f"alpha_beta_extended_match_seq_end_{end_idx}"
             d[col_desc] = partial_seqs.apply(lambda seq: get_match_ratio(seq, CONSENSUS_POSITIONS_EXTENDED_ALPHA_BETA_FOLD))
     return pd.DataFrame(d)
 
@@ -296,8 +296,8 @@ def get_stem_loops_mfe(seqs: 'pd.Series[List[str]]', seq_end_idx: list, selected
     for end_idx in tqdm(seq_end_idx):
         partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
         for sl in STEM_LOOPS:
-            if is_feature_selected(f"mfe_seq_end_{end_idx}_sl_{sl}", selected_features):
-                col_desc = f"mfe_seq_end_{end_idx}_sl_{sl}"
+            col_desc = f"mfe_seq_end_{end_idx}_sl_{sl}"
+            if is_feature_selected(col_desc, selected_features):
                 d[col_desc] = partial_seqs.apply(lambda seq: get_mfe_for_seq(seq, sl))
     return pd.DataFrame(d)
 
@@ -313,7 +313,7 @@ def get_prob_df(seqs: 'pd.Series[List[str]]', seq_end_idx: list, selected_featur
             df_ls.append(df)
     else:
         for end_idx in tqdm(seq_end_idx):
-            feature_exists = any(feature.startswith(f"seq_end_{end_idx}_") for feature in selected_features)
+            feature_exists = pd.Series(selected_features).str.startswith(f'seq_end_{end_idx}_').any()
             if feature_exists:
                 partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
                 seq_and_prob_df = partial_seqs.apply(lambda seq: get_prob_for_seq(seq, end_idx, selected_features))
@@ -389,7 +389,8 @@ def get_mfe_centroid_comparison_df(seqs: 'pd.Series[List[str]]', seq_end_idx: li
             df_ls.append(df)
     else:
         for end_idx in tqdm(seq_end_idx):
-            if any(feature.startswith(f"seq_end_{end_idx} mfe == centroid") for feature in selected_features):
+            feature_exists = pd.Series(selected_features).str.startswith(f"seq_end_{end_idx} mfe == centroid").any()
+            if feature_exists:
                 # check if the selected features contain comparison between mfe and centroid structures
                 partial_seqs = seqs.apply(lambda seq: seq[:end_idx])
                 seq_mfe_centroid_comparison_df = partial_seqs.apply(

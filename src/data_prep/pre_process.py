@@ -259,18 +259,22 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
     create_fasta_file(RNA_data_train, rna_type)
 
     RNA_X_train, RNA_y_train = generate_features(RNA_data_train, rna_type=rna_type)
-    temp_RNA_X_train = remove_zero_variance_features(RNA_X_train)
-
-    temp_RNA_X_train_features = temp_RNA_X_train.columns.values
-    RNA_X_val, RNA_y_val = generate_features(RNA_data_val, reference_RNA_data=RNA_data_train, rna_type=rna_type,
-                                             selected_features=temp_RNA_X_train_features)
-    RNA_X_test, RNA_y_test = generate_features(RNA_data_test, reference_RNA_data=RNA_data_train_val, rna_type=rna_type,
-                                               selected_features=temp_RNA_X_train_features)
-
-    # TODO - once the code above has been moved into generate_features, this part can be deleted
     final_RNA_X_train = remove_zero_variance_features(RNA_X_train)
-    final_RNA_X_val = RNA_X_val[final_RNA_X_train.columns]
-    final_RNA_X_test = RNA_X_test[final_RNA_X_train.columns]
+
+    final_RNA_X_train_features = final_RNA_X_train.columns.values
+    final_RNA_X_val, RNA_y_val = generate_features(RNA_data_val, reference_RNA_data=RNA_data_train, rna_type=rna_type,
+                                                   selected_features=final_RNA_X_train_features)
+    final_RNA_X_test, RNA_y_test = generate_features(RNA_data_test, reference_RNA_data=RNA_data_train_val,
+                                                     rna_type=rna_type,
+                                                     selected_features=final_RNA_X_train_features)
+
+    if rna_type == 'i_w_folding':
+        # remove features that are missing from the validation and test sets
+        common_features = set(final_RNA_X_train_features).intersection(set(final_RNA_X_val.columns)).intersection(
+            set(final_RNA_X_test.columns))
+        final_RNA_X_train = final_RNA_X_train[common_features]
+        final_RNA_X_val = final_RNA_X_val[common_features]
+        final_RNA_X_test = final_RNA_X_test[common_features]
 
     data[f'RNA{rna_type}_X_train_sequences'] = RNA_X_data_train
     data[f'RNA{rna_type}_X_train'] = final_RNA_X_train
