@@ -5,10 +5,10 @@ from src.analysis.EDA import exploratory_data_analysis
 from src.consts import *
 from src.data_prep.pre_process import get_features_df, generate_features
 from src.models.Features_Models_Selection import feature_selection, model_selection
-from src.models.models_functions import model, scale, estimate_pred
+from src.models.models_functions import model, scale
 from src.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb, get_best_param_optuna
 from src.models.sequences_generator import sequence_df_generator
-from src.utils import get_current_file_parent_path, get_current_date
+from src.utils import get_current_file_parent_path, get_current_date, estimate_pred
 import numpy as np
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
@@ -17,6 +17,7 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 import warnings
 
 warnings.filterwarnings('ignore', category=FutureWarning)
+
 
 def run_pipeline(rna_type: str):
     # Load the data features if exists, write if it doesn't
@@ -130,7 +131,7 @@ def run_pipeline(rna_type: str):
 
     # TODO: combine the two models prediction
     final_pred = np.array(total_pred).mean(axis=0)
-    estimate_pred(RNA_y_test, final_pred, 'voting model', rna_type=rna_type)
+    estimate_pred(RNA_y_test, final_pred, 'voting model', data_title=f'RNA{rna_type}')
 
     if rna_type[0] == 'p':
         # final_predicted_df
