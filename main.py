@@ -35,6 +35,12 @@ def run_pipeline(rna_type: str):
     RNA_X_test_features = data[f'RNA{rna_type}_X_test']
     RNA_y_test = data[f'RNA{rna_type}_y_test']
 
+    if rna_type == 'i_w_folding':
+        low_variance_features = RNA_X_train_features.var().sort_values().iloc[:RNA_X_val_features.shape[1] // 2].index
+        RNA_X_train_features = RNA_X_train_features.drop(columns=low_variance_features)
+        RNA_X_val_features = RNA_X_val_features.drop(columns=low_variance_features)
+        RNA_X_test_features = RNA_X_test_features.drop(columns=low_variance_features)
+
     # Feature and model selection
     param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
     models = ['XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
@@ -94,8 +100,9 @@ def run_pipeline(rna_type: str):
                                                                              reference_RNA_data=RNA_train_val_data_seq,
                                                                              cp=False,
                                                                              selected_features=selected_features_left_to_generate)
-                all_seqs_selected_features = pd.concat((all_seqs_selected_features, all_seqs_additional_selected_features),
-                                                       axis=1)
+                all_seqs_selected_features = pd.concat(
+                    (all_seqs_selected_features, all_seqs_additional_selected_features),
+                    axis=1)
                 dump(all_seqs_selected_features, all_seqs_features_file_path, compress=True)
 
             all_seqs_selected_features = all_seqs_selected_features[RNA_selected_features]
@@ -113,7 +120,8 @@ def run_pipeline(rna_type: str):
                 final_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
                     pd.DataFrame({'Copy Number': y_pred}))
             else:
-                raise ValueError('main: TARGET_COLUMN must be one of the following values: "Copy Number" or "Raw Copy Number"')
+                raise ValueError(
+                    'main: TARGET_COLUMN must be one of the following values: "Copy Number" or "Raw Copy Number"')
 
             final_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_{cur_model_name}.csv', index=False)
             final_predicted_dfs.append(final_predicted_df)
@@ -137,7 +145,7 @@ def run_pipeline(rna_type: str):
         # final_predicted_df
         all_seq_voting_pred = pd.concat([df['Copy Number'] for df in final_predicted_dfs], axis=1).mean(axis=1)
         final_voting_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
-                    pd.DataFrame({'Copy Number': all_seq_voting_pred}))
+            pd.DataFrame({'Copy Number': all_seq_voting_pred}))
         final_voting_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_voting.csv', index=False)
 
 
