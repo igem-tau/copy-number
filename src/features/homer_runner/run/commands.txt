@@ -1,0 +1,9 @@
+1. generate 2 fastas with the following names:
+pRNAhigh.fasta
+pRNAlow.fasta
+2. run the following in bash:
+../homer/bin/findMotifs.pl 'pRNAhigh.fasta' fasta denovo_high -fasta 'pRNAlow.fasta'
+../homer/bin/findMotifs.pl 'pRNAlow.fasta' fasta denovo_low -fasta 'pRNAhigh.fasta'
+3. rename and copy generated motifs files to the code from:
+denovo_high\homerMotifs.all.motifs
+denovo_low\homerMotifs.all.motifs
