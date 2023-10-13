@@ -110,6 +110,9 @@ def run_pipeline(rna_type: str):
             # Predict
             _, all_seqs_selected_features_scaled = scale(RNA_FS_train_val_X, all_seqs_selected_features)
             y_pred = trained_model.predict(all_seqs_selected_features_scaled)
+
+            # zero negative copy number predictions
+            y_pred[y_pred < 0] = 0
             print(f"Range of copy nums predicted: {y_pred.min()} - {y_pred.max()}")
             print()
 

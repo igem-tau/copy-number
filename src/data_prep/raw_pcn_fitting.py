@@ -5,13 +5,13 @@ from src.utils import get_current_file_parent_path
 from pathlib import Path
 from scipy.stats import linregress
 
-RNA_TYPE = 'p'
+RNA_TYPE = 'p_fitted'
 RAW_PCN_COLUMN_NAME = 'Raw Copy Number'
 TARGET_PCN_COLUMN_NAME = 'pcn'
 DATA_PATH = Path(get_current_file_parent_path(__file__).parent.parent, 'data')
 DATA_FILE_PATH = Path(DATA_PATH, f'RNA{RNA_TYPE}_with_Raw_PCN.csv')
 ADDITIONAL_DATA_FILE_PATH = Path(DATA_PATH, 'biology_results', f'PCN RNA{RNA_TYPE} results.xlsx')
-MODEL_PREDICTIONS_PATH = Path(DATA_PATH.parent, f'copy_num_predictions_RNA{RNA_TYPE}_fitted_voting.csv')
+MODEL_PREDICTIONS_PATH = Path(DATA_PATH.parent, f'copy_num_predictions_RNA{RNA_TYPE}_voting.csv')
 
 
 def is_promoter_sequence_valid(sequence):
