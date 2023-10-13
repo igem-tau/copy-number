@@ -36,7 +36,7 @@ def scatter_plot_raw_target(raw_traget_pcn_df):
     fig = px.scatter(raw_traget_pcn_df, x='raw_pcn', y='target_pcn', color='type',
                      labels={'raw_pcn': 'Log of Relative Copy Number', 'target_pcn': 'Log of ddPCR/qPCR',
                              'type': 'legend:'})
-    fig.update_traces(marker_size=5)
+    fig.update_traces(marker_size=9)
     return fig
 
 
@@ -90,7 +90,7 @@ def pre_model_prep():
         y=[measured_pcn_for_fit['target_pcn'].max()],
         mode="text",
         name='correlations metrics',
-        text=[f'pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
+        text=[f'Pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
         textposition="top right",
         showlegend=False
     ))
@@ -98,9 +98,16 @@ def pre_model_prep():
     plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'raw_pcn_fit_search.html')))
 
 
-def post_model_estimation():
+def post_model_estimation(compare_to='validation'):
     measurements_predictions = get_measured_pcn(with_duplicates=False, matching='predictions')
-    measurements_predictions_for_val = measurements_predictions.query('use_for_fit == "X"').copy()
+
+    if compare_to == 'validation':
+        measurements_predictions_for_val = measurements_predictions.query('use_for_fit == "X"').copy()
+    elif compare_to == 'qpcr':
+        measurements_predictions_for_val = measurements_predictions.query('type == "qPCR"').copy()
+    else:
+        raise ValueError('post_model_estimation: compare_to must be one of the following: "validation", "qpcr"')
+
 
     model_predictions = measurements_predictions_for_val['raw_pcn']
     biological_measurements = measurements_predictions_for_val['target_pcn']
@@ -121,7 +128,7 @@ def post_model_estimation():
         dict(predictions=model_predictions, target_pcn=biological_measurements, type=measurements_predictions['type'])),
         x='predictions', y='target_pcn', color='type',
         labels={'predictions': 'Predicted Copy Number', 'target_pcn': 'ddPCR/qPCR', 'type': 'legend:'})
-    fig.update_traces(marker_size=5)
+    fig.update_traces(marker_size=9)
 
     x_space = pd.Series(np.linspace(model_predictions.min(), model_predictions.max(), 1000))
     fig.add_trace(go.Scatter(x=x_space,
@@ -138,7 +145,7 @@ def post_model_estimation():
         y=[biological_measurements.max()],
         mode="text",
         name='correlations metrics',
-        text=[f'pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
+        text=[f'Pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
         textposition="top right",
         showlegend=False
     ))
