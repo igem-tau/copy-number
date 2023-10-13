@@ -195,7 +195,7 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
                                  columns=['Algorithm', 'pearson_train', 'pearson_val', 'mae_train', 'mae_val'])
         X_train_scaled, X_val_scaled = scale(X_train, X_val)
         params_dict = {}
-        max_trials_per_optimization_cycle = 10
+        max_trials_per_optimization_cycle = 2
         for model_name in tqdm(model_names):
             study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
