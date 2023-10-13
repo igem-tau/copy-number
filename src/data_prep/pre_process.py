@@ -60,7 +60,7 @@ def get_RNAi_data():
     get RNA_I df, with additional columns
     :return:
     """
-    if TARGET_COLUMN == 'Copy Numer':
+    if TARGET_COLUMN == 'Copy Number':
         RNAi_df = pd.read_excel(Path(DATA_PATH, 'sup_data_2_i_rna.xlsx'),
                                 names=RNA_DATA_COLUMNS)  # inhibitory RNA
         RNAi_df['cnt_grw'] = RNAi_df['Final Counts'] / RNAi_df['Initial Counts']
@@ -259,39 +259,22 @@ def save_features_df(rna_type: str = 'p', specify_date=False):
     create_fasta_file(RNA_data_train, rna_type)
 
     RNA_X_train, RNA_y_train = generate_features(RNA_data_train, rna_type=rna_type)
-    temp_RNA_X_train = remove_zero_variance_features(RNA_X_train)
-
-    temp_RNA_X_train_features = temp_RNA_X_train.columns.values
-    RNA_X_val, RNA_y_val = generate_features(RNA_data_val, reference_RNA_data=RNA_data_train, rna_type=rna_type,
-                                             selected_features=temp_RNA_X_train_features)
-    RNA_X_test, RNA_y_test = generate_features(RNA_data_test, reference_RNA_data=RNA_data_train_val, rna_type=rna_type,
-                                               selected_features=temp_RNA_X_train_features)
-
-    # TODO - move into generate_features
-    if rna_type == 'i_w_folding':
-        RNAi_from_RNAp_feats = pd.read_csv(Path(CURRENT_FOLDER_PATH, '..', 'features', 'rna_p_new_features.csv'))
-
-        RNAi_from_RNAp_feats_train_val, RNAi_from_RNAp_feats_test = split_for_testing(RNAi_from_RNAp_feats, RNA_y,
-                                                                                      stratify_by=RNA_stratify_col)
-        RNAi_from_RNAp_feats_stratify_train_val, _ = split_for_testing(RNA_stratify_col, RNA_y,
-                                                                       stratify_by=RNA_stratify_col)
-        RNAi_from_RNAp_feats_stratify_train_val = RNA_stratify_train_val
-        RNAi_from_RNAp_feats_X_train_val = RNAi_from_RNAp_feats_train_val.drop(TARGET_COLUMN, axis=1)
-        RNAi_from_RNAp_feats_y_train_val = RNAi_from_RNAp_feats_train_val[TARGET_COLUMN]
-        RNAi_from_RNAp_feats_X_train, RNAi_from_RNAp_feats_X_val, _, _ = train_validation_split(
-            RNAi_from_RNAp_feats_X_train_val,
-            RNAi_from_RNAp_feats_y_train_val,
-            stratify_by=RNAi_from_RNAp_feats_stratify_train_val
-        )
-
-        RNA_X_train = pd.concat([RNA_X_train, RNAi_from_RNAp_feats_X_train], axis=1)
-        RNA_X_val = pd.concat([RNA_X_val, RNAi_from_RNAp_feats_X_val], axis=1)
-        RNA_X_test = pd.concat([RNA_X_test, RNAi_from_RNAp_feats_test], axis=1)
-
-    # TODO - once the code above has been moved into generate_features, this part can be deleted
     final_RNA_X_train = remove_zero_variance_features(RNA_X_train)
-    final_RNA_X_val = RNA_X_val[final_RNA_X_train.columns]
-    final_RNA_X_test = RNA_X_test[final_RNA_X_train.columns]
+
+    final_RNA_X_train_features = final_RNA_X_train.columns.values
+    final_RNA_X_val, RNA_y_val = generate_features(RNA_data_val, reference_RNA_data=RNA_data_train, rna_type=rna_type,
+                                                   selected_features=final_RNA_X_train_features)
+    final_RNA_X_test, RNA_y_test = generate_features(RNA_data_test, reference_RNA_data=RNA_data_train_val,
+                                                     rna_type=rna_type,
+                                                     selected_features=final_RNA_X_train_features)
+
+    if rna_type == 'i_w_folding':
+        # remove features that are missing from the validation and test sets
+        common_features = list(set(final_RNA_X_train_features).intersection(set(final_RNA_X_val.columns)).intersection(
+            set(final_RNA_X_test.columns)))
+        final_RNA_X_train = final_RNA_X_train[common_features]
+        final_RNA_X_val = final_RNA_X_val[common_features]
+        final_RNA_X_test = final_RNA_X_test[common_features]
 
     data[f'RNA{rna_type}_X_train_sequences'] = RNA_X_data_train
     data[f'RNA{rna_type}_X_train'] = final_RNA_X_train

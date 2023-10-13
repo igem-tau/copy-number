@@ -98,9 +98,16 @@ def pre_model_prep():
     plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'raw_pcn_fit_search.html')))
 
 
-def post_model_estimation():
+def post_model_estimation(compare_to='validation'):
     measurements_predictions = get_measured_pcn(with_duplicates=False, matching='predictions')
-    measurements_predictions_for_val = measurements_predictions.query('use_for_fit == "X"').copy()
+
+    if compare_to == 'validation':
+        measurements_predictions_for_val = measurements_predictions.query('use_for_fit == "X"').copy()
+    elif compare_to == 'qpcr':
+        measurements_predictions_for_val = measurements_predictions.query('type == "qPCR"').copy()
+    else:
+        raise ValueError('post_model_estimation: compare_to must be one of the following: "validation", "qpcr"')
+
 
     model_predictions = measurements_predictions_for_val['raw_pcn']
     biological_measurements = measurements_predictions_for_val['target_pcn']
