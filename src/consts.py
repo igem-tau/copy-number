@@ -63,4 +63,4 @@ CONSENSUS_POSITIONS_EXTENDED_ALPHA_BETA_FOLD = {
 #                                   285: 297}
 
 RNA_TYPE_CONST = {"RNA": 'p'}
-TARGET_COLUMN = 'Raw Copy Number'
+TARGET_COLUMN = 'Copy Number'
