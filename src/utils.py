@@ -1,6 +1,15 @@
+import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import List, Optional
+from catboost import CatBoostRegressor
+from lightgbm import LGBMRegressor
+import plotly.graph_objects as go
+import plotly.express as px
+from scipy.stats import pearsonr, spearmanr
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score, mean_absolute_error
+from xgboost import XGBRegressor
 
 
 def get_current_file_parent_path(file) -> Path:
@@ -13,6 +22,75 @@ def is_feature_selected(feature: str, selected_features: 'Optional[List[str]]') 
 
 def get_current_date() -> str:
     return str(pd.to_datetime("today")).split()[0]
+
+
+def get_estimator_features_name(estimator):
+    if isinstance(estimator, CatBoostRegressor):
+        return estimator.feature_names_
+    elif isinstance(estimator, LGBMRegressor):
+        return estimator.feature_name_
+    elif isinstance(estimator, (XGBRegressor, RandomForestRegressor)):
+        return estimator.feature_names_in_
+    else:
+        # hoping it will work, but it might break, since not all models has this attribute
+        return estimator.feature_names_in_
+
+
+def estimate_pred(y_true, y_pred, model_name, data_title='', estimator=None, save_plots=True, loglog_axes=True):
+    FIGURES_PATH = Path(get_current_file_parent_path(__file__).parent, 'data', 'figures')
+
+    r2 = r2_score(y_true, y_pred)
+    print(f'R^2 value for {model_name}: {r2}')
+    mae_score = mean_absolute_error(y_true, y_pred)
+    print(f'MAE value for {model_name}: {mae_score}')
+    pearson, _ = pearsonr(y_true, y_pred)
+    print(f'pearson correlation value for {model_name}: {pearson}')
+    spearman, _ = spearmanr(y_true, y_pred)
+    print(f'spearman correlation value for {model_name}: {spearman}')
+
+    if save_plots:
+        if estimator is not None:
+            # feature importance
+            feature_importance = estimator.feature_importances_
+            sorted_idx = np.flip(np.argsort(feature_importance))
+            sorted_features = np.array(get_estimator_features_name(estimator))[sorted_idx]
+            sorted_importance = feature_importance[sorted_idx]
+            fig = px.bar(
+                x=sorted_importance,
+                y=sorted_features,
+                orientation='h',
+                labels={'x': 'Feature Importance', 'y': 'Feature'},
+                title=f'{model_name} Feature Importance {data_title}',
+            )
+            fig.update_layout(width=800, height=400)
+            with open(Path(FIGURES_PATH, f'{model_name} Feature Importance {data_title}.html'), 'w') as f:
+                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+
+        # evaluation plot
+        fig = px.scatter(x=y_true, y=y_pred, labels={'x': 'Actual Copy Number', 'y': 'Predicted Copy Number'})
+        fig.add_trace(
+            go.Scatter(x=[min([*y_true, *y_pred]), max([*y_true, *y_pred])],
+                       y=[min([*y_true, *y_pred]), max([*y_true, *y_pred])],
+                       mode='lines', name='',
+                       showlegend=False))
+        fig.add_annotation(x=1, y=0.01, text=f'Spearman correlation={spearman:.4f}', showarrow=False, xref='paper',
+                           yref='paper', font=dict(size=15))
+        fig.add_annotation(x=1, y=0.1, text=f'Pearson correlation={pearson:.4f}', showarrow=False, xref='paper',
+                           yref='paper', font=dict(size=15))
+        fig.add_annotation(x=1, y=0.2, text=f'Mean Absolut Error={mae_score:.4f}', showarrow=False, xref='paper', yref='paper',
+                           font=dict(size=15))
+        fig.update_layout(title=f'{model_name} evaluation for {data_title}')
+
+        if loglog_axes:
+            fig.update_layout(
+                xaxis=dict(tickmode='linear', dtick=0.1, tickformat='.0f', type='log'),
+                yaxis=dict(tickmode='linear', dtick=0.1, tickformat='.0f', type='log')
+            )
+
+        with open(Path(FIGURES_PATH, f'{model_name} evaluation {data_title}.html'), 'w') as f:
+            f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+
+    return r2, mae_score, pearson, spearman
 
 
 if __name__ == '__main__':

@@ -5,10 +5,10 @@ from src.analysis.EDA import exploratory_data_analysis
 from src.consts import *
 from src.data_prep.pre_process import get_features_df, generate_features
 from src.models.Features_Models_Selection import feature_selection, model_selection
-from src.models.models_functions import model, scale, estimate_pred
+from src.models.models_functions import model, scale
 from src.models.Parameters_Tuning.best_param_to_xl import get_best_params_set_xgb, get_best_param_optuna
 from src.models.sequences_generator import sequence_df_generator
-from src.utils import get_current_file_parent_path, get_current_date
+from src.utils import get_current_file_parent_path, get_current_date, estimate_pred
 import numpy as np
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
@@ -17,6 +17,7 @@ DATA_PATH = Path(CURRENT_FOLDER_PATH, 'data')
 import warnings
 
 warnings.filterwarnings('ignore', category=FutureWarning)
+
 
 def run_pipeline(rna_type: str):
     # Load the data features if exists, write if it doesn't
@@ -33,6 +34,12 @@ def run_pipeline(rna_type: str):
 
     RNA_X_test_features = data[f'RNA{rna_type}_X_test']
     RNA_y_test = data[f'RNA{rna_type}_y_test']
+
+    if rna_type == 'i_w_folding':
+        low_variance_features = RNA_X_train_features.var().sort_values().iloc[:RNA_X_val_features.shape[1] // 2].index
+        RNA_X_train_features = RNA_X_train_features.drop(columns=low_variance_features)
+        RNA_X_val_features = RNA_X_val_features.drop(columns=low_variance_features)
+        RNA_X_test_features = RNA_X_test_features.drop(columns=low_variance_features)
 
     # Feature and model selection
     param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
@@ -93,8 +100,9 @@ def run_pipeline(rna_type: str):
                                                                              reference_RNA_data=RNA_train_val_data_seq,
                                                                              cp=False,
                                                                              selected_features=selected_features_left_to_generate)
-                all_seqs_selected_features = pd.concat((all_seqs_selected_features, all_seqs_additional_selected_features),
-                                                       axis=1)
+                all_seqs_selected_features = pd.concat(
+                    (all_seqs_selected_features, all_seqs_additional_selected_features),
+                    axis=1)
                 dump(all_seqs_selected_features, all_seqs_features_file_path, compress=True)
 
             all_seqs_selected_features = all_seqs_selected_features[RNA_selected_features]
@@ -112,7 +120,8 @@ def run_pipeline(rna_type: str):
                 final_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
                     pd.DataFrame({'Copy Number': y_pred}))
             else:
-                raise ValueError('main: TARGET_COLUMN must be one of the following values: "Copy Number" or "Raw Copy Number"')
+                raise ValueError(
+                    'main: TARGET_COLUMN must be one of the following values: "Copy Number" or "Raw Copy Number"')
 
             final_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_{cur_model_name}.csv', index=False)
             final_predicted_dfs.append(final_predicted_df)
@@ -130,13 +139,13 @@ def run_pipeline(rna_type: str):
 
     # TODO: combine the two models prediction
     final_pred = np.array(total_pred).mean(axis=0)
-    estimate_pred(RNA_y_test, final_pred, 'voting model', rna_type=rna_type)
+    estimate_pred(RNA_y_test, final_pred, 'voting model', data_title=f'RNA{rna_type}')
 
     if rna_type[0] == 'p':
         # final_predicted_df
         all_seq_voting_pred = pd.concat([df['Copy Number'] for df in final_predicted_dfs], axis=1).mean(axis=1)
         final_voting_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
-                    pd.DataFrame({'Copy Number': all_seq_voting_pred}))
+            pd.DataFrame({'Copy Number': all_seq_voting_pred}))
         final_voting_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_voting.csv', index=False)
 
 
