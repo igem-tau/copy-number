@@ -92,8 +92,8 @@ def exploratory_data_analysis(model_name: str, trained_model: Union[
                               y_val: pd.Series, rna_type: str) -> None:
     num_features_to_take = 5
     feature_importances = trained_model.feature_importances_
-    importance_threshold = sorted(feature_importances, reverse=True)[num_features_to_take]
-    df_x = pd.concat([train, val]).loc[:, feature_importances > importance_threshold]
+    importance_threshold = sorted(feature_importances, reverse=True)[:num_features_to_take][-1]
+    df_x = pd.concat([train, val]).loc[:, feature_importances >= importance_threshold]
     df_y = pd.concat([y_train, y_val])
     fig1 = plot_features_dist(df_x)
     fig2 = plot_features_box(df_x)
