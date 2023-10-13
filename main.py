@@ -74,7 +74,7 @@ def run_pipeline(rna_type: str):
         total_pred.append(y_pred)
 
         # Exploratory Data Analysis (EDA)
-        # exploratory_data_analysis(RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
+        exploratory_data_analysis(cur_model_name, RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val, rna_type)
 
         if rna_type[0] == 'p':
             # Generate selected features
