@@ -1,7 +1,13 @@
+from typing import Union
 import numpy as np
+from catboost import CatBoostRegressor
+from lightgbm import LGBMRegressor
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
+
 from src.utils import get_current_file_parent_path, get_current_date, get_continuous_and_discrete_features
 from pathlib import Path
 import plotly.express as px
@@ -80,9 +86,14 @@ def plot_scatter_hist(df_x, df_y):
     return fig
 
 
-def exploratory_data_analysis(model_name: str, train: pd.DataFrame, val: pd.DataFrame, y_train: pd.Series,
+def exploratory_data_analysis(model_name: str, trained_model: Union[
+    XGBRegressor, CatBoostRegressor, LGBMRegressor, RandomForestRegressor], train: pd.DataFrame,
+                              val: pd.DataFrame, y_train: pd.Series,
                               y_val: pd.Series, rna_type: str) -> None:
-    df_x = pd.concat([train, val])
+    num_features_to_take = 5
+    feature_importances = trained_model.feature_importances_
+    importance_threshold = sorted(feature_importances, reverse=True)[num_features_to_take]
+    df_x = pd.concat([train, val]).loc[:, feature_importances > importance_threshold]
     df_y = pd.concat([y_train, y_val])
     fig1 = plot_features_dist(df_x)
     fig2 = plot_features_box(df_x)
