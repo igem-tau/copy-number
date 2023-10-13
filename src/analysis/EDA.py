@@ -90,7 +90,7 @@ def exploratory_data_analysis(model_name: str, trained_model: Union[
     XGBRegressor, CatBoostRegressor, LGBMRegressor, RandomForestRegressor], train: pd.DataFrame,
                               val: pd.DataFrame, y_train: pd.Series,
                               y_val: pd.Series, rna_type: str) -> None:
-    num_features_to_take = 5
+    num_features_to_take = 10
     feature_importances = trained_model.feature_importances_
     importance_threshold = sorted(feature_importances, reverse=True)[:num_features_to_take][-1]
     df_x = pd.concat([train, val]).loc[:, feature_importances >= importance_threshold]
