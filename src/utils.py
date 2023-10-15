@@ -44,9 +44,9 @@ def estimate_pred(y_true, y_pred, model_name, data_title='', estimator=None, sav
     mae_score = mean_absolute_error(y_true, y_pred)
     print(f'MAE value for {model_name}: {mae_score}')
     pearson, pearson_p_value = pearsonr(y_true, y_pred)
-    print(f'pearson correlation value for {model_name}: {pearson}')
+    print(f'pearson correlation value for {model_name}: {pearson}, p-value = {pearson_p_value:.2e}')
     spearman, spearman_p_value = spearmanr(y_true, y_pred)
-    print(f'spearman correlation value for {model_name}: {spearman}')
+    print(f'spearman correlation value for {model_name}: {spearman}, p-value = {spearman_p_value:.2e}')
 
     if save_plots:
         if estimator is not None:
