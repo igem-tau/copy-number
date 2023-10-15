@@ -9,8 +9,8 @@ RNA_TYPE = 'p_fitted'
 RAW_PCN_COLUMN_NAME = 'Raw Copy Number'
 TARGET_PCN_COLUMN_NAME = 'pcn'
 DATA_PATH = Path(get_current_file_parent_path(__file__).parent.parent, 'data')
-DATA_FILE_PATH = Path(DATA_PATH, f'RNA{RNA_TYPE}_with_Raw_PCN.csv')
-ADDITIONAL_DATA_FILE_PATH = Path(DATA_PATH, 'biology_results', f'PCN RNA{RNA_TYPE} results.xlsx')
+DATA_FILE_PATH = Path(DATA_PATH, f'RNA{RNA_TYPE[0]}_with_Raw_PCN.csv')
+ADDITIONAL_DATA_FILE_PATH = Path(DATA_PATH, 'biology_results', f'PCN RNA{RNA_TYPE[0]} results.xlsx')
 MODEL_PREDICTIONS_PATH = Path(DATA_PATH.parent, f'copy_num_predictions_RNA{RNA_TYPE}_voting.csv')
 
 
@@ -36,16 +36,16 @@ def get_measured_pcn(with_duplicates=True, for_fit=False, matching='article'):
         data = pd.read_csv(MODEL_PREDICTIONS_PATH)
     else:
         raise ValueError('raw_pcn_fitting.get_measured_pcn: matching must be "article" or "predictions"')
-    article_ddpcr_data = pd.read_excel(ADDITIONAL_DATA_FILE_PATH, sheet_name=f'ddPCR - RNA{RNA_TYPE}')[
+    article_ddpcr_data = pd.read_excel(ADDITIONAL_DATA_FILE_PATH, sheet_name=f'ddPCR - RNA{RNA_TYPE[0]}')[
         ['promoter seq', 'use for fit', 'ddpcr']]
-    our_bio_data = pd.read_excel(ADDITIONAL_DATA_FILE_PATH, sheet_name=f'Our qPCR - RNA{RNA_TYPE}')[
-        [f'RNA{RNA_TYPE} promoter', 'use for fit', 'PCN measured in Wet lab']]
+    our_bio_data = pd.read_excel(ADDITIONAL_DATA_FILE_PATH, sheet_name=f'Our qPCR - RNA{RNA_TYPE[0]}')[
+        [f'RNA{RNA_TYPE[0]} promoter', 'use for fit', 'PCN measured in Wet lab']]
 
     # filter invalid promoters (due to indel)
-    our_bio_data = our_bio_data.loc[our_bio_data[f"RNA{RNA_TYPE} promoter"].apply(is_promoter_sequence_valid)]
+    our_bio_data = our_bio_data.loc[our_bio_data[f"RNA{RNA_TYPE[0]} promoter"].apply(is_promoter_sequence_valid)]
 
     concat_ddpcr = join_data_with_article_sequences(data, article_ddpcr_data, 'promoter seq')
-    concat_qpcr = join_data_with_article_sequences(data, our_bio_data, f'RNA{RNA_TYPE} promoter')
+    concat_qpcr = join_data_with_article_sequences(data, our_bio_data, f'RNA{RNA_TYPE[0]} promoter')
 
     raw_target_pcn_df = pd.concat((
         pd.DataFrame(

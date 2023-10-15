@@ -13,8 +13,8 @@ RNA_TYPE = 'p'
 RAW_PCN_COLUMN_NAME = 'Raw Copy Number'
 TARGET_PCN_COLUMN_NAME = 'pcn'
 DATA_PATH = Path(get_current_file_parent_path(__file__).parent.parent, 'data')
-DATA_FILE_PATH = Path(DATA_PATH, f'RNA{RNA_TYPE}_with_Raw_PCN.csv')
-ADDITIONAL_DATA_FILE_PATH = Path(DATA_PATH, 'biology_results', f'PCN RNA{RNA_TYPE} results.xlsx')
+DATA_FILE_PATH = Path(DATA_PATH, f'RNA{RNA_TYPE[0]}_with_Raw_PCN.csv')
+ADDITIONAL_DATA_FILE_PATH = Path(DATA_PATH, 'biology_results', f'PCN RNA{RNA_TYPE[0]} results.xlsx')
 
 
 def is_promoter_sequence_valid(sequence):
