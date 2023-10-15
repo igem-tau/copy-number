@@ -123,6 +123,7 @@ def get_hyper_parameters(trial, regressor_name):
             max_features=trial.suggest_categorical('max_features', ["sqrt", "log2", None]),
             # warm_start=trial.suggest_categorical('warm_start', [True, False])
         )
+
         regressor_obj = RandomForestRegressor(**params, random_state=RANDOM_STATE)
 
     elif regressor_name == 'XGBoost':
