@@ -5,7 +5,7 @@ from src.utils import get_current_file_parent_path
 from pathlib import Path
 from scipy.stats import linregress
 
-RNA_TYPE = 'p_fitted'
+RNA_TYPE = 'p'
 RAW_PCN_COLUMN_NAME = 'Raw Copy Number'
 TARGET_PCN_COLUMN_NAME = 'pcn'
 DATA_PATH = Path(get_current_file_parent_path(__file__).parent.parent, 'data')
