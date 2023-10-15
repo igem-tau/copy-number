@@ -90,17 +90,17 @@ def exploratory_data_analysis(model_name: str, trained_model: Union[
     XGBRegressor, CatBoostRegressor, LGBMRegressor, RandomForestRegressor], train: pd.DataFrame,
                               val: pd.DataFrame, y_train: pd.Series,
                               y_val: pd.Series, rna_type: str) -> None:
-    num_features_to_take = 5
+    num_features_to_take = 10
     feature_importances = trained_model.feature_importances_
     importance_threshold = sorted(feature_importances, reverse=True)[:num_features_to_take][-1]
     df_x = pd.concat([train, val]).loc[:, feature_importances >= importance_threshold]
     df_y = pd.concat([y_train, y_val])
     fig1 = plot_features_dist(df_x)
-    fig2 = plot_features_box(df_x)
+    # fig2 = plot_features_box(df_x)
     fig3 = plot_scatter_hist(df_x, df_y)
 
     eda_save_path = Path(DATA_PATH, f'{get_current_date()}_{model_name}_RNA{rna_type}_features_graphs.html')
     with open(eda_save_path, 'w') as f:
         f.write(fig3.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
-        f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))
+        # f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))
