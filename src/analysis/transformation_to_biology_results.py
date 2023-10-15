@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from scipy.stats import spearmanr, pearsonr, linregress
 
-RNA_TYPE = 'p'
+RNA_TYPE = 'p_fitted'
 RAW_PCN_COLUMN_NAME = 'Raw Copy Number'
 TARGET_PCN_COLUMN_NAME = 'pcn'
 DATA_PATH = Path(get_current_file_parent_path(__file__).parent.parent, 'data')
