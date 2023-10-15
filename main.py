@@ -44,6 +44,7 @@ def run_pipeline(rna_type: str):
     # Feature and model selection
     param_dict = model_selection(RNA_X_train_features, RNA_X_val_features, RNA_y_train, RNA_y_val, rna_type)
     models = ['XGBoost', 'CatBoostRegressor', 'LGBMRegressor', 'RandomForest']
+    models_for_voting = ['CatBoostRegressor', 'RandomForest']
 
     if rna_type[0] == 'p':
         # Generate sequences and calculate features
@@ -141,12 +142,12 @@ def run_pipeline(rna_type: str):
             dump(trained_model, model_path, compress=True)
 
     # TODO: combine the two models prediction
-    final_pred = np.array(total_pred).mean(axis=0)
+    final_pred = np.array([y_pred for i, y_pred in enumerate(total_pred) if models[i] in models_for_voting]).mean(axis=0)
     estimate_pred(RNA_y_test, final_pred, 'voting model', data_title=f'RNA{rna_type}')
 
     if rna_type[0] == 'p':
         # final_predicted_df
-        all_seq_voting_pred = pd.concat([df['Copy Number'] for df in final_predicted_dfs], axis=1).mean(axis=1)
+        all_seq_voting_pred = pd.concat([df['Copy Number'] for i, df in enumerate(final_predicted_dfs) if models[i] in models_for_voting], axis=1).mean(axis=1)
         final_voting_predicted_df = generated_RNA_df[['Promoter Sequence (-35 to +1)']].join(
             pd.DataFrame({'Copy Number': all_seq_voting_pred}))
         final_voting_predicted_df.to_csv(f'copy_num_predictions_RNA{rna_type}_voting.csv', index=False)
