@@ -4,7 +4,6 @@ from src.consts import PROMOTER_LENGTH
 from src.data_prep.raw_pcn_fitting import get_measured_pcn
 from src.utils import get_current_file_parent_path
 from pathlib import Path
-import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 from scipy.stats import spearmanr, pearsonr, linregress
@@ -95,7 +94,8 @@ def pre_model_prep():
         showlegend=False
     ))
 
-    plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'raw_pcn_fit_search.html')))
+    fig.write_html(Path(DATA_PATH, 'figures', 'raw_pcn_fit_search.html'), full_html=False,
+                   include_plotlyjs='cdn')
 
 
 def post_model_estimation(compare_to='validation'):
@@ -107,7 +107,6 @@ def post_model_estimation(compare_to='validation'):
         measurements_predictions_for_val = measurements_predictions.query('type == "qPCR"').copy()
     else:
         raise ValueError('post_model_estimation: compare_to must be one of the following: "validation", "qpcr"')
-
 
     model_predictions = measurements_predictions_for_val['raw_pcn']
     biological_measurements = measurements_predictions_for_val['target_pcn']
@@ -150,7 +149,8 @@ def post_model_estimation(compare_to='validation'):
         showlegend=False
     ))
 
-    plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'predicted_pcn_fit_validation.html')))
+    fig.write_html(Path(DATA_PATH, 'figures', 'predicted_pcn_fit_validation.html'), full_html=False,
+                   include_plotlyjs='cdn')
 
 
 if __name__ == '__main__':
