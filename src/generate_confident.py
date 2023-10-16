@@ -83,8 +83,9 @@ def generate_conf_plot(hparam_path, x_train, y_train, X_test, y_test, model_name
                           xaxis_title='index', yaxis_title='Copy Number')
         fig.show()
 
-        # if save_plot:
-        #     fig.savefig(f'{DATA_PATH}\\conf_score_RNA{rna_type}.png')
+        if save_plot:
+            fig.write_html(Path(DATA_PATH, 'figures', f'conf_score_RNA{rna_type}.html'), full_html=False,
+                   include_plotlyjs='cdn')
 
     draw_plot(y_lower, y_upper, y_test_sorted.ravel())
 
