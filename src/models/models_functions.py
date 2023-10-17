@@ -8,9 +8,9 @@ from src.models.boosting_models import run_model
 
 def remove_outliers(X: pd.DataFrame, y: pd.DataFrame):
     q1, q3 = np.percentile(y, [25, 75])
-    iqr = q3-q1
-    lower_fence = q1 - (1.5*iqr)
-    higher_fence = q3 + (1.5*iqr)
+    iqr = q3 - q1
+    lower_fence = q1 - (1.5 * iqr)
+    higher_fence = q3 + (1.5 * iqr)
     X = X[(y > lower_fence) & (y < higher_fence)]
     y = y[(y > lower_fence) & (y < higher_fence)]
     return X, y
@@ -36,18 +36,20 @@ def prepare_model_data(X: pd.DataFrame, y: pd.DataFrame, outliers=False):
     return X_train, X_test, y_train, y_test
 
 
-def model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_test: pd.DataFrame, model_name: str, data_name: str, best_param=None, save_plots=False):
+def model(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_test: pd.DataFrame, model_name: str,
+          data_name: str, best_param=None, save_plots: bool = False, do_scale: bool = True):
     print(f'Running {model_name} for {data_name} with {len(X_train.columns)} features')
-    X_train, X_test = scale(X_train, X_test)
     if best_param is None:
         best_param = {}
+    if do_scale:
+        X_train, X_test = scale(X_train, X_test)
 
     if model_name == 'lasso':
         model, r2, mae_score, spearman = run_lasso(X_train, X_test, y_train, y_test, data_title=data_name,
-                                            Best_param=best_param, save_plots=save_plots)
+                                                   Best_param=best_param, save_plots=save_plots)
     else:
-        model, r2, mae_score, pearson, spearman, y_pred = run_model(model_name, X_train, X_test, y_train, y_test, data_title=data_name,
-                                            Best_param=best_param, save_plots=save_plots)
+        model, r2, mae_score, pearson, spearman, y_pred = run_model(model_name, X_train, X_test, y_train, y_test,
+                                                                    data_title=data_name,
+                                                                    Best_param=best_param, save_plots=save_plots)
 
     return model, r2, mae_score, pearson, spearman, y_pred
-

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 import plotly.graph_objects as go
@@ -44,9 +44,9 @@ def estimate_pred(y_true, y_pred, model_name, data_title='', estimator=None, sav
     mae_score = mean_absolute_error(y_true, y_pred)
     print(f'MAE value for {model_name}: {mae_score}')
     pearson, pearson_p_value = pearsonr(y_true, y_pred)
-    print(f'pearson correlation value for {model_name}: {pearson}')
+    print(f'pearson correlation value for {model_name}: {pearson}, p-value = {pearson_p_value:.2e}')
     spearman, spearman_p_value = spearmanr(y_true, y_pred)
-    print(f'spearman correlation value for {model_name}: {spearman}')
+    print(f'spearman correlation value for {model_name}: {spearman}, p-value = {spearman_p_value:.2e}')
 
     if save_plots:
         if estimator is not None:
@@ -73,11 +73,14 @@ def estimate_pred(y_true, y_pred, model_name, data_title='', estimator=None, sav
                        y=[max(0, min([*y_true, *y_pred])), max([*y_true, *y_pred])],
                        mode='lines', name='',
                        showlegend=False))
-        fig.add_annotation(x=1, y=0.01, text=f'Spearman correlation={spearman:.4f}, p-value={spearman_p_value:.2e}', showarrow=False, xref='paper',
+        fig.add_annotation(x=1, y=0.01, text=f'Spearman correlation={spearman:.4f}, p-value={spearman_p_value:.2e}',
+                           showarrow=False, xref='paper',
                            yref='paper', font=dict(size=15))
-        fig.add_annotation(x=1, y=0.1, text=f'Pearson correlation={pearson:.4f}, p-value={pearson_p_value:.2e}', showarrow=False, xref='paper',
+        fig.add_annotation(x=1, y=0.1, text=f'Pearson correlation={pearson:.4f}, p-value={pearson_p_value:.2e}',
+                           showarrow=False, xref='paper',
                            yref='paper', font=dict(size=15))
-        fig.add_annotation(x=1, y=0.2, text=f'Mean Absolut Error={mae_score:.4f}', showarrow=False, xref='paper', yref='paper',
+        fig.add_annotation(x=1, y=0.2, text=f'Mean Absolut Error={mae_score:.4f}', showarrow=False, xref='paper',
+                           yref='paper',
                            font=dict(size=15), align='right')
         fig.update_layout(title=f'{model_name} evaluation for {data_title}')
 
@@ -91,6 +94,17 @@ def estimate_pred(y_true, y_pred, model_name, data_title='', estimator=None, sav
             f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
     return r2, mae_score, pearson, spearman
+
+
+def get_continuous_and_discrete_features(df: pd.DataFrame) -> 'Tuple[List[str], List[str]]':
+    numeric_features = df.select_dtypes(include=np.number)
+    max_unique_discrete_values = 10
+    is_continuous = numeric_features.apply(lambda col: len(col.unique()) > max_unique_discrete_values)
+
+    continuous_features = numeric_features.loc[:, is_continuous].columns.values.tolist()
+    discrete_features = numeric_features.loc[:, ~is_continuous].columns.values.tolist()
+
+    return continuous_features, discrete_features
 
 
 if __name__ == '__main__':

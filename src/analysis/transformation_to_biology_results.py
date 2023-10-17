@@ -4,7 +4,6 @@ from src.consts import PROMOTER_LENGTH
 from src.data_prep.raw_pcn_fitting import get_measured_pcn
 from src.utils import get_current_file_parent_path
 from pathlib import Path
-import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 from scipy.stats import spearmanr, pearsonr, linregress
@@ -13,8 +12,8 @@ RNA_TYPE = 'p'
 RAW_PCN_COLUMN_NAME = 'Raw Copy Number'
 TARGET_PCN_COLUMN_NAME = 'pcn'
 DATA_PATH = Path(get_current_file_parent_path(__file__).parent.parent, 'data')
-DATA_FILE_PATH = Path(DATA_PATH, f'RNA{RNA_TYPE}_with_Raw_PCN.csv')
-ADDITIONAL_DATA_FILE_PATH = Path(DATA_PATH, 'biology_results', f'PCN RNA{RNA_TYPE} results.xlsx')
+DATA_FILE_PATH = Path(DATA_PATH, f'RNA{RNA_TYPE[0]}_with_Raw_PCN.csv')
+ADDITIONAL_DATA_FILE_PATH = Path(DATA_PATH, 'biology_results', f'PCN RNA{RNA_TYPE[0]} results.xlsx')
 
 
 def is_promoter_sequence_valid(sequence):
@@ -36,7 +35,7 @@ def scatter_plot_raw_target(raw_traget_pcn_df):
     fig = px.scatter(raw_traget_pcn_df, x='raw_pcn', y='target_pcn', color='type',
                      labels={'raw_pcn': 'Log of Relative Copy Number', 'target_pcn': 'Log of ddPCR/qPCR',
                              'type': 'legend:'})
-    fig.update_traces(marker_size=5)
+    fig.update_traces(marker_size=9)
     return fig
 
 
@@ -90,12 +89,13 @@ def pre_model_prep():
         y=[measured_pcn_for_fit['target_pcn'].max()],
         mode="text",
         name='correlations metrics',
-        text=[f'pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
+        text=[f'Pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
         textposition="top right",
         showlegend=False
     ))
 
-    plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'raw_pcn_fit_search.html')))
+    fig.write_html(Path(DATA_PATH, 'figures', 'raw_pcn_fit_search.html'), full_html=False,
+                   include_plotlyjs='cdn')
 
 
 def post_model_estimation(compare_to='validation'):
@@ -107,7 +107,6 @@ def post_model_estimation(compare_to='validation'):
         measurements_predictions_for_val = measurements_predictions.query('type == "qPCR"').copy()
     else:
         raise ValueError('post_model_estimation: compare_to must be one of the following: "validation", "qpcr"')
-
 
     model_predictions = measurements_predictions_for_val['raw_pcn']
     biological_measurements = measurements_predictions_for_val['target_pcn']
@@ -128,7 +127,7 @@ def post_model_estimation(compare_to='validation'):
         dict(predictions=model_predictions, target_pcn=biological_measurements, type=measurements_predictions['type'])),
         x='predictions', y='target_pcn', color='type',
         labels={'predictions': 'Predicted Copy Number', 'target_pcn': 'ddPCR/qPCR', 'type': 'legend:'})
-    fig.update_traces(marker_size=5)
+    fig.update_traces(marker_size=9)
 
     x_space = pd.Series(np.linspace(model_predictions.min(), model_predictions.max(), 1000))
     fig.add_trace(go.Scatter(x=x_space,
@@ -145,12 +144,13 @@ def post_model_estimation(compare_to='validation'):
         y=[biological_measurements.max()],
         mode="text",
         name='correlations metrics',
-        text=[f'pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
+        text=[f'Pearson: {pearson_corr:.3f}, p-value: {pearson_permutations_p_value:.3f}'],
         textposition="top right",
         showlegend=False
     ))
 
-    plotly.offline.plot(fig, filename=str(Path(DATA_PATH, 'figures', 'predicted_pcn_fit_validation.html')))
+    fig.write_html(Path(DATA_PATH, 'figures', 'predicted_pcn_fit_validation.html'), full_html=False,
+                   include_plotlyjs='cdn')
 
 
 if __name__ == '__main__':
