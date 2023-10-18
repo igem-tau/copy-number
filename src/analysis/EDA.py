@@ -32,7 +32,8 @@ def plot_features_dist(df):
 
     fig.update_yaxes(title_text="Counts", row=1, col=1)
     fig.update_yaxes(title_text="Counts", row=2, col=1)
-    fig.update_layout(template='plotly_white', title_text='<b>Features Distributions', title_x=0.5)
+    fig.update_layout(template='plotly_white', title_text='<b>Features Distributions', title_x=0.5,
+                      legend=(dict(font=dict(size=10))))
     return fig
 
 
@@ -90,7 +91,7 @@ def exploratory_data_analysis(model_name: str, trained_model: Union[
     XGBRegressor, CatBoostRegressor, LGBMRegressor, RandomForestRegressor], train: pd.DataFrame,
                               val: pd.DataFrame, y_train: pd.Series,
                               y_val: pd.Series, rna_type: str) -> None:
-    num_features_to_take = 5
+    num_features_to_take = 10
     feature_importances = trained_model.feature_importances_
     importance_threshold = sorted(feature_importances, reverse=True)[:num_features_to_take][-1]
     df_x = pd.concat([train, val]).loc[:, feature_importances >= importance_threshold]
