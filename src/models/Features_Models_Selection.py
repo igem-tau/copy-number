@@ -9,15 +9,14 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
 from sklearn.linear_model import Ridge, Lasso, ElasticNet
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-from scipy.stats import pearsonr
+from sklearn.metrics import r2_score, mean_squared_error
+from scipy.stats import pearsonr, spearmanr
 from xgboost import XGBRegressor
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from sklearn.neural_network import MLPRegressor
 from pathlib import Path
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from typing import Dict
 
 from src.models.models_functions import scale
@@ -67,11 +66,11 @@ def make_model(X_tr, X_va, y_tr, y_va, regressor_name: str, params):
     r2_val = r2_score(y_va, y_pred_val)
     pearson_train, _ = pearsonr(y_tr, y_pred_train)
     pearson_val, _ = pearsonr(y_va, y_pred_val)
+    spearman_train, _ = spearmanr(y_tr, y_pred_train)
+    spearman_val, _ = spearmanr(y_va, y_pred_val)
     mse_train = mean_squared_error(y_tr, y_pred_train)
     mse_val = mean_squared_error(y_va, y_pred_val)
-    mae_train = mean_absolute_error(y_tr, y_pred_train)
-    mae_val = mean_absolute_error(y_va, y_pred_val)
-    return regressor_name, pearson_train, pearson_val, mae_train, mae_val, mse_train, mse_val, r2_train, r2_val
+    return regressor_name, pearson_train, pearson_val, spearman_train, spearman_val, mse_train, mse_val, r2_train, r2_val
 
 
 def get_hyper_parameters(trial, regressor_name):
@@ -193,10 +192,10 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
         params_dict = load(selected_model_params_path)
     else:
         df_models = pd.DataFrame(data=None,
-                                 columns=['Algorithm', 'pearson_train', 'pearson_val', 'mae_train', 'mae_val'])
+                                 columns=['Algorithm', 'pearson_train', 'pearson_val', 'spearman_train', 'spearman_val'])
         X_train_scaled, X_val_scaled = scale(X_train, X_val)
         params_dict = {}
-        max_trials_per_optimization_cycle = 10
+        max_trials_per_optimization_cycle = 5
         for model_name in tqdm(model_names):
             study_file_name = f'RNA{rna_type}_{model_name}_study'
             print(f"Running: {model_name} for model selection")
@@ -221,41 +220,39 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
 
             params = study.best_trial.params
             params_dict[model_name] = params
+            dump(params_dict, selected_model_params_path, compress=True)
 
-            model_name, pearson_train, pearson_val, mae_train, mae_val, _, _, _, _ = make_model(X_train, X_val, y_train,
-                                                                                                y_val, model_name,
-                                                                                                params)
-            df_models.loc[len(df_models.index)] = [model_name, pearson_train, pearson_val, mae_train, mae_val]
+            if model_params_path.exists():
+                df_models = load(model_params_path)
+            if model_name not in df_models['Algorithm'].values.tolist():
+                model_name, pearson_train, pearson_val, spearman_train, spearman_val, _, _, _, _ = make_model(X_train, X_val, y_train,
+                                                                                                    y_val, model_name,
+                                                                                                    params)
+                df_models.loc[len(df_models.index)] = [model_name, pearson_train, pearson_val, spearman_train, spearman_val]
+                dump(df_models, model_params_path, compress=True)
             print(f"Finished: {model_name} for model selection")
 
-        dump(params_dict, selected_model_params_path, compress=True)
-        dump(df_models, model_params_path, compress=True)
-
         print('Creating plot for model selection')
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
-        fig.add_trace(
-            go.Bar(name='pearson train', x=df_models.Algorithm, y=df_models.pearson_train),
-            secondary_y=False,
+        fig = go.Figure(
+            data=[
+                go.Bar(name='pearson train', x=df_models.Algorithm, y=df_models.pearson_train, yaxis='y',
+                       offsetgroup=1),
+                go.Bar(name='pearson validation', x=df_models.Algorithm, y=df_models.pearson_val, yaxis='y',
+                       offsetgroup=2),
+                go.Bar(name='Spearman train', x=df_models.Algorithm, y=df_models.spearman_train, yaxis='y', offsetgroup=3,
+                       visible='legendonly'),
+                go.Bar(name='Spearman validation', x=df_models.Algorithm, y=df_models.spearman_val, yaxis='y', offsetgroup=4,
+                       visible='legendonly')
+            ],
+            layout=dict(
+                template='plotly_white',
+                title='Pearson and Spearman correlations for train and validation sets',
+                title_x=0.5,
+                yaxis=dict(title='Pearson / Spearman correlation'),
+                # yaxis2=dict(title='Spearman correlationE', overlaying='y', side='left'),
+                barmode='group'
+            )
         )
-        fig.add_trace(
-            go.Bar(name='pearson validation', x=df_models.Algorithm, y=df_models.pearson_val),
-            secondary_y=False,
-        )
-        fig.add_trace(
-            go.Bar(name='MAE train', x=df_models.Algorithm, y=df_models.mae_train),
-            secondary_y=True,
-        )
-        fig.add_trace(
-            go.Bar(name='MAE validation', x=df_models.Algorithm, y=df_models.mae_val),
-            secondary_y=True,
-        )
-
-        fig.update_layout(template='plotly_white', title='Pearson correlation and Mean Absolute Error (MAE) for train '
-                                                         'and validation sets', title_x=0.5, yaxis=dict(
-            title=dict(text="Pearson correlation"),
-            side="left"), yaxis2=dict(
-            title=dict(text="MAE"),
-            side="right"))
 
         with open(Path(DATA_PATH, f'{get_current_date()}_RNA{rna_type}_model_selection_graphs.html'), 'w') as f:
             f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
