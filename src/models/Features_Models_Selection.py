@@ -222,14 +222,14 @@ def model_selection(X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: pd.Seri
             params_dict[model_name] = params
             dump(params_dict, selected_model_params_path, compress=True)
 
-            if model_params_path.exists():
-                df_models = load(model_params_path)
-            if model_name not in df_models['Algorithm'].values.tolist():
-                model_name, pearson_train, pearson_val, spearman_train, spearman_val, _, _, _, _ = make_model(X_train, X_val, y_train,
-                                                                                                    y_val, model_name,
-                                                                                                    params)
-                df_models.loc[len(df_models.index)] = [model_name, pearson_train, pearson_val, spearman_train, spearman_val]
-                dump(df_models, model_params_path, compress=True)
+            # if model_params_path.exists():
+            #     df_models = load(model_params_path)
+            # if model_name not in df_models['Algorithm'].values.tolist():
+            model_name, pearson_train, pearson_val, spearman_train, spearman_val, _, _, _, _ = make_model(X_train, X_val, y_train,
+                                                                                                y_val, model_name,
+                                                                                                params)
+            df_models.loc[len(df_models.index)] = [model_name, pearson_train, pearson_val, spearman_train, spearman_val]
+            dump(df_models, model_params_path, compress=True)
             print(f"Finished: {model_name} for model selection")
 
         print('Creating plot for model selection')
