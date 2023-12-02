@@ -51,7 +51,7 @@ def run_pipeline(rna_type: str):
         y_train_val1_val2 = pd.concat([y_train_val1, y_val2], ignore_index=True)
 
         train_val1_val2_data = pd.concat([train_val1_data, val2_data], ignore_index=True)
-        test_data = pd.concat([X_test, y_test])
+        test_data = pd.concat([X_test, pd.DataFrame(y_test, columns=[TARGET_COLUMN])], axis=1)
         X_test, y_test = generate_features(test_data, rna_type=rna_type, reference_RNA_data=train_val1_val2_data,
                                            selected_features=final_X_train_features)
 

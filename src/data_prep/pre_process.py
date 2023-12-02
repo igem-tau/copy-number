@@ -199,14 +199,24 @@ def split_into_percentages(X: Union[pd.DataFrame, pd.Series], y: Union[pd.DataFr
     parts = []
     for i in range(1, len(percentages)):
         normalized_percentages = sum(percentages[i:]) / sum(percentages[i-1:])
-        if stratify_by is None:
-            part_i_X, part_i_y, rest_X, rest_y = train_test_split(X, y, test_size=normalized_percentages,
-                                                                  random_state=RANDOM_STATE)
+        if i == 1:
+            if stratify_by is None:
+                part_i_X, rest_X, part_i_y, rest_y = train_test_split(X, y, test_size=normalized_percentages,
+                                                                      random_state=RANDOM_STATE)
+            else:
+                part_i_X, rest_X, part_i_y, rest_y, part_i_stratify, rest_stratify = train_test_split(
+                    X, y, stratify_by, test_size=normalized_percentages,
+                    random_state=RANDOM_STATE, stratify=stratify_by
+                )
         else:
-            part_i_X, part_i_y, part_i_stratify, rest_X, rest_y, rest_stratify = train_test_split(
-                X, y, stratify_by, test_size=sum(percentages[i:]),
-                random_state=RANDOM_STATE, stratify=stratify_by
-            )
+            if stratify_by is None:
+                part_i_X, rest_X, part_i_y, rest_y = train_test_split(rest_X, rest_y, test_size=normalized_percentages,
+                                                                      random_state=RANDOM_STATE)
+            else:
+                part_i_X, rest_X, part_i_y, rest_y, part_i_stratify, rest_stratify = train_test_split(
+                    rest_X, rest_y, rest_stratify, test_size=normalized_percentages,
+                    random_state=RANDOM_STATE, stratify=rest_stratify
+                )
         parts.append((part_i_X.reset_index(drop=True), part_i_y.reset_index(drop=True)))
 
     parts.append((rest_X.reset_index(drop=True), rest_y.reset_index(drop=True)))
