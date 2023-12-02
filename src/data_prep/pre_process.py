@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 from sklearn.model_selection import train_test_split
 from src.consts import TARGET_COLUMN, RNA_DATA_COLUMNS, RNAi_PROM_RNAp_COLUMNS, RNAp_EDITED_ZONES, RNAi_EDITED_ZONES, \
-    RNAp_SEQ_ORIGINAL, RNAi_SEQ_ORIGINAL
+    RNAp_SEQ_ORIGINAL, RNAi_SEQ_ORIGINAL, RANDOM_STATE
 from src.data_prep.raw_pcn_fitting import custom_fit_and_transform_raw_pcn, update_pcn_by_biology_results
 from src.features.denovo_motifs import score_denovo_motifs
 from src.features.motifs import calc_motifs_pv
@@ -15,7 +15,7 @@ from src.features.delta_G.TX_prediction import calculate_dG_and_Tx
 from src.features.rna_structure import make_rna_features_in_pipeline
 from src.utils import get_current_file_parent_path, is_feature_selected, get_current_date
 import sys
-from typing import Optional, Tuple, Union, List
+from typing import Optional, Tuple, Union, List, Any
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
@@ -189,6 +189,29 @@ def split_for_testing(X: Union[pd.DataFrame, pd.Series], y: Union[pd.DataFrame, 
     RNA_data_test = pd.concat([RNA_X_test, pd.DataFrame(y_test, columns=[TARGET_COLUMN])], axis=1). \
         reset_index(drop=True)
     return RNA_data_train_val, RNA_data_test
+
+
+def split_into_percentages(X: Union[pd.DataFrame, pd.Series], y: Union[pd.DataFrame, pd.Series],
+                           percentages: list[float, ...], stratify_by: Any = None) -> list[tuple[pd.DataFrame, pd.DataFrame], ...]:
+    assert any([abs(sum(percentages) - target_val) < 1e-10 for target_val in [1, 100]]), 'split_into_percentages: the parts must sum up to 1 or 100%'
+    assert len(percentages) > 1, 'split_into_percentages: the list of percentages must contain at least two parts'
+
+    parts = []
+    for i in range(1, len(percentages)):
+        normalized_percentages = sum(percentages[i:]) / sum(percentages[i-1:])
+        if stratify_by is None:
+            part_i_X, part_i_y, rest_X, rest_y = train_test_split(X, y, test_size=normalized_percentages,
+                                                                  random_state=RANDOM_STATE)
+        else:
+            part_i_X, part_i_y, part_i_stratify, rest_X, rest_y, rest_stratify = train_test_split(
+                X, y, stratify_by, test_size=sum(percentages[i:]),
+                random_state=RANDOM_STATE, stratify=stratify_by
+            )
+        parts.append((part_i_X.reset_index(drop=True), part_i_y.reset_index(drop=True)))
+
+    parts.append((rest_X.reset_index(drop=True), rest_y.reset_index(drop=True)))
+
+    return parts
 
 
 def train_validation_split(X, y, stratify_by: pd.Series,
