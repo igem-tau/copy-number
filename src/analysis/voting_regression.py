@@ -34,26 +34,29 @@ def run_pipeline(rna_type: str):
         )
         train_data = pd.concat([X_train, pd.DataFrame(y_train, columns=[TARGET_COLUMN])], axis=1)
         X_train, y_train = generate_features(train_data, rna_type=rna_type)
-        final_X_train = remove_zero_variance_features(X_train)
-        final_X_train_features = final_X_train.columns.values
+        X_train = remove_zero_variance_features(X_train)
+        X_train_features = X_train.columns.values
 
         val1_data = pd.concat([X_val1, pd.DataFrame(y_val1, columns=[TARGET_COLUMN])], axis=1)
         X_val1, y_val1 = generate_features(val1_data, rna_type=rna_type, reference_RNA_data=train_data,
-                                           selected_features=final_X_train_features)
+                                           selected_features=X_train_features)
+        X_val1 = X_val1[X_train_features]
         X_train_val1 = pd.concat([X_train, X_val1], ignore_index=True)
         y_train_val1 = pd.concat([y_train, y_val1], ignore_index=True)
 
         train_val1_data = pd.concat([train_data, val1_data], ignore_index=True)
         val2_data = pd.concat([X_val2, pd.DataFrame(y_val2, columns=[TARGET_COLUMN])], axis=1)
         X_val2, y_val2 = generate_features(val2_data, rna_type=rna_type, reference_RNA_data=train_val1_data,
-                                           selected_features=final_X_train_features)
+                                           selected_features=X_train_features)
+        X_val2 = X_val2[X_train_features]
         X_train_val1_val2 = pd.concat([X_train_val1, X_val2], ignore_index=True)
         y_train_val1_val2 = pd.concat([y_train_val1, y_val2], ignore_index=True)
 
         train_val1_val2_data = pd.concat([train_val1_data, val2_data], ignore_index=True)
         test_data = pd.concat([X_test, pd.DataFrame(y_test, columns=[TARGET_COLUMN])], axis=1)
         X_test, y_test = generate_features(test_data, rna_type=rna_type, reference_RNA_data=train_val1_val2_data,
-                                           selected_features=final_X_train_features)
+                                           selected_features=X_train_features)
+        X_test = X_test[X_train_features]
 
         dump(
             (X_train, y_train, X_val1, y_val1, X_train_val1, y_train_val1, X_val2, y_val2, X_train_val1_val2,
