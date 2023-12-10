@@ -1,7 +1,9 @@
+import numpy as np
 import pandas as pd
 from pathlib import Path
 
 from joblib import dump, load
+from sklearn.ensemble import VotingRegressor
 from sklearn.linear_model import LinearRegression, Lasso
 from src.consts import TARGET_COLUMN, RNA_TYPE_CONST
 from src.data_prep.pre_process import split_into_percentages, get_RNAp_data, equal_bins_data, \
@@ -74,6 +76,8 @@ def run_pipeline(rna_type: str):
     val2_predictions = {}
     test_predictions = {}
     models_tracker = {}
+    voting_estimators = []
+    voting_features = []
     for cur_model_name in models:
         selected_features = feature_selection(X_train, y_train, param_dict, cur_model_name,
                                               rna_type)
@@ -97,18 +101,26 @@ def run_pipeline(rna_type: str):
 
         models_tracker[f'{cur_model_name}:val2'] = temp_model
         models_tracker[f'{cur_model_name}:test'] = trained_model
-        dump(MODELS_PATH, models_tracker, compress=True)
+        voting_estimators.append((cur_model_name, trained_model))
+        voting_features.extend(selected_features)
+        dump(models_tracker, MODELS_PATH, compress=True)
         print(f'done with: {cur_model_name}')
 
     # Voting (regression problem of choosing the weights for each model)
     voting_regression_model = Lasso()
+    voting_regression_model_2 = VotingRegressor(voting_estimators)
     voting_regression_model.fit(pd.DataFrame(val2_predictions), y_val2)
+    voting_features = np.unique(voting_features)
+    voting_regression_model_2.fit(X_train_val1_val2[voting_features], y_train_val1_val2)
 
     voting_results = voting_regression_model.predict(pd.DataFrame(test_predictions))
+    voting_results_2 = voting_regression_model_2.predict(X_test[voting_features])
     estimate_pred(y_test, voting_results, 'regression voting model', data_title=f'RNA{rna_type}', save_plots=True)
+    estimate_pred(y_test, voting_results_2, 'regression voting model 2', data_title=f'RNA{rna_type}', save_plots=True)
 
     models_tracker['voting_model'] = voting_regression_model
-    dump(MODELS_PATH, models_tracker, compress=True)
+    models_tracker['voting_model 2'] = voting_regression_model_2
+    dump(models_tracker, MODELS_PATH, compress=True)
 
 
 if __name__ == '__main__':
