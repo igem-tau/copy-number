@@ -7,6 +7,7 @@ from src.utils import get_current_file_parent_path, is_feature_selected
 from tqdm import tqdm
 from typing import List, Optional
 
+
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
 INTERACT_MEME = Path(DATA_PATH, 'motifs', 'dpinteract.meme')
