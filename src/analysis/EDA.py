@@ -104,3 +104,16 @@ def exploratory_data_analysis(model_name: str, trained_model: Union[
         f.write(fig3.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
         f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))
+
+
+def exploratory_data_analysis_by_features(features: list[str], df_x: pd.DataFrame, df_y: pd.Series,
+                                          rna_type: str) -> None:
+    fig1 = plot_features_dist(df_x[features])
+    fig2 = plot_features_box(df_x[features])
+    fig3 = plot_scatter_hist(df_x[features], df_y)
+
+    eda_save_path = Path(DATA_PATH, f'{get_current_date()}_AllModels_RNA{rna_type}_features_graphs.html')
+    with open(eda_save_path, 'w') as f:
+        f.write(fig3.to_html(full_html=False, include_plotlyjs='cdn'))
+        f.write(fig1.to_html(full_html=False, include_plotlyjs='cdn'))
+        f.write(fig2.to_html(full_html=False, include_plotlyjs='cdn'))

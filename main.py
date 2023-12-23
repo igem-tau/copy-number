@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from joblib import load, dump
-from src.analysis.EDA import exploratory_data_analysis
+from src.analysis.EDA import exploratory_data_analysis, exploratory_data_analysis_by_features
 from src.consts import *
 from src.data_prep.pre_process import get_features_df, generate_features
 from src.models.Features_Models_Selection import feature_selection, model_selection
@@ -52,6 +52,8 @@ def run_pipeline(rna_type: str):
 
     total_pred = []
     final_predicted_dfs = []
+    top_features = []
+    num_features_to_take = 10
     for cur_model_name in models:
         RNA_selected_features = feature_selection(RNA_X_train_features, RNA_y_train, param_dict, cur_model_name,
                                                   rna_type)
@@ -73,6 +75,9 @@ def run_pipeline(rna_type: str):
                                                                         cur_model_name, f'RNA{rna_type}', Best_params,
                                                                         save_plots=True)
         total_pred.append(y_pred)
+        feature_importances = trained_model.feature_importances_
+        importance_threshold = sorted(feature_importances, reverse=True)[:num_features_to_take][-1]
+        top_features.extend(RNA_FS_train_val_X.columns.values[feature_importances >= importance_threshold].tolist())
 
         # Exploratory Data Analysis (EDA)
         exploratory_data_analysis(cur_model_name, trained_model, RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val,
@@ -141,6 +146,11 @@ def run_pipeline(rna_type: str):
             model_file_name += '.joblib'
             model_path = Path(DATA_PATH, model_file_name)
             dump(trained_model, model_path, compress=True)
+
+    top_features = np.unique(top_features)
+    exploratory_data_analysis_by_features(top_features,
+                                          pd.concat((RNA_X_train_features, RNA_X_val_features), axis=0),
+                                          pd.concat((RNA_y_train, RNA_y_val), axis=0), rna_type)
 
     # TODO: combine the two models prediction
     final_pred = np.array([y_pred for i, y_pred in enumerate(total_pred) if models[i] in models_for_voting]).mean(
