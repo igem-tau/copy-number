@@ -52,7 +52,7 @@ def run_pipeline(rna_type: str):
 
     total_pred = []
     final_predicted_dfs = []
-    top_features = []
+    voting_top_features = []
     num_features_to_take = 10
     for cur_model_name in models:
         RNA_selected_features = feature_selection(RNA_X_train_features, RNA_y_train, param_dict, cur_model_name,
@@ -77,7 +77,13 @@ def run_pipeline(rna_type: str):
         total_pred.append(y_pred)
         feature_importances = trained_model.feature_importances_
         importance_threshold = sorted(feature_importances, reverse=True)[:num_features_to_take][-1]
-        top_features.extend(RNA_FS_train_val_X.columns.values[feature_importances >= importance_threshold].tolist())
+        if cur_model_name in models_for_voting:
+            if not voting_top_features:
+                voting_top_features = RNA_FS_train_val_X.columns.values[
+                    feature_importances >= importance_threshold].tolist()
+            else:
+                voting_top_features = np.intersect1d(voting_top_features, RNA_FS_train_val_X.columns.values[
+                    feature_importances >= importance_threshold].tolist(), assume_unique=True)
 
         # Exploratory Data Analysis (EDA)
         exploratory_data_analysis(cur_model_name, trained_model, RNA_FS_train, RNA_FS_val, RNA_y_train, RNA_y_val,
@@ -147,8 +153,7 @@ def run_pipeline(rna_type: str):
             model_path = Path(DATA_PATH, model_file_name)
             dump(trained_model, model_path, compress=True)
 
-    top_features = np.unique(top_features)
-    exploratory_data_analysis_by_features(top_features,
+    exploratory_data_analysis_by_features(voting_top_features,
                                           pd.concat((RNA_X_train_features, RNA_X_val_features), axis=0),
                                           pd.concat((RNA_y_train, RNA_y_val), axis=0), rna_type)
 
