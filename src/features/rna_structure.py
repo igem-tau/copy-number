@@ -179,8 +179,8 @@ def get_rna_form(seqs: 'pd.Series[List[str]]', seq_end_idx: list,
     d = {}
     for end_idx in tqdm(seq_end_idx):
         unpaired_cnt = f"unpaired_cnt_seq_end_{end_idx}"
-        bow_cnt = f"bow_cnt_seq_end_{end_idx}"
-        bubble_cnt = f"bubble_cnt_seq_end_{end_idx}"
+        bow_cnt = f"arc_cnt_seq_end_{end_idx}"
+        bubble_cnt = f"interior_loop_cnt_seq_end_{end_idx}"
 
         unpaired_condition = is_feature_selected(unpaired_cnt, selected_features)
         bow_condition = is_feature_selected(bow_cnt, selected_features)
@@ -212,11 +212,12 @@ def rna_features_by_windows(seqs: 'pd.Series[List[str]]', selected_features: 'Op
                             window_start: int = 0, window_end: int = 60, window_size: int = 70,
                             window_jump: int = 10) -> pd.DataFrame:
     d = {}
+
     while window_start <= window_end:
         mfe = f"mfe_window_{window_start}_{window_start + window_size}"
         unpaired_cnt = f"unpaired_cnt_window_{window_start}_{window_start + window_size}"
-        bow_cnt = f"bow_cnt_window_{window_start}_{window_start + window_size}"
-        bubble_cnt = f"bubble_cnt_window_{window_start}_{window_start + window_size}"
+        bow_cnt = f"arc_cnt_window_{window_start}_{window_start + window_size}"
+        bubble_cnt = f"interior_loop_cnt_window_{window_start}_{window_start + window_size}"
 
         mfe_condition = is_feature_selected(mfe, selected_features)
         unpaired_condition = is_feature_selected(unpaired_cnt, selected_features)
@@ -235,6 +236,7 @@ def rna_features_by_windows(seqs: 'pd.Series[List[str]]', selected_features: 'Op
                 d.pop(bow_cnt)
             if not bubble_condition:
                 d.pop(bubble_cnt)
+
         window_start += window_jump
     res_df = pd.DataFrame(d)
     res_df.index = seqs.index
