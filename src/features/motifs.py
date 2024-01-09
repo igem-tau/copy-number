@@ -1,19 +1,11 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-<<<<<<< Updated upstream
 from pymemesuite.common import MotifFile, Sequence
 from pymemesuite.fimo import FIMO
 from src.utils import get_current_file_parent_path, is_feature_selected
 from tqdm import tqdm
 from typing import List, Optional
-=======
-#from pymemesuite.common import MotifFile, Sequence
-#from pymemesuite.fimo import FIMO
-from src.consts import *
-from src.utils import get_current_file_parent_path, get_selected_features
-
->>>>>>> Stashed changes
 
 CURRENT_FOLDER_PATH = get_current_file_parent_path(__file__)
 DATA_PATH = Path(CURRENT_FOLDER_PATH, '..', '..', 'data')
