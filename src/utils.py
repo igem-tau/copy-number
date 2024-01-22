@@ -62,7 +62,7 @@ def estimate_pred(y_true, y_pred, model_name, data_title='', estimator=None, sav
                 labels={'x': 'Feature Importance', 'y': 'Feature'},
                 title=f'{model_name} Feature Importance {data_title}',
             )
-            fig.update_layout(width=800, height=400)
+            fig.update_layout(width=800, height=600)
             with open(Path(FIGURES_PATH, f'{model_name} Feature Importance {data_title}.html'), 'w') as f:
                 f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
